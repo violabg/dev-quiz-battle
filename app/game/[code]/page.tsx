@@ -131,7 +131,7 @@ export default function GamePage(props: { params: Promise<{ code: string }> }) {
           event: "*", // INSERT, UPDATE, DELETE
           schema: "public",
           table: "games",
-          filter: `code=eq.${code.toUpperCase()}`,
+          filter: game?.id ? `id=eq.${game.id}` : undefined,
         },
         (payload) => {
           if (payload.eventType === "DELETE") {

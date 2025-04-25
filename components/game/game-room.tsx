@@ -210,6 +210,24 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
     game.players.length,
   ]);
 
+  // Show next turn button if there is a winner OR if time is up and no winner
+  useEffect(() => {
+    if (!currentQuestion || !currentQuestion.ended_at) return;
+    // Show next turn if there is a winner or if time is up and no winner
+    if (winner || (!winner && allAnswers.length === game.players.length)) {
+      setShowNextTurn(true);
+    } else if (!winner && allAnswers.length < game.players.length) {
+      // If time is up but not all players answered, still allow next turn
+      setShowNextTurn(true);
+    }
+  }, [
+    currentQuestion,
+    currentQuestion?.ended_at,
+    winner,
+    allAnswers.length,
+    game.players.length,
+  ]);
+
   // Avvia nuovo turno: solo il prossimo giocatore può farlo
   const handleNextTurn = () => {
     setCurrentPlayerIndex((prev) => (prev + 1) % game.players.length);
@@ -498,13 +516,20 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
               </div>
             </div>
           </Card>
-          {winner && (
+          {(winner ||
+            (currentQuestion && currentQuestion.ended_at && !winner)) && (
             <Card className="mt-4">
               <div className="flex flex-col items-center mt-6">
-                <div className="mb-2 font-bold text-green-600 text-lg">
-                  {winner.username} ha indovinato! (+{winner.score.toFixed(1)}{" "}
-                  punti)
-                </div>
+                {winner ? (
+                  <div className="mb-2 font-bold text-green-600 text-lg">
+                    {winner.username} ha indovinato! (+{winner.score.toFixed(1)}{" "}
+                    punti)
+                  </div>
+                ) : (
+                  <div className="mb-2 font-bold text-yellow-600 text-lg">
+                    Tempo scaduto! Nessun giocatore ha risposto correttamente.
+                  </div>
+                )}
                 {showNextTurn && isNextPlayersTurn && (
                   <Button onClick={handleNextTurn} className="mt-2">
                     Inizia nuovo turno
