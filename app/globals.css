@@ -1,0 +1,219 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --background-image-gradient-radial: radial-gradient(var(--tw-gradient-stops));
+  --background-image-gradient-conic: conic-gradient(
+    from 180deg at 50% 50%,
+    var(--tw-gradient-stops)
+  );
+
+  --backdrop-blur-xs: 2px;
+
+  @keyframes gradient {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+}
+
+:root {
+  /* OKLCH color values */
+  --background: oklch(100% 0 0); /* White */
+  --foreground: oklch(27.81% 0.032 262.24); /* Dark blue-gray */
+
+  --card: oklch(100% 0 0); /* White */
+  --card-foreground: oklch(27.81% 0.032 262.24); /* Dark blue-gray */
+
+  --popover: oklch(100% 0 0); /* White */
+  --popover-foreground: oklch(27.81% 0.032 262.24); /* Dark blue-gray */
+
+  --primary: oklch(58.92% 0.25 296.91); /* Purple */
+  --primary-foreground: oklch(98% 0.005 210); /* Light gray */
+
+  --secondary: oklch(96.11% 0.02 210); /* Light gray-blue */
+  --secondary-foreground: oklch(32.2% 0.01 262.5); /* Dark gray-blue */
+
+  --muted: oklch(96.11% 0.02 210); /* Light gray-blue */
+  --muted-foreground: oklch(60% 0.02 215.4); /* Medium gray */
+
+  --accent: oklch(96.11% 0.02 210); /* Light gray-blue */
+  --accent-foreground: oklch(32.2% 0.01 262.5); /* Dark gray-blue */
+
+  --destructive: oklch(60.2% 0.18 22.5); /* Red */
+  --destructive-foreground: oklch(98% 0.005 210); /* Light gray */
+
+  --border: oklch(91.4% 0.01 214.3); /* Light gray */
+  --input: oklch(91.4% 0.01 214.3); /* Light gray */
+  --ring: oklch(27.81% 0.032 262.24); /* Dark blue-gray */
+
+  /* Gradient colors as direct values */
+  --gradient-from: oklch(58.92% 0.25 296.91); /* Purple */
+  --gradient-to: oklch(65% 0.2 220); /* Blue */
+
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: oklch(0.14 0.01 260.78); /* Dark blue-gray */
+  --foreground: oklch(98% 0.005 210); /* Light gray */
+
+  --card: oklch(27.81% 0.032 262.24); /* Dark blue-gray */
+  --card-foreground: oklch(98% 0.005 210); /* Light gray */
+
+  --popover: oklch(27.81% 0.032 262.24); /* Dark blue-gray */
+  --popover-foreground: oklch(98% 0.005 210); /* Light gray */
+
+  --primary: oklch(58.92% 0.25 296.91); /* Purple */
+  --primary-foreground: oklch(98% 0.005 210); /* Light gray */
+
+  --secondary: oklch(17.5% 0.02 217.2); /* Dark gray-blue */
+  --secondary-foreground: oklch(98% 0.005 210); /* Light gray */
+
+  --muted: oklch(17.5% 0.02 217.2); /* Dark gray-blue */
+  --muted-foreground: oklch(65.1% 0.01 215); /* Medium gray */
+
+  --accent: oklch(17.5% 0.02 217.2); /* Dark gray-blue */
+  --accent-foreground: oklch(98% 0.005 210); /* Light gray */
+
+  --destructive: oklch(30.6% 0.12 22.5); /* Dark red */
+  --destructive-foreground: oklch(98% 0.005 210); /* Light gray */
+
+  --border: oklch(17.5% 0.02 217.2); /* Dark gray-blue */
+  --input: oklch(17.5% 0.02 217.2); /* Dark gray-blue */
+  --ring: oklch(83.9% 0.01 212.7); /* Light gray-blue */
+
+  /* Gradient colors as direct values */
+  --gradient-from: oklch(58.92% 0.25 296.91); /* Purple */
+  --gradient-to: oklch(65% 0.2 220); /* Blue */
+}
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+  @media (width >= --theme(--breakpoint-sm)) {
+    max-width: none;
+  }
+  @media (width >= 1400px) {
+    max-width: 1400px;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@utility glass-card {
+  @apply bg-white/10 dark:bg-black/20 backdrop-blur-lg border border-white/20 dark:border-white/10;
+}
+
+@utility gradient-border {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 2px;
+    border-radius: var(--radius);
+    background: linear-gradient(
+      to right,
+      var(--gradient-from),
+      var(--gradient-to)
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+@utility gradient-hover {
+  background-image: linear-gradient(
+    to right,
+    var(--gradient-from),
+    var(--gradient-from)
+  ) !important;
+}
+
+.text-gradient {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-image: linear-gradient(
+    to right,
+    var(--gradient-from),
+    var(--gradient-to)
+  );
+  background-size: 200% auto;
+  animation: gradient 6s ease infinite;
+}
+
+.gradient-bg {
+  background-image: linear-gradient(
+    to right,
+    var(--gradient-from),
+    var(--gradient-to)
+  );
+  background-size: 200% auto;
+  animation: gradient 6s ease infinite;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
