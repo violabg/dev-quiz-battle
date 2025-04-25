@@ -1,4 +1,5 @@
 "use server";
+import { getRecentQuestionTexts } from "@/lib/get-recent-questions";
 import type { GameDifficulty, GameLanguage } from "@/types/supabase";
 import { groq } from "@ai-sdk/groq";
 import { generateObject } from "ai";
@@ -39,6 +40,19 @@ export async function generateQuestion({
   language,
   difficulty,
 }: GenerateQuestionOptions): Promise<GeneratedQuestion> {
+  // Fetch previous questions from Supabase (last 5 hours, same language/difficulty)
+  let previousQuestions: string[] = [];
+  try {
+    previousQuestions = await getRecentQuestionTexts({ language, difficulty });
+  } catch {
+    previousQuestions = [];
+  }
+  const previousQuestionsPrompt = previousQuestions.length
+    ? `Evita di generare domande simili o uguali alle seguenti (già usate nelle ultime 5 ore):\n${previousQuestions
+        .map((q, i) => `${i + 1}. ${q}`)
+        .join("\n")}`
+    : "";
+
   const prompt = `
     Genera una domanda a scelta multipla sulla programmazione ${language} con difficoltà ${difficulty}.
     
@@ -51,6 +65,8 @@ export async function generateQuestion({
     - esperto: Algoritmi complessi, ottimizzazioni o particolarità del linguaggio
     
     Includi un esempio di codice rilevante per la domanda.
+    
+    ${previousQuestionsPrompt}
     
     Format your response as a valid JSON object with the following structure:
     {
