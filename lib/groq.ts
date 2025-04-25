@@ -1,71 +1,75 @@
-import { generateText } from "ai"
-import { groq } from "@ai-sdk/groq"
-import type { GameLanguage, GameDifficulty } from "@/types/supabase"
+"use server";
+import type { GameDifficulty, GameLanguage } from "@/types/supabase";
+import { groq } from "@ai-sdk/groq";
+import { generateText } from "ai";
 
 interface GenerateQuestionOptions {
-  language: GameLanguage
-  difficulty: GameDifficulty
+  language: GameLanguage;
+  difficulty: GameDifficulty;
 }
 
 interface GeneratedQuestion {
-  questionText: string
-  codeSample: string | null
-  options: { text: string }[]
-  correctAnswer: number
-  explanation: string
+  questionText: string;
+  codeSample: string | null;
+  options: { text: string }[];
+  correctAnswer: number;
+  explanation: string;
 }
 
-export async function generateQuestion({ language, difficulty }: GenerateQuestionOptions): Promise<GeneratedQuestion> {
+export async function generateQuestion({
+  language,
+  difficulty,
+}: GenerateQuestionOptions): Promise<GeneratedQuestion> {
   const prompt = `
-    Generate a multiple-choice coding question about ${language} programming with ${difficulty} difficulty.
+    Genera una domanda a scelta multipla sulla programmazione ${language} con difficoltà ${difficulty}.
     
-    The question should test the user's knowledge of ${language} syntax, concepts, or best practices.
+    La domanda deve testare la conoscenza della sintassi, dei concetti o delle best practice di ${language}.
     
-    For ${difficulty} difficulty:
-    - easy: Basic syntax and fundamental concepts
-    - medium: Intermediate concepts and common patterns
-    - hard: Advanced concepts and edge cases
-    - expert: Complex algorithms, optimizations, or language-specific nuances
+    Per la difficoltà ${difficulty}:
+    - facile: Sintassi di base e concetti fondamentali
+    - media: Concetti intermedi e pattern comuni
+    - difficile: Concetti avanzati e casi limite
+    - esperto: Algoritmi complessi, ottimizzazioni o particolarità del linguaggio
     
-    Include a code sample that is relevant to the question.
+    Includi un esempio di codice rilevante per la domanda.
     
     Format your response as a valid JSON object with the following structure:
     {
-      "questionText": "The question text",
-      "codeSample": "// The code sample with proper formatting and syntax",
+      "questionText": "Testo della domanda",
+      "codeSample": "// Esempio di codice con formattazione e sintassi corretta",
       "options": [
-        {"text": "First option"},
-        {"text": "Second option"},
-        {"text": "Third option"},
-        {"text": "Fourth option"}
+        {"text": "Prima opzione"},
+        {"text": "Seconda opzione"},
+        {"text": "Terza opzione"},
+        {"text": "Quarta opzione"}
       ],
-      "correctAnswer": 0, // Index of the correct answer (0-3)
-      "explanation": "Detailed explanation of why the correct answer is correct"
+      "correctAnswer": 0, // Indice della risposta corretta (0-3)
+      "explanation": "Spiegazione dettagliata del perché la risposta è corretta"
     }
     
-    Ensure the code sample is properly formatted and uses correct syntax for ${language}.
-    Make sure there is exactly one correct answer.
-    The explanation should be detailed and educational.
-  `
+    Assicurati che l'esempio di codice sia formattato correttamente e utilizzi la sintassi giusta per ${language}.
+    Assicurati che ci sia esattamente una risposta corretta.
+    La spiegazione deve essere dettagliata ed educativa.
+  `;
 
   try {
     const { text } = await generateText({
-      model: groq("llama3-70b-8192"),
+      model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
       prompt,
       temperature: 0.7,
       maxTokens: 2048,
-    })
-
+    });
+    console.log("text :>> ", text);
     // Parse the JSON response
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error("Failed to parse JSON from response")
+      throw new Error("Impossibile analizzare il JSON dalla risposta");
     }
 
-    const questionData = JSON.parse(jsonMatch[0]) as GeneratedQuestion
-    return questionData
+    const questionData = JSON.parse(jsonMatch[0]) as GeneratedQuestion;
+    return questionData;
   } catch (error) {
-    console.error("Error generating question:", error)
-    throw new Error("Failed to generate question")
+    console.error("Errore durante la generazione della domanda:", error);
+    throw new Error("Impossibile generare la domanda");
   }
 }

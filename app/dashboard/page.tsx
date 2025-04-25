@@ -54,8 +54,8 @@ export default function DashboardPage() {
       });
 
       if (insertError) {
-        toast.error("Error", {
-          description: "Failed to create user profile",
+        toast.error("Errore", {
+          description: "Impossibile creare il profilo utente",
         });
         return false;
       }
@@ -200,13 +200,17 @@ export default function DashboardPage() {
         <div className="gap-8 grid md:grid-cols-2">
           <GradientCard>
             <CardHeader>
-              <CardTitle>Create a New Game</CardTitle>
-              <CardDescription>Set up a new coding quiz battle</CardDescription>
+              <CardTitle>Crea una nuova partita</CardTitle>
+              <CardDescription>
+                Imposta una nuova sfida di quiz di programmazione
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="max-players">Maximum Players</Label>
+                  <Label htmlFor="max-players">
+                    Numero massimo di giocatori
+                  </Label>
                   <Input
                     id="max-players"
                     type="number"
@@ -229,22 +233,22 @@ export default function DashboardPage() {
                 {loading ? (
                   <Loader2 className="mr-2 w-4 h-4 animate-spin" />
                 ) : null}
-                Create Game
+                Crea partita
               </Button>
             </CardFooter>
           </GradientCard>
 
           <GradientCard>
             <CardHeader>
-              <CardTitle>Join a Game</CardTitle>
+              <CardTitle>Unisciti a una partita</CardTitle>
               <CardDescription>
-                Enter a game code to join an existing game
+                Inserisci un codice partita per unirti a una partita esistente
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="game-code">Game Code</Label>
+                  <Label htmlFor="game-code">Codice partita</Label>
                   <Input
                     id="game-code"
                     placeholder="Enter 6-digit code"
@@ -264,7 +268,7 @@ export default function DashboardPage() {
                 {loading ? (
                   <Loader2 className="mr-2 w-4 h-4 animate-spin" />
                 ) : null}
-                Join Game
+                Unisciti
               </Button>
             </CardFooter>
           </GradientCard>

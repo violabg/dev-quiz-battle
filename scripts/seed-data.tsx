@@ -146,12 +146,12 @@ export default function SeedData() {
         }
       }
 
-      toast.success("Data seeding completed", {
-        description: "Check the logs for details",
+      toast.success("Seeding completato", {
+        description: "Controlla i log per i dettagli",
       });
     } catch (error: any) {
       addLog(`Unexpected error: ${error.message}`);
-      toast.error("Error", {
+      toast.error("Errore", {
         description: error.message,
       });
     } finally {
@@ -163,12 +163,12 @@ export default function SeedData() {
     <div className="space-y-6">
       <Button onClick={seedData} disabled={loading}>
         {loading ? <Loader2 className="mr-2 w-4 h-4 animate-spin" /> : null}
-        Seed Test Data
+        Popola dati di test
       </Button>
 
       {logs.length > 0 && (
         <div className="bg-muted mt-4 p-4 border rounded-lg max-h-96 overflow-auto">
-          <h3 className="mb-2 font-semibold">Logs:</h3>
+          <h3 className="mb-2 font-semibold">Log:</h3>
           <div className="font-mono text-sm">
             {logs.map((log, index) => (
               <div

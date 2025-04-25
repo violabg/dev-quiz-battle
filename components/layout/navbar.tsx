@@ -1,11 +1,7 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { useSupabase } from "@/lib/supabase-provider"
-import { Button } from "@/components/ui/button"
-import { ModeToggle } from "@/components/theme-toggle"
-import { LogOut, User } from "lucide-react"
+import { ModeToggle } from "@/components/theme-toggle";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,27 +9,31 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+import { useSupabase } from "@/lib/supabase-provider";
+import { LogOut, User } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export function Navbar() {
-  const { user, supabase } = useSupabase()
-  const pathname = usePathname()
+  const { user, supabase } = useSupabase();
+  const pathname = usePathname();
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-  }
+    await supabase.auth.signOut();
+  };
 
   const navItems = [
     { name: "Home", href: "/" },
     { name: "Dashboard", href: "/dashboard" },
-    { name: "Leaderboard", href: "/leaderboard" },
-  ]
+    { name: "Classifica", href: "/leaderboard" },
+  ];
 
   return (
     <header className="border-b">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="flex justify-between items-center h-16 container">
         <div className="flex items-center gap-6">
-          <Link href="/" className="text-2xl font-bold text-gradient">
+          <Link href="/" className="font-bold text-gradient text-2xl">
             DevQuizBattle
           </Link>
           <nav className="hidden md:flex gap-6">
@@ -42,7 +42,9 @@ export function Navbar() {
                 key={item.href}
                 href={item.href}
                 className={`text-sm font-medium transition-colors hover:text-primary ${
-                  pathname === item.href ? "text-primary" : "text-muted-foreground"
+                  pathname === item.href
+                    ? "text-primary"
+                    : "text-muted-foreground"
                 }`}
               >
                 {item.name}
@@ -56,32 +58,32 @@ export function Navbar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
-                  <User className="h-5 w-5" />
+                  <User className="w-5 h-5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuLabel>Il mio account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/profile">Profile</Link>
+                  <Link href="/profile">Profilo</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/dashboard">Dashboard</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
+                  <LogOut className="mr-2 w-4 h-4" />
+                  <span>Esci</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <Button asChild>
-              <Link href="/login">Sign In</Link>
+              <Link href="/login">Accedi</Link>
             </Button>
           )}
         </div>
       </div>
     </header>
-  )
+  );
 }

@@ -9,10 +9,11 @@ import { useSupabase } from "@/lib/supabase-provider";
 import type { GameWithPlayers } from "@/types/supabase";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export default function GamePage({ params }: { params: { code: string } }) {
+export default function GamePage(props: { params: Promise<{ code: string }> }) {
+  const params = use(props.params);
   const { code } = params;
   const { user, supabase, loading: authLoading } = useSupabase();
   const router = useRouter();
@@ -88,8 +89,9 @@ export default function GamePage({ params }: { params: { code: string } }) {
       });
     } catch (error: any) {
       console.error("Error fetching game:", error);
-      toast.error("Error", {
-        description: "Failed to load game data: " + error.message,
+      toast.error("Errore", {
+        description:
+          "Impossibile caricare i dati della partita: " + error.message,
       });
       router.push("/dashboard");
     } finally {
@@ -144,7 +146,7 @@ export default function GamePage({ params }: { params: { code: string } }) {
         },
         async () => {
           // Refetch all players when there's any change
-          if (!game) return;
+          if (!game?.id) return;
 
           const { data: playersData } = await supabase
             .from("game_players")
@@ -179,7 +181,7 @@ export default function GamePage({ params }: { params: { code: string } }) {
       gameSubscription.unsubscribe();
       playersSubscription.unsubscribe();
     };
-  }, [user, code, supabase, router, game?.id, fetchGame, game]);
+  }, [user, code, supabase, router, game?.id, fetchGame]);
 
   const handleStartGame = async () => {
     if (!game || !isHost) return;
@@ -214,8 +216,8 @@ export default function GamePage({ params }: { params: { code: string } }) {
       }));
     } catch (error: any) {
       console.error("Error in handleStartGame:", error);
-      toast.error("Error", {
-        description: "Failed to start the game: " + error.message,
+      toast.error("Errore", {
+        description: "Impossibile avviare la partita: " + error.message,
       });
     }
   };
@@ -245,8 +247,8 @@ export default function GamePage({ params }: { params: { code: string } }) {
 
       router.push("/dashboard");
     } catch (error: any) {
-      toast.error("Error", {
-        description: "Failed to leave the game",
+      toast.error("Errore", {
+        description: "Impossibile uscire dalla partita",
       });
     }
   };
@@ -267,9 +269,9 @@ export default function GamePage({ params }: { params: { code: string } }) {
       <div className="flex flex-col min-h-screen">
         <Navbar />
         <main className="flex flex-col flex-1 justify-center items-center py-8 container">
-          <h1 className="mb-4 font-bold text-2xl">Game not found</h1>
+          <h1 className="mb-4 font-bold text-2xl">Partita non trovata</h1>
           <Button onClick={() => router.push("/dashboard")}>
-            Return to Dashboard
+            Torna alla Dashboard
           </Button>
         </main>
       </div>

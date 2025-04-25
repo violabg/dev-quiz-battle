@@ -62,11 +62,11 @@ export function AuthForm() {
         // If profile creation fails, we should still show success since the auth account was created
       }
 
-      toast.success("Account created!", {
-        description: "Please check your email to verify your account.",
+      toast.success("Account creato!", {
+        description: "Controlla la tua email per verificare il tuo account.",
       });
     } catch (error: any) {
-      toast.error("Error", {
+      toast.error("Errore", {
         description: error.message,
       });
     } finally {
@@ -89,7 +89,7 @@ export function AuthForm() {
       router.push("/dashboard");
       router.refresh();
     } catch (error: any) {
-      toast.error("Error", {
+      toast.error("Errore", {
         description: error.message,
       });
     } finally {
@@ -101,15 +101,15 @@ export function AuthForm() {
     <GradientCard className="mx-auto w-full max-w-md">
       <Tabs defaultValue="signin" className="w-full">
         <TabsList className="grid grid-cols-2 w-full">
-          <TabsTrigger value="signin">Sign In</TabsTrigger>
-          <TabsTrigger value="signup">Sign Up</TabsTrigger>
+          <TabsTrigger value="signin">Accedi</TabsTrigger>
+          <TabsTrigger value="signup">Registrati</TabsTrigger>
         </TabsList>
         <TabsContent value="signin">
           <Card>
             <CardHeader>
-              <CardTitle className="text-gradient">Welcome Back</CardTitle>
+              <CardTitle className="text-gradient">Bentornato</CardTitle>
               <CardDescription>
-                Sign in to your DevQuizBattle account
+                Accedi al tuo account DevQuizBattle
               </CardDescription>
             </CardHeader>
             <form onSubmit={handleSignIn}>
@@ -119,7 +119,7 @@ export function AuthForm() {
                   <Input
                     id="signin-email"
                     type="email"
-                    placeholder="your@email.com"
+                    placeholder="tu@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -138,7 +138,7 @@ export function AuthForm() {
               </CardContent>
               <CardFooter>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Signing in..." : "Sign In"}
+                  {loading ? "Accesso in corso..." : "Accedi"}
                 </Button>
               </CardFooter>
             </form>
@@ -147,9 +147,9 @@ export function AuthForm() {
         <TabsContent value="signup">
           <Card>
             <CardHeader>
-              <CardTitle className="text-gradient">Create Account</CardTitle>
+              <CardTitle className="text-gradient">Crea Account</CardTitle>
               <CardDescription>
-                Sign up for a new DevQuizBattle account
+                Registrati per un nuovo account DevQuizBattle
               </CardDescription>
             </CardHeader>
             <form onSubmit={handleSignUp}>
@@ -159,14 +159,14 @@ export function AuthForm() {
                   <Input
                     id="signup-email"
                     type="email"
-                    placeholder="your@email.com"
+                    placeholder="tu@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-username">Username</Label>
+                  <Label htmlFor="signup-username">Nome utente</Label>
                   <Input
                     id="signup-username"
                     type="text"
@@ -189,7 +189,7 @@ export function AuthForm() {
               </CardContent>
               <CardFooter>
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Creating account..." : "Sign Up"}
+                  {loading ? "Creazione account..." : "Registrati"}
                 </Button>
               </CardFooter>
             </form>

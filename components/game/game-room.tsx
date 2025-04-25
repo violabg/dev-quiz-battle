@@ -109,14 +109,8 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
       questionSubscription.unsubscribe();
       answerSubscription.unsubscribe();
     };
-  }, [
-    supabase,
-    game.id,
-    currentQuestion.id,
-    game.players.length,
-    game.players,
-    currentQuestion,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase, game.id, currentQuestion?.id, game.players.length]);
 
   const handleCreateQuestion = async () => {
     if (!user || !isCurrentPlayersTurn) return;
@@ -148,8 +142,8 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
       setCurrentQuestion(data as Question);
       setQuestionStartTime(Date.now());
     } catch (error: any) {
-      toast.error("Error", {
-        description: "Failed to create question",
+      toast.error("Errore", {
+        description: "Impossibile creare la domanda",
       });
     } finally {
       setIsLoading(false);
@@ -197,8 +191,8 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
         if (updateError) throw updateError;
       }
     } catch (error: any) {
-      toast.error("Error", {
-        description: "Failed to submit answer",
+      toast.error("Errore", {
+        description: "Impossibile inviare la risposta",
       });
     }
   };
@@ -210,10 +204,10 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
           <h1 className="font-bold text-3xl">
             <span className="text-gradient">DevQuizBattle</span>
           </h1>
-          <p className="text-muted-foreground">Game Code: {game.code}</p>
+          <p className="text-muted-foreground">Codice partita: {game.code}</p>
         </div>
         <Button variant="destructive" onClick={onLeaveGame}>
-          Leave Game
+          Esci
         </Button>
       </div>
 
@@ -230,17 +224,17 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
                 {isCurrentPlayersTurn ? (
                   <div className="space-y-6 w-full max-w-md">
                     <h2 className="font-bold text-2xl text-center">
-                      It's your turn!
+                      È il tuo turno!
                     </h2>
                     <p className="text-muted-foreground text-center">
-                      Choose a programming language and difficulty level to
-                      create a question for everyone.
+                      Scegli un linguaggio di programmazione e un livello di
+                      difficoltà per creare una domanda per tutti.
                     </p>
 
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <label className="font-medium text-sm">
-                          Programming Language
+                          Linguaggio di programmazione
                         </label>
                         <Select
                           value={language}
@@ -249,7 +243,7 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
                           }
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select language" />
+                            <SelectValue placeholder="Seleziona il linguaggio" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="javascript">
@@ -270,7 +264,7 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
 
                       <div className="space-y-2">
                         <label className="font-medium text-sm">
-                          Difficulty
+                          Difficoltà
                         </label>
                         <Select
                           value={difficulty}
@@ -279,13 +273,13 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
                           }
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select difficulty" />
+                            <SelectValue placeholder="Seleziona la difficoltà" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="easy">Easy</SelectItem>
-                            <SelectItem value="medium">Medium</SelectItem>
-                            <SelectItem value="hard">Hard</SelectItem>
-                            <SelectItem value="expert">Expert</SelectItem>
+                            <SelectItem value="easy">Facile</SelectItem>
+                            <SelectItem value="medium">Media</SelectItem>
+                            <SelectItem value="hard">Difficile</SelectItem>
+                            <SelectItem value="expert">Esperto</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -298,10 +292,10 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
                         {isLoading ? (
                           <>
                             <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                            Generating Question...
+                            Generazione domanda...
                           </>
                         ) : (
-                          "Generate Question"
+                          "Genera domanda"
                         )}
                       </Button>
                     </div>
@@ -309,10 +303,10 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
                 ) : (
                   <div className="text-center">
                     <h2 className="mb-2 font-bold text-2xl">
-                      {currentPlayer?.profile.username}'s Turn
+                      Turno di {currentPlayer?.profile.username}
                     </h2>
                     <p className="text-muted-foreground">
-                      Waiting for them to create a question...
+                      In attesa che crei una domanda...
                     </p>
                   </div>
                 )}
@@ -324,7 +318,7 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
         <div>
           <Card>
             <div className="p-4">
-              <h2 className="mb-4 font-bold text-xl">Leaderboard</h2>
+              <h2 className="mb-4 font-bold text-xl">Classifica</h2>
               <div className="space-y-2">
                 {[...game.players]
                   .sort((a, b) => b.score - a.score)
@@ -364,7 +358,7 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
 
           <Card className="mt-4">
             <div className="p-4">
-              <h2 className="mb-2 font-bold text-xl">Current Turn</h2>
+              <h2 className="mb-2 font-bold text-xl">Turno attuale</h2>
               <div className="flex items-center gap-2">
                 <Avatar>
                   <AvatarImage
@@ -380,7 +374,7 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
                   {currentPlayer?.profile.username}
                 </span>
                 {isCurrentPlayersTurn && (
-                  <Badge className="ml-1">Your Turn</Badge>
+                  <Badge className="ml-1">Il tuo turno</Badge>
                 )}
               </div>
             </div>

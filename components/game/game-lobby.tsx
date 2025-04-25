@@ -23,8 +23,9 @@ export function GameLobby({
 }: GameLobbyProps) {
   const copyGameCode = () => {
     navigator.clipboard.writeText(game.code);
-    toast.success("Game code copied", {
-      description: "Share this code with your friends to join the game",
+    toast.success("Codice partita copiato", {
+      description:
+        "Condividi questo codice con i tuoi amici per unirsi alla partita",
     });
   };
 
@@ -33,10 +34,10 @@ export function GameLobby({
       <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="font-bold text-3xl">
-            <span className="text-gradient">Game Lobby</span>
+            <span className="text-gradient">Sala d'attesa</span>
           </h1>
           <p className="text-muted-foreground">
-            Waiting for players to join...
+            In attesa che i giocatori si uniscano...
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -49,7 +50,7 @@ export function GameLobby({
             </Button>
           </div>
           <Button variant="destructive" onClick={onLeaveGame}>
-            Leave Game
+            Esci
           </Button>
         </div>
       </div>
@@ -59,7 +60,7 @@ export function GameLobby({
           <div className="flex items-center gap-2 mb-4">
             <Users className="w-5 h-5" />
             <h2 className="font-semibold text-xl">
-              Players ({game.players.length}/{game.max_players})
+              Giocatori ({game.players.length}/{game.max_players})
             </h2>
           </div>
 
@@ -78,7 +79,7 @@ export function GameLobby({
                 <div className="flex-1">
                   <p className="font-medium">{player.profile.username}</p>
                   <p className="text-muted-foreground text-sm">
-                    Turn order: {player.turn_order}
+                    Ordine di turno: {player.turn_order}
                   </p>
                 </div>
                 {player.player_id === game.host_id && <Badge>Host</Badge>}
@@ -97,14 +98,14 @@ export function GameLobby({
             className="px-8"
           >
             {game.players.length < 2
-              ? "Need at least 2 players to start"
-              : "Start Game"}
+              ? "Servono almeno 2 giocatori per iniziare"
+              : "Inizia la partita"}
           </Button>
           {game.players.length < 2 && (
             <p className="text-muted-foreground text-sm">
-              Share the game code{" "}
-              <span className="font-mono font-bold">{game.code}</span> with
-              friends to join
+              Condividi il codice partita{" "}
+              <span className="font-mono font-bold">{game.code}</span> con gli
+              amici per unirsi
             </p>
           )}
         </div>
