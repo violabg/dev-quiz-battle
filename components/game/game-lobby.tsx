@@ -29,16 +29,26 @@ export function GameLobby({
     });
   };
 
+  // Trova il giocatore di turno (turn_order === 1 all'inizio, poi gestito dal game-room)
+  const currentTurnPlayer = game.players.find((p) => p.turn_order === 1);
+
+  let lobbyMessage = "";
+  if (game.status === "waiting") {
+    lobbyMessage = "In attesa che i giocatori si uniscano...";
+  } else if (game.status === "active") {
+    lobbyMessage =
+      "In attesa che venga generata la domanda da " +
+      (currentTurnPlayer?.profile.username || "...");
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="font-bold text-3xl">
-            <span className="text-gradient">Sala d'attesa</span>
+            <span className="text-gradient">{"Sala d'attesa"}</span>
           </h1>
-          <p className="text-muted-foreground">
-            In attesa che i giocatori si uniscano...
-          </p>
+          <p className="text-muted-foreground">{lobbyMessage}</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">

@@ -31,9 +31,12 @@ interface GameRoomProps {
   onLeaveGame: () => void;
 }
 
-export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
+export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
   const { user, supabase } = useSupabase();
-  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
+  // Add ended_at to Question type for local use
+  type QuestionWithEnd = Question & { ended_at?: string; started_at?: string };
+  const [currentQuestion, setCurrentQuestion] =
+    useState<QuestionWithEnd | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [language, setLanguage] = useState<GameLanguage>("javascript");
   const [difficulty, setDifficulty] = useState<GameDifficulty>("medium");
@@ -41,10 +44,52 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
   const [questionStartTime, setQuestionStartTime] = useState<number | null>(
     null
   );
+  // Stato per chi ha indovinato e punteggio assegnato
+  const [winner, setWinner] = useState<{
+    playerId: string;
+    username: string;
+    score: number;
+  } | null>(null);
+  const [showNextTurn, setShowNextTurn] = useState(false);
 
   // Determine if it's the current user's turn
   const currentPlayer = game.players[currentPlayerIndex];
   const isCurrentPlayersTurn = currentPlayer?.player_id === user?.id;
+  const nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
+  const isNextPlayersTurn =
+    game.players[nextPlayerIndex]?.player_id === user?.id;
+
+  type AnswerWithPlayer = {
+    id: string;
+    player_id: string;
+    selected_option: number;
+    is_correct: boolean;
+    response_time_ms: number;
+    score_earned: number;
+    answered_at: string;
+    player: { id: string; username: string; avatar_url?: string | null };
+  };
+  const [allAnswers, setAllAnswers] = useState<AnswerWithPlayer[]>([]);
+
+  // Fetch latest question on mount or when game.id changes
+  useEffect(() => {
+    if (!game.id) return;
+    (async () => {
+      const { data } = await supabase
+        .from("questions")
+        .select("*")
+        .eq("game_id", game.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+      if (data) {
+        setCurrentQuestion(data as QuestionWithEnd);
+        setQuestionStartTime(
+          data.started_at ? new Date(data.started_at).getTime() : Date.now()
+        );
+      }
+    })();
+  }, [game.id, supabase]);
 
   useEffect(() => {
     // Set up real-time subscription for question updates
@@ -67,50 +112,111 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
             .single();
 
           if (data) {
-            setCurrentQuestion(data as Question);
-            setQuestionStartTime(Date.now());
+            setCurrentQuestion(data as QuestionWithEnd);
+            setQuestionStartTime(
+              data.started_at ? new Date(data.started_at).getTime() : Date.now()
+            );
           }
         }
       )
-      .subscribe();
-
-    // Set up real-time subscription for answer updates
-    const answerSubscription = supabase
-      .channel("answer-updates")
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "UPDATE",
           schema: "public",
-          table: "answers",
-          filter: `question_id=eq.${currentQuestion?.id}`,
+          table: "questions",
+          filter: `game_id=eq.${game.id}`,
         },
-        async () => {
-          // Check if all active players have answered
-          if (!currentQuestion) return;
-
-          const { data: answers } = await supabase
-            .from("answers")
+        async (payload) => {
+          // Update ended_at if question is ended
+          const { data } = await supabase
+            .from("questions")
             .select("*")
-            .eq("question_id", currentQuestion.id);
-
-          const activePlayers = game.players.filter((p) => p.is_active);
-
-          if (answers && answers.length >= activePlayers.length) {
-            // All players have answered, move to next player's turn
-            setCurrentPlayerIndex((prev) => (prev + 1) % game.players.length);
-            setCurrentQuestion(null);
+            .eq("id", payload.new.id)
+            .single();
+          if (data) {
+            setCurrentQuestion(data as QuestionWithEnd);
           }
         }
       )
       .subscribe();
 
+    // Set up real-time subscription for answer updates (for allAnswers)
+    let answerSubscription: ReturnType<typeof supabase.channel> | undefined;
+    if (currentQuestion) {
+      answerSubscription = supabase
+        .channel("all-answers")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "answers",
+            filter: `question_id=eq.${currentQuestion.id}`,
+          },
+          async () => {
+            const { data } = await supabase
+              .from("answers")
+              .select(`*, player:player_id(id, username, avatar_url)`)
+              .eq("question_id", currentQuestion.id);
+            if (data) setAllAnswers(data);
+          }
+        )
+        .subscribe();
+      // Fetch initial answers
+      (async () => {
+        const { data } = await supabase
+          .from("answers")
+          .select(`*, player:player_id(id, username, avatar_url)`)
+          .eq("question_id", currentQuestion.id);
+        if (data) setAllAnswers(data);
+      })();
+    } else {
+      setAllAnswers([]);
+    }
+
     return () => {
       questionSubscription.unsubscribe();
-      answerSubscription.unsubscribe();
+      if (answerSubscription) answerSubscription.unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase, game.id, currentQuestion?.id, game.players.length]);
+  }, [supabase, game.id, currentQuestion, game.players.length, winner]);
+
+  // Timer: check if time is up, all answered, or winner, and end question if needed
+  useEffect(() => {
+    if (!currentQuestion || !questionStartTime || winner) return;
+    const TIME_LIMIT = 120 * 1000; // 120 seconds
+    const interval = setInterval(async () => {
+      const now = Date.now();
+      const allPlayersAnswered =
+        allAnswers.length === game.players.length && allAnswers.length > 0;
+      if (now - questionStartTime >= TIME_LIMIT || allPlayersAnswered) {
+        // End question: update ended_at in DB if not already set
+        if (!currentQuestion.ended_at) {
+          await supabase
+            .from("questions")
+            .update({ ended_at: new Date().toISOString() })
+            .eq("id", currentQuestion.id);
+        }
+        clearInterval(interval);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [
+    currentQuestion,
+    questionStartTime,
+    winner,
+    supabase,
+    allAnswers.length,
+    game.players.length,
+  ]);
+
+  // Avvia nuovo turno: solo il prossimo giocatore può farlo
+  const handleNextTurn = () => {
+    setCurrentPlayerIndex((prev) => (prev + 1) % game.players.length);
+    setCurrentQuestion(null);
+    setWinner(null);
+    setShowNextTurn(false);
+  };
 
   const handleCreateQuestion = async () => {
     if (!user || !isCurrentPlayersTurn) return;
@@ -119,8 +225,9 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
     try {
       // Generate question using Groq
       const questionData = await generateQuestion({ language, difficulty });
+      const startedAt = new Date().toISOString();
 
-      // Save question to database
+      // Save question to database (add started_at for timer sync)
       const { data, error } = await supabase
         .from("questions")
         .insert({
@@ -133,6 +240,7 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
           options: questionData.options,
           correct_answer: questionData.correctAnswer,
           explanation: questionData.explanation,
+          started_at: startedAt,
         })
         .select()
         .single();
@@ -140,8 +248,16 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
       if (error) throw error;
 
       setCurrentQuestion(data as Question);
-      setQuestionStartTime(Date.now());
-    } catch (error: any) {
+      setQuestionStartTime(new Date(startedAt).getTime());
+
+      // Aggiorna lo stato della partita a 'active' se non già attivo
+      if (game.status !== "active") {
+        await supabase
+          .from("games")
+          .update({ status: "active" })
+          .eq("id", game.id);
+      }
+    } catch {
       toast.error("Errore", {
         description: "Impossibile creare la domanda",
       });
@@ -190,7 +306,7 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
 
         if (updateError) throw updateError;
       }
-    } catch (error: any) {
+    } catch {
       toast.error("Errore", {
         description: "Impossibile inviare la risposta",
       });
@@ -217,6 +333,9 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
             <QuestionDisplay
               question={currentQuestion}
               onSubmitAnswer={handleSubmitAnswer}
+              winner={winner}
+              allAnswers={allAnswers}
+              timeIsUp={!!currentQuestion.ended_at}
             />
           ) : (
             <GradientCard>
@@ -379,6 +498,26 @@ export function GameRoom({ game, isHost, onLeaveGame }: GameRoomProps) {
               </div>
             </div>
           </Card>
+          {winner && (
+            <Card className="mt-4">
+              <div className="flex flex-col items-center mt-6">
+                <div className="mb-2 font-bold text-green-600 text-lg">
+                  {winner.username} ha indovinato! (+{winner.score.toFixed(1)}{" "}
+                  punti)
+                </div>
+                {showNextTurn && isNextPlayersTurn && (
+                  <Button onClick={handleNextTurn} className="mt-2">
+                    Inizia nuovo turno
+                  </Button>
+                )}
+                {showNextTurn && !isNextPlayersTurn && (
+                  <div className="mt-2 text-muted-foreground text-sm">
+                    In attesa che il prossimo giocatore inizi il nuovo turno...
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
         </div>
       </div>
     </div>

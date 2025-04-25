@@ -1,1 +1,3 @@
-{}
+{
+  "github.copilot.customInstructionsPath": ".github/copilot-instructions.md"
+}

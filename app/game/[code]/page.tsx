@@ -20,7 +20,23 @@ export default function GamePage(props: { params: Promise<{ code: string }> }) {
   const [loading, setLoading] = useState(true);
   const [game, setGame] = useState<GameWithPlayers | null>(null);
   const [isHost, setIsHost] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<any>({});
+  // Definisci un tipo per debugInfo per evitare any
+  interface DebugInfo {
+    gameId?: string;
+    gameCode?: string;
+    gameStatus?: string;
+    isHost?: boolean;
+    hostId?: string;
+    userId?: string;
+    playerCount?: number;
+    lastUpdate?: string;
+    updatePayload?: unknown;
+    lastPlayerUpdate?: string;
+    gameDeleted?: boolean;
+    manuallyUpdated?: boolean;
+    startGameTriggered?: string;
+  }
+  const [debugInfo, setDebugInfo] = useState<DebugInfo>({});
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -87,11 +103,13 @@ export default function GamePage(props: { params: Promise<{ code: string }> }) {
         userId: user.id,
         playerCount: playersData.length,
       });
-    } catch (error: any) {
+    } catch (error) {
+      // error: unknown
       console.error("Error fetching game:", error);
       toast.error("Errore", {
         description:
-          "Impossibile caricare i dati della partita: " + error.message,
+          "Impossibile caricare i dati della partita: " +
+          (error instanceof Error ? error.message : String(error)),
       });
       router.push("/dashboard");
     } finally {
@@ -104,28 +122,38 @@ export default function GamePage(props: { params: Promise<{ code: string }> }) {
 
     fetchGame();
 
-    // Set up real-time subscription for game updates
+    // Set up real-time subscription for game updates (INSERT, UPDATE, DELETE)
     const gameSubscription = supabase
       .channel("game-updates")
       .on(
         "postgres_changes",
         {
-          event: "UPDATE",
+          event: "*", // INSERT, UPDATE, DELETE
           schema: "public",
           table: "games",
           filter: `code=eq.${code.toUpperCase()}`,
         },
         (payload) => {
-          console.log("Game update received:", payload.new);
+          if (payload.eventType === "DELETE") {
+            // Game deleted (es: host abbandona)
+            setGame(null);
+            setDebugInfo((prev) => ({
+              ...prev,
+              gameDeleted: true,
+              lastUpdate: new Date().toISOString(),
+            }));
+            toast("La partita è stata chiusa.");
+            router.push("/dashboard");
+            return;
+          }
+          // Aggiorna stato locale con i nuovi dati
           setGame((currentGame) => {
             if (!currentGame) return null;
             return { ...currentGame, ...payload.new };
           });
-
-          // Update debug info
           setDebugInfo((prev) => ({
             ...prev,
-            gameStatus: payload.new.status,
+            gameStatus: payload.new?.status,
             lastUpdate: new Date().toISOString(),
             updatePayload: payload.new,
           }));
@@ -133,7 +161,7 @@ export default function GamePage(props: { params: Promise<{ code: string }> }) {
       )
       .subscribe();
 
-    // Set up real-time subscription for player updates
+    // Set up real-time subscription for player updates (INSERT, UPDATE, DELETE)
     const playersSubscription = supabase
       .channel("player-updates")
       .on(
@@ -147,7 +175,6 @@ export default function GamePage(props: { params: Promise<{ code: string }> }) {
         async () => {
           // Refetch all players when there's any change
           if (!game?.id) return;
-
           const { data: playersData } = await supabase
             .from("game_players")
             .select(
@@ -164,8 +191,6 @@ export default function GamePage(props: { params: Promise<{ code: string }> }) {
               if (!currentGame) return null;
               return { ...currentGame, players: playersData };
             });
-
-            // Update debug info
             setDebugInfo((prev) => ({
               ...prev,
               playerCount: playersData.length,
@@ -176,10 +201,48 @@ export default function GamePage(props: { params: Promise<{ code: string }> }) {
       )
       .subscribe();
 
+    // Set up real-time subscription for questions (INSERT, UPDATE, DELETE)
+    const questionsSubscription = supabase
+      .channel("questions-updates")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "questions",
+          filter: game?.id ? `game_id=eq.${game.id}` : undefined,
+        },
+        async () => {
+          // Optionally, you can refetch questions or trigger a state update if needed
+        }
+      )
+      .subscribe();
+
+    // Set up real-time subscription for answers (INSERT, UPDATE, DELETE)
+    const answersSubscription = supabase
+      .channel("answers-updates")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "answers",
+          filter: game?.id
+            ? `question_id=in.(select id from questions where game_id='${game.id}')`
+            : undefined,
+        },
+        async () => {
+          // Optionally, you can refetch answers or trigger a state update if needed
+        }
+      )
+      .subscribe();
+
     return () => {
       console.log("Unsubscribing from channels");
       gameSubscription.unsubscribe();
       playersSubscription.unsubscribe();
+      questionsSubscription.unsubscribe();
+      answersSubscription.unsubscribe();
     };
   }, [user, code, supabase, router, game?.id, fetchGame]);
 
@@ -282,6 +345,7 @@ export default function GamePage(props: { params: Promise<{ code: string }> }) {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-1 py-8 container">
+        {/* Mostra GameRoom se la partita è attiva, anche se non c'è ancora una domanda */}
         {game.status === "waiting" ? (
           <GameLobby
             game={game}
@@ -292,7 +356,6 @@ export default function GamePage(props: { params: Promise<{ code: string }> }) {
         ) : (
           <GameRoom game={game} isHost={isHost} onLeaveGame={handleLeaveGame} />
         )}
-
         {/* Debug panel - only visible in development */}
         {process.env.NODE_ENV !== "production" && (
           <DebugPanel

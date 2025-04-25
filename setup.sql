@@ -42,6 +42,8 @@ CREATE TABLE IF NOT EXISTS questions (
   options JSONB NOT NULL,
   correct_answer INTEGER NOT NULL,
   explanation TEXT,
+  started_at TIMESTAMP WITH TIME ZONE,
+  ended_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
