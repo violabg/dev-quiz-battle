@@ -228,9 +228,75 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
     game.players.length,
   ]);
 
-  // Avvia nuovo turno: solo il prossimo giocatore può farlo
-  const handleNextTurn = () => {
-    setCurrentPlayerIndex((prev) => (prev + 1) % game.players.length);
+  // --- ANSWER LOGIC ---
+  // Only show correct answer (green) if someone answered correctly or time is up
+  // Mark wrong answers in red for everyone as soon as they are given
+  // Reset answer state on new turn
+  useEffect(() => {
+    // Reset winner and answer state on new question
+    setWinner(null);
+    setShowNextTurn(false);
+  }, [currentQuestion?.id]);
+
+  // When an answer is submitted, check if it's correct and if so, set winner and end question
+  const handleSubmitAnswer = async (selectedOption: number) => {
+    if (!user || !currentQuestion || !questionStartTime) return;
+
+    try {
+      const responseTime = Date.now() - questionStartTime;
+      const isCorrect = selectedOption === currentQuestion.correct_answer;
+
+      // Calculate score based on response time
+      const { data: scoreData } = await supabase.rpc("calculate_score", {
+        response_time_ms: responseTime,
+      });
+
+      const scoreEarned = isCorrect ? scoreData : 0;
+
+      // Save answer to database
+      const { error } = await supabase.from("answers").insert({
+        question_id: currentQuestion.id,
+        player_id: user.id,
+        selected_option: selectedOption,
+        is_correct: isCorrect,
+        response_time_ms: responseTime,
+        score_earned: scoreEarned,
+      });
+
+      if (error) throw error;
+
+      // If correct, end question for everyone (winner will be determined by fetching answers)
+      if (isCorrect && !currentQuestion.ended_at) {
+        await supabase
+          .from("questions")
+          .update({ ended_at: new Date().toISOString() })
+          .eq("id", currentQuestion.id);
+      }
+      // Do not setWinner locally, let the winner be determined by the answers subscription for all clients
+    } catch {
+      toast.error("Errore", {
+        description: "Impossibile inviare la risposta",
+      });
+    }
+  };
+
+  // When the game changes (via subscription), sync currentPlayerIndex with game.current_turn if present
+  useEffect(() => {
+    if (typeof game.current_turn === "number") {
+      setCurrentPlayerIndex(game.current_turn);
+    }
+  }, [game.current_turn]);
+
+  // Patch: fallback to local state if game.current_turn is not present
+  // Remove sync effect for now, but keep DB update for next turn
+  const handleNextTurn = async () => {
+    const nextIndex = (currentPlayerIndex + 1) % game.players.length;
+    // Try to update current_turn in the database for all clients (ignore TS error if field missing)
+    await supabase
+      .from("games")
+      .update({ current_turn: nextIndex })
+      .eq("id", game.id);
+    setCurrentPlayerIndex(nextIndex); // Optimistic update
     setCurrentQuestion(null);
     setWinner(null);
     setShowNextTurn(false);
@@ -284,52 +350,37 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
     }
   };
 
-  const handleSubmitAnswer = async (selectedOption: number) => {
-    if (!user || !currentQuestion || !questionStartTime) return;
-
-    try {
-      const responseTime = Date.now() - questionStartTime;
-      const isCorrect = selectedOption === currentQuestion.correct_answer;
-
-      // Calculate score based on response time
-      const { data: scoreData } = await supabase.rpc("calculate_score", {
-        response_time_ms: responseTime,
-      });
-
-      const scoreEarned = isCorrect ? scoreData : 0;
-
-      // Save answer to database
-      const { error } = await supabase.from("answers").insert({
-        question_id: currentQuestion.id,
-        player_id: user.id,
-        selected_option: selectedOption,
-        is_correct: isCorrect,
-        response_time_ms: responseTime,
-        score_earned: scoreEarned,
-      });
-
-      if (error) throw error;
-
-      // Update player's score
-      if (isCorrect) {
-        const { error: updateError } = await supabase
-          .from("game_players")
-          .update({
-            score:
-              game.players.find((p) => p.player_id === user.id)?.score +
-              scoreEarned,
-          })
-          .eq("game_id", game.id)
-          .eq("player_id", user.id);
-
-        if (updateError) throw updateError;
-      }
-    } catch {
-      toast.error("Errore", {
-        description: "Impossibile inviare la risposta",
-      });
+  // --- Ensure timer stops for everyone when turn is over ---
+  useEffect(() => {
+    if (currentQuestion && currentQuestion.ended_at) {
+      setQuestionStartTime(null); // Stop timer for all
     }
-  };
+    // Only run when currentQuestion changes
+  }, [currentQuestion]);
+
+  // --- Winner sync: determine winner from allAnswers when question is over ---
+  useEffect(() => {
+    if (!currentQuestion || !currentQuestion.ended_at) {
+      setWinner(null);
+      return;
+    }
+    // Find the first correct answer (by answered_at)
+    const correct = allAnswers
+      .filter((a) => a.is_correct)
+      .sort(
+        (a, b) =>
+          new Date(a.answered_at).getTime() - new Date(b.answered_at).getTime()
+      )[0];
+    if (correct) {
+      setWinner({
+        playerId: correct.player_id,
+        username: correct.player.username,
+        score: correct.score_earned,
+      });
+    } else {
+      setWinner(null);
+    }
+  }, [currentQuestion, currentQuestion?.ended_at, allAnswers]);
 
   return (
     <div className="space-y-8">

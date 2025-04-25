@@ -44,17 +44,26 @@ export function QuestionDisplay({
   // Parse options from JSON
   const options = question.options as { text: string }[];
 
-  // Determine if time is up (from prop or local timer)
+  // --- ANSWER UI LOGIC ---
+  // Only show correct answer (green) if someone answered correctly or time is up
+  // Mark wrong answers in red for everyone as soon as they are given
+  // Reset answer state on new turn
   const revealCorrect = Boolean(winner) || timeIsUp;
 
   // Helper: get answer state for each option
   const getOptionState = (index: number) => {
-    if (!hasAnswered && !revealCorrect) return "default";
+    // If time is up or there is a winner, show correct answer
     if (revealCorrect && index === question.correct_answer) return "correct";
+    // If this option was selected by any player and is wrong, mark as wrong
     if (allAnswers.some((a) => a.selected_option === index && !a.is_correct))
       return "wrong";
     return "default";
   };
+
+  // Reset hasAnswered when question changes (new turn)
+  useEffect(() => {
+    setHasAnswered(false);
+  }, [question.id]);
 
   useEffect(() => {
     // Use server time if available

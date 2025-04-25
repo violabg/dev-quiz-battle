@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS games (
   host_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
   status TEXT NOT NULL CHECK (status IN ('waiting', 'active', 'completed')),
   max_players INTEGER NOT NULL DEFAULT 8,
+  current_turn INTEGER NOT NULL DEFAULT 0;
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
