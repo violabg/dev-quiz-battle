@@ -4,8 +4,7 @@ import { QuestionDisplay } from "@/components/game/question-display";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { GradientCard } from "@/components/ui/gradient-card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -407,7 +406,7 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
               timeIsUp={!!currentQuestion.ended_at}
             />
           ) : (
-            <GradientCard>
+            <Card className="gradient-border glass-card">
               <div className="flex flex-col justify-center items-center p-6 min-h-[400px]">
                 {isCurrentPlayersTurn ? (
                   <div className="space-y-6 w-full max-w-md">
@@ -499,54 +498,54 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
                   </div>
                 )}
               </div>
-            </GradientCard>
+            </Card>
           )}
         </div>
 
         <div>
-          <Card>
-            <div className="p-4">
-              <h2 className="mb-4 font-bold text-xl">Classifica</h2>
-              <div className="space-y-2">
-                {[...game.players]
-                  .sort((a, b) => b.score - a.score)
-                  .map((player) => (
-                    <div
-                      key={player.id}
-                      className="flex justify-between items-center p-2 border rounded-lg"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Avatar className="w-8 h-8">
-                          <AvatarImage
-                            src={player.profile.avatar_url || undefined}
-                          />
-                          <AvatarFallback>
-                            {player.profile.username
-                              .substring(0, 2)
-                              .toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">
-                          {player.profile.username}
-                        </span>
-                        {player.player_id === game.host_id && (
-                          <Badge variant="outline" className="ml-1">
-                            Host
-                          </Badge>
-                        )}
-                      </div>
-                      <span className="font-bold">
-                        {player.score.toFixed(1)}
+          <Card className="gradient-border glass-card">
+            <CardHeader>
+              <CardTitle className="text-lg">Classifica</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {[...game.players]
+                .sort((a, b) => b.score - a.score)
+                .map((player) => (
+                  <div
+                    key={player.id}
+                    className="flex justify-between items-center p-2 border rounded-lg"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage
+                          src={player.profile.avatar_url || undefined}
+                        />
+                        <AvatarFallback>
+                          {player.profile.username
+                            .substring(0, 2)
+                            .toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">
+                        {player.profile.username}
                       </span>
+                      {player.player_id === game.host_id && (
+                        <Badge variant="outline" className="ml-1">
+                          Host
+                        </Badge>
+                      )}
                     </div>
-                  ))}
-              </div>
-            </div>
+                    <span className="font-bold">{player.score.toFixed(1)}</span>
+                  </div>
+                ))}
+            </CardContent>
           </Card>
 
-          <Card className="mt-4">
-            <div className="p-4">
-              <h2 className="mb-2 font-bold text-xl">Turno attuale</h2>
+          <Card className="mt-4 gradient-border glass-card">
+            <CardHeader>
+              <CardTitle className="text-lg">Turno attuale</CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="flex items-center gap-2">
                 <Avatar>
                   <AvatarImage
@@ -565,12 +564,12 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
                   <Badge className="ml-1">Il tuo turno</Badge>
                 )}
               </div>
-            </div>
+            </CardContent>
           </Card>
           {(winner ||
             (currentQuestion && currentQuestion.ended_at && !winner)) && (
-            <Card className="mt-4">
-              <div className="flex flex-col items-center mt-6">
+            <Card className="mt-4 gradient-border glass-card">
+              <CardContent className="flex flex-col items-center mt-6">
                 {winner ? (
                   <div className="mb-2 font-bold text-green-600 text-lg">
                     {winner.username} ha indovinato! (+{winner.score.toFixed(1)}{" "}
@@ -591,7 +590,7 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
                     In attesa che il prossimo giocatore inizi il nuovo turno...
                   </div>
                 )}
-              </div>
+              </CardContent>
             </Card>
           )}
         </div>
