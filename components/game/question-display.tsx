@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { GradientCard } from "@/components/ui/gradient-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getAnswersWithPlayerForQuestion } from "@/lib/supabase-answers";
 import { useSupabase } from "@/lib/supabase-provider";
 import type { Question } from "@/types/supabase";
 import { Check, Clock, X } from "lucide-react";
@@ -83,15 +84,11 @@ export function QuestionDisplay({
     // Check if user has already answered
     const checkUserAnswer = async () => {
       if (!user) return;
-
-      const { data } = await supabase
-        .from("answers")
-        .select("*")
-        .eq("question_id", question.id)
-        .eq("player_id", user.id)
-        .maybeSingle();
-
-      if (data) {
+      const answers = await getAnswersWithPlayerForQuestion(
+        supabase,
+        question.id
+      );
+      if (answers && answers.some((a) => a.player_id === user.id)) {
         setHasAnswered(true);
       }
     };

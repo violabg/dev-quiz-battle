@@ -100,7 +100,7 @@ export async function generateQuestion({
       temperature: 0.7,
       maxTokens: 2048,
     });
-    console.log("questionData :>> ", questionData);
+
     return questionData as GeneratedQuestion;
   } catch (error) {
     console.error("Errore durante la generazione della domanda:", error);

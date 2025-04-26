@@ -5,6 +5,18 @@ import { GameLobby } from "@/components/game/game-lobby";
 import { GameRoom } from "@/components/game/game-room";
 import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
+import {
+  getPlayersForGame,
+  subscribeToGamePlayers,
+  unsubscribeFromGamePlayers,
+} from "@/lib/supabase-game-players";
+import {
+  getGameByCode,
+  subscribeToGame,
+  unsubscribeFromGame,
+  updateGameStatus,
+} from "@/lib/supabase-games";
+import { getProfileById } from "@/lib/supabase-profiles";
 import { useSupabase } from "@/lib/supabase-provider";
 import type { GameWithPlayers } from "@/types/supabase";
 import { Loader2 } from "lucide-react";
@@ -47,53 +59,21 @@ export default function GamePage(props: { params: Promise<{ code: string }> }) {
 
   const fetchGame = useCallback(async () => {
     if (!user) return;
-
     try {
       // Get game data
-      const { data: gameData, error: gameError } = await supabase
-        .from("games")
-        .select("*")
-        .eq("code", code.toUpperCase())
-        .single();
-
-      if (gameError) throw gameError;
-
+      const { data: gameData } = await getGameByCode(supabase, code);
       // Get players in the game
-      const { data: playersData, error: playersError } = await supabase
-        .from("game_players")
-        .select(
-          `
-          *,
-          profile:player_id(id, username, avatar_url)
-        `
-        )
-        .eq("game_id", gameData.id)
-        .order("turn_order", { ascending: true });
-
-      if (playersError) throw playersError;
-
+      const playersData = await getPlayersForGame(supabase, gameData.id);
       // Get host profile
-      const { data: hostData, error: hostError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", gameData.host_id)
-        .single();
-
-      if (hostError) throw hostError;
-
-      // Check if current user is the host
+      const hostData = await getProfileById(supabase, gameData.host_id);
       setIsHost(user.id === gameData.host_id);
-
       // Combine data
       const gameWithPlayers = {
         ...gameData,
         players: playersData,
         host: hostData,
       } as GameWithPlayers;
-
       setGame(gameWithPlayers);
-
-      // Update debug info
       setDebugInfo({
         gameId: gameData.id,
         gameCode: gameData.code,
@@ -123,195 +103,102 @@ export default function GamePage(props: { params: Promise<{ code: string }> }) {
     fetchGame();
 
     // Set up real-time subscription for game updates (INSERT, UPDATE, DELETE)
-    const gameSubscription = supabase
-      .channel("game-updates")
-      .on(
-        "postgres_changes",
-        {
-          event: "*", // INSERT, UPDATE, DELETE
-          schema: "public",
-          table: "games",
-          filter: game?.id ? `id=eq.${game.id}` : undefined,
-        },
-        (payload) => {
-          if (payload.eventType === "DELETE") {
-            // Game deleted (es: host abbandona)
-            setGame(null);
-            setDebugInfo((prev) => ({
-              ...prev,
-              gameDeleted: true,
-              lastUpdate: new Date().toISOString(),
-            }));
-            toast("La partita è stata chiusa.");
-            router.push("/dashboard");
-            return;
-          }
-          // Aggiorna stato locale con i nuovi dati
-          setGame((currentGame) => {
-            if (!currentGame) return null;
-            return { ...currentGame, ...payload.new };
-          });
-          setDebugInfo((prev) => ({
-            ...prev,
-            gameStatus: payload.new?.status,
-            lastUpdate: new Date().toISOString(),
-            updatePayload: payload.new,
-          }));
-        }
-      )
-      .subscribe();
+    const gameSubscription = subscribeToGame(supabase, game?.id, (payload) => {
+      if (payload.eventType === "DELETE") {
+        setGame(null);
+        setDebugInfo((prev) => ({
+          ...prev,
+          gameDeleted: true,
+          lastUpdate: new Date().toISOString(),
+        }));
+        toast("La partita è stata chiusa.");
+        router.push("/dashboard");
+        return;
+      }
+      setGame((currentGame) => {
+        if (!currentGame) return null;
+        return { ...currentGame, ...payload.new };
+      });
+      setDebugInfo((prev) => ({
+        ...prev,
+        gameStatus: payload.new?.status,
+        lastUpdate: new Date().toISOString(),
+        updatePayload: payload.new,
+      }));
+    });
 
     // Set up real-time subscription for player updates (INSERT, UPDATE, DELETE)
-    const playersSubscription = supabase
-      .channel("player-updates")
-      .on(
-        "postgres_changes",
-        {
-          event: "*", // INSERT, UPDATE, DELETE
-          schema: "public",
-          table: "game_players",
-          filter: game?.id ? `game_id=eq.${game.id}` : undefined,
-        },
-        async () => {
-          // Refetch all players when there's any change
-          if (!game?.id) return;
-          const { data: playersData } = await supabase
-            .from("game_players")
-            .select(
-              `
-              *,
-              profile:player_id(id, username, avatar_url)
-            `
-            )
-            .eq("game_id", game.id)
-            .order("turn_order", { ascending: true });
-
-          if (playersData) {
-            setGame((currentGame) => {
-              if (!currentGame) return null;
-              return { ...currentGame, players: playersData };
-            });
-            setDebugInfo((prev) => ({
-              ...prev,
-              playerCount: playersData.length,
-              lastPlayerUpdate: new Date().toISOString(),
-            }));
-          }
-        }
-      )
-      .subscribe();
-
-    // Set up real-time subscription for questions (INSERT, UPDATE, DELETE)
-    const questionsSubscription = supabase
-      .channel("questions-updates")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "questions",
-          filter: game?.id ? `game_id=eq.${game.id}` : undefined,
-        },
-        async () => {
-          // Optionally, you can refetch questions or trigger a state update if needed
-        }
-      )
-      .subscribe();
-
-    // Set up real-time subscription for answers (INSERT, UPDATE, DELETE)
-    const answersSubscription = supabase
-      .channel("answers-updates")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "answers",
-          filter: game?.id
-            ? `question_id=in.(select id from questions where game_id='${game.id}')`
-            : undefined,
-        },
-        async () => {
-          // Optionally, you can refetch answers or trigger a state update if needed
-        }
-      )
-      .subscribe();
+    const playersSubscription = subscribeToGamePlayers(supabase, async () => {
+      if (!game?.id) return;
+      const playersData = await getPlayersForGame(supabase, game.id);
+      setGame((currentGame) => {
+        if (!currentGame) return null;
+        return { ...currentGame, players: playersData };
+      });
+      setDebugInfo((prev) => ({
+        ...prev,
+        playerCount: playersData.length,
+        lastPlayerUpdate: new Date().toISOString(),
+      }));
+    });
 
     return () => {
       console.log("Unsubscribing from channels");
-      gameSubscription.unsubscribe();
-      playersSubscription.unsubscribe();
-      questionsSubscription.unsubscribe();
-      answersSubscription.unsubscribe();
+      unsubscribeFromGame(gameSubscription);
+      unsubscribeFromGamePlayers(playersSubscription);
     };
   }, [user, code, supabase, router, game?.id, fetchGame]);
 
   const handleStartGame = async () => {
     if (!game || !isHost) return;
-
     try {
       // Update the game status to "active"
-      const { error } = await supabase
-        .from("games")
-        .update({ status: "active" })
-        .eq("id", game.id);
-
-      if (error) {
-        console.error("Error starting game:", error);
-        throw error;
-      }
-
+      await updateGameStatus(supabase, game.id, "active");
       // Log success for debugging
       console.log("Game started successfully, status updated to active");
-
       // Manually update the local game state as a fallback
       setGame((currentGame) => {
         if (!currentGame) return null;
         return { ...currentGame, status: "active" };
       });
-
-      // Update debug info
       setDebugInfo((prev) => ({
         ...prev,
         gameStatus: "active",
         manuallyUpdated: true,
         startGameTriggered: new Date().toISOString(),
       }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error in handleStartGame:", error);
       toast.error("Errore", {
-        description: "Impossibile avviare la partita: " + error.message,
+        description:
+          "Impossibile avviare la partita: " +
+          (error instanceof Error ? error.message : String(error)),
       });
     }
   };
 
   const handleLeaveGame = async () => {
     if (!game || !user) return;
-
     try {
       if (isHost) {
         // If host leaves, end the game
-        const { error } = await supabase
-          .from("games")
-          .update({ status: "completed" })
-          .eq("id", game.id);
-
-        if (error) throw error;
+        await updateGameStatus(supabase, game.id, "completed");
       } else {
         // If player leaves, remove them from the game
+        // (remains as direct call or can be moved to a helper if desired)
         const { error } = await supabase
           .from("game_players")
           .update({ is_active: false })
           .eq("game_id", game.id)
           .eq("player_id", user.id);
-
         if (error) throw error;
       }
-
       router.push("/dashboard");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Errore", {
-        description: "Impossibile uscire dalla partita",
+        description:
+          "Impossibile uscire dalla partita: " +
+          (error instanceof Error ? error.message : String(error)),
       });
     }
   };

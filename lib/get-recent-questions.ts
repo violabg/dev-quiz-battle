@@ -1,4 +1,6 @@
+import { getQuestionsByLanguageAndDifficulty } from "@/lib/supabase-questions";
 import { createServerSupabase } from "@/lib/supabase-server";
+import type { Question } from "@/types/supabase";
 import { subHours } from "date-fns";
 
 /**
@@ -13,12 +15,11 @@ export async function getRecentQuestionTexts({
 }) {
   const supabase = createServerSupabase();
   const since = subHours(new Date(), 5).toISOString();
-  const { data, error } = await supabase
-    .from("questions")
-    .select("question_text")
-    .eq("language", language)
-    .eq("difficulty", difficulty)
-    .gte("created_at", since);
-  if (error) throw error;
-  return (data ?? []).map((q) => q.question_text);
+  const questions: Question[] = await getQuestionsByLanguageAndDifficulty(
+    supabase,
+    language,
+    difficulty,
+    since
+  );
+  return questions.map((q: Question) => q.question_text);
 }

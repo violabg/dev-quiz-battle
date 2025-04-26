@@ -13,7 +13,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { generateQuestion } from "@/lib/groq";
+import {
+  getAnswersWithPlayerForQuestion,
+  insertAnswer,
+  subscribeToAnswers,
+  unsubscribeFromAnswers,
+} from "@/lib/supabase-answers";
 import { useSupabase } from "@/lib/supabase-provider";
+import {
+  getQuestionsForGame,
+  insertQuestion,
+  subscribeToQuestions,
+  unsubscribeFromQuestions,
+  updateQuestion,
+} from "@/lib/supabase-questions";
 import type {
   GameDifficulty,
   GameLanguage,
@@ -74,14 +87,9 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
   useEffect(() => {
     if (!game.id) return;
     (async () => {
-      const { data } = await supabase
-        .from("questions")
-        .select("*")
-        .eq("game_id", game.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
-      if (data) {
+      const questions = await getQuestionsForGame(supabase, game.id);
+      if (questions && questions.length > 0) {
+        const data = questions[0];
         setCurrentQuestion(data as QuestionWithEnd);
         setQuestionStartTime(
           data.started_at ? new Date(data.started_at).getTime() : Date.now()
@@ -92,91 +100,47 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
 
   useEffect(() => {
     // Set up real-time subscription for question updates
-    const questionSubscription = supabase
-      .channel("question-updates")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "questions",
-          filter: `game_id=eq.${game.id}`,
-        },
-        async (payload) => {
-          // Fetch the full question data
-          const { data } = await supabase
-            .from("questions")
-            .select("*")
-            .eq("id", payload.new.id)
-            .single();
-
-          if (data) {
-            setCurrentQuestion(data as QuestionWithEnd);
-            setQuestionStartTime(
-              data.started_at ? new Date(data.started_at).getTime() : Date.now()
-            );
-          }
+    const questionSubscription = subscribeToQuestions(
+      supabase,
+      async (payload) => {
+        if (payload.new && payload.new.game_id === game.id) {
+          setCurrentQuestion(payload.new as QuestionWithEnd);
+          setQuestionStartTime(
+            payload.new.started_at
+              ? new Date(payload.new.started_at).getTime()
+              : Date.now()
+          );
         }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "questions",
-          filter: `game_id=eq.${game.id}`,
-        },
-        async (payload) => {
-          // Update ended_at if question is ended
-          const { data } = await supabase
-            .from("questions")
-            .select("*")
-            .eq("id", payload.new.id)
-            .single();
-          if (data) {
-            setCurrentQuestion(data as QuestionWithEnd);
-          }
-        }
-      )
-      .subscribe();
+      }
+    );
 
     // Set up real-time subscription for answer updates (for allAnswers)
-    let answerSubscription: ReturnType<typeof supabase.channel> | undefined;
+    let answerSubscription: ReturnType<typeof subscribeToAnswers> | undefined;
     if (currentQuestion) {
-      answerSubscription = supabase
-        .channel("all-answers")
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "answers",
-            filter: `question_id=eq.${currentQuestion.id}`,
-          },
-          async () => {
-            const { data } = await supabase
-              .from("answers")
-              .select(`*, player:player_id(id, username, avatar_url)`)
-              .eq("question_id", currentQuestion.id);
-            if (data) setAllAnswers(data);
-          }
-        )
-        .subscribe();
+      answerSubscription = subscribeToAnswers(supabase, async (payload) => {
+        if (payload.new && payload.new.question_id === currentQuestion.id) {
+          const answers = await getAnswersWithPlayerForQuestion(
+            supabase,
+            currentQuestion.id
+          );
+          setAllAnswers(answers);
+        }
+      });
       // Fetch initial answers
       (async () => {
-        const { data } = await supabase
-          .from("answers")
-          .select(`*, player:player_id(id, username, avatar_url)`)
-          .eq("question_id", currentQuestion.id);
-        if (data) setAllAnswers(data);
+        const answers = await getAnswersWithPlayerForQuestion(
+          supabase,
+          currentQuestion.id
+        );
+        setAllAnswers(answers);
       })();
     } else {
       setAllAnswers([]);
     }
 
     return () => {
-      questionSubscription.unsubscribe();
-      if (answerSubscription) answerSubscription.unsubscribe();
+      unsubscribeFromQuestions(questionSubscription);
+      if (answerSubscription) unsubscribeFromAnswers(answerSubscription);
     };
   }, [supabase, game.id, currentQuestion, game.players.length, winner]);
 
@@ -191,10 +155,9 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
       if (now - questionStartTime >= TIME_LIMIT || allPlayersAnswered) {
         // End question: update ended_at in DB if not already set
         if (!currentQuestion.ended_at) {
-          await supabase
-            .from("questions")
-            .update({ ended_at: new Date().toISOString() })
-            .eq("id", currentQuestion.id);
+          await updateQuestion(supabase, currentQuestion.id, {
+            ended_at: new Date().toISOString(),
+          });
         }
         clearInterval(interval);
       }
@@ -240,20 +203,16 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
   // When an answer is submitted, check if it's correct and if so, set winner and end question
   const handleSubmitAnswer = async (selectedOption: number) => {
     if (!user || !currentQuestion || !questionStartTime) return;
-
     try {
       const responseTime = Date.now() - questionStartTime;
       const isCorrect = selectedOption === currentQuestion.correct_answer;
-
       // Calculate score based on response time
       const { data: scoreData } = await supabase.rpc("calculate_score", {
         response_time_ms: responseTime,
       });
-
       const scoreEarned = isCorrect ? scoreData : 0;
-
       // Save answer to database
-      const { error } = await supabase.from("answers").insert({
+      await insertAnswer(supabase, {
         question_id: currentQuestion.id,
         player_id: user.id,
         selected_option: selectedOption,
@@ -261,17 +220,12 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
         response_time_ms: responseTime,
         score_earned: scoreEarned,
       });
-
-      if (error) throw error;
-
-      // If correct, end question for everyone (winner will be determined by fetching answers)
+      // If correct, end question for everyone (winner will be determined by the answers subscription for all clients)
       if (isCorrect && !currentQuestion.ended_at) {
-        await supabase
-          .from("questions")
-          .update({ ended_at: new Date().toISOString() })
-          .eq("id", currentQuestion.id);
+        await updateQuestion(supabase, currentQuestion.id, {
+          ended_at: new Date().toISOString(),
+        });
       }
-      // Do not setWinner locally, let the winner be determined by the answers subscription for all clients
     } catch {
       toast.error("Errore", {
         description: "Impossibile inviare la risposta",
@@ -303,36 +257,26 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
 
   const handleCreateQuestion = async () => {
     if (!user || !isCurrentPlayersTurn) return;
-
     setIsLoading(true);
     try {
       // Generate question using Groq
       const questionData = await generateQuestion({ language, difficulty });
       const startedAt = new Date().toISOString();
-
       // Save question to database (add started_at for timer sync)
-      const { data, error } = await supabase
-        .from("questions")
-        .insert({
-          game_id: game.id,
-          created_by_player_id: user.id,
-          language,
-          difficulty,
-          question_text: questionData.questionText,
-          code_sample: questionData.codeSample,
-          options: questionData.options,
-          correct_answer: questionData.correctAnswer,
-          explanation: questionData.explanation,
-          started_at: startedAt,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
+      const data = await insertQuestion(supabase, {
+        game_id: game.id,
+        created_by_player_id: user.id,
+        language,
+        difficulty,
+        question_text: questionData.questionText,
+        code_sample: questionData.codeSample,
+        options: questionData.options,
+        correct_answer: questionData.correctAnswer,
+        explanation: questionData.explanation,
+        started_at: startedAt,
+      });
       setCurrentQuestion(data as Question);
       setQuestionStartTime(new Date(startedAt).getTime());
-
       // Aggiorna lo stato della partita a 'active' se non già attivo
       if (game.status !== "active") {
         await supabase
