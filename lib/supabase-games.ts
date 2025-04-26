@@ -1,4 +1,4 @@
-import type { Database, Game } from "@/types/supabase";
+import type { Game } from "@/types/supabase";
 import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
 
 export async function createGame(
@@ -49,52 +49,34 @@ export const updateGameStatus = async (
   return { error };
 };
 
-export const subscribeToGameUpdates = (
-  supabase: SupabaseClient<Database>,
-  gameId: string,
-  onUpdate: (payload: {
-    new: {
-      current_turn?: number;
-      status?: string;
-    };
-  }) => void
-) => {
-  return supabase
-    .channel("game_updates")
-    .on(
-      "postgres_changes",
-      {
-        event: "UPDATE",
-        schema: "public",
-        table: "games",
-        filter: `id=eq.${gameId}`,
-      },
-      onUpdate
-    )
-    .subscribe();
-};
-
 export function subscribeToGame(
   supabase: SupabaseClient,
-  gameId: string | undefined,
-  handler: (payload: {
-    eventType: string;
-    new: Game | null;
-    old: Game | null;
-  }) => void
+  options: {
+    gameId?: string;
+    onUpdate: (payload: {
+      eventType: string;
+      new: Game | null;
+      old: Game | null;
+    }) => void;
+  }
 ) {
+  const channelName = options.gameId ? `game-${options.gameId}` : "games";
   return supabase
-    .channel("game-updates")
+    .channel(channelName)
     .on(
       "postgres_changes",
       {
         event: "*",
         schema: "public",
         table: "games",
-        filter: gameId ? `id=eq.${gameId}` : undefined,
+        filter: options.gameId ? `id=eq.${options.gameId}` : undefined,
       },
-      (payload) => {
-        handler({
+      (payload: {
+        eventType: string;
+        new: Record<string, unknown>;
+        old: Record<string, unknown>;
+      }) => {
+        options.onUpdate({
           eventType: payload.eventType,
           new: payload.new as Game | null,
           old: payload.old as Game | null,
@@ -104,34 +86,6 @@ export function subscribeToGame(
     .subscribe();
 }
 
-export function unsubscribeFromGame(channel: { unsubscribe: () => void }) {
-  channel.unsubscribe();
-}
-
-export function subscribeToGames(
-  supabase: SupabaseClient,
-  handler: (payload: {
-    eventType: string;
-    new: Game | null;
-    old: Game | null;
-  }) => void
-) {
-  return supabase
-    .channel("games-updates")
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "games" },
-      (payload) => {
-        handler({
-          eventType: payload.eventType,
-          new: payload.new as Game | null,
-          old: payload.old as Game | null,
-        });
-      }
-    )
-    .subscribe();
-}
-
-export function unsubscribeFromGames(channel: { unsubscribe: () => void }) {
+export function unsubscribeFromChannel(channel: { unsubscribe: () => void }) {
   channel.unsubscribe();
 }

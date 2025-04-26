@@ -20,7 +20,11 @@ import {
   subscribeToAnswers,
   unsubscribeFromAnswers,
 } from "@/lib/supabase-answers";
-import { updateGameStatus, updateGameTurn } from "@/lib/supabase-games";
+import {
+  subscribeToGame,
+  updateGameStatus,
+  updateGameTurn,
+} from "@/lib/supabase-games";
 import { useSupabase } from "@/lib/supabase-provider";
 import {
   getQuestionsForGame,
@@ -70,39 +74,28 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
   useEffect(() => {
     if (!game.id) return;
 
-    const channel = supabase
-      .channel("game_updates")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "games",
-          filter: `id=eq.${game.id}`,
-        },
-        (payload) => {
-          const updatedGame = payload.new as {
-            current_turn?: number;
-            status?: string;
-          };
-          // Handle turn changes
-          if (
-            updatedGame?.current_turn !== undefined &&
-            currentPlayerIndex !== updatedGame.current_turn
-          ) {
-            setCurrentPlayerIndex(updatedGame.current_turn);
-            // Reset question-related state for all clients when turn changes
-            setCurrentQuestion(null);
-            setWinner(null);
-            setShowNextTurn(false);
-            setAllAnswers([]);
-          }
+    const channel = subscribeToGame(supabase, {
+      gameId: game.id,
+      onUpdate: (payload) => {
+        const updatedGame = payload.new;
+        if (
+          updatedGame?.current_turn !== undefined &&
+          currentPlayerIndex !== updatedGame.current_turn
+        ) {
+          setCurrentPlayerIndex(updatedGame.current_turn);
+          // Reset question-related state for all clients when turn changes
+          setCurrentQuestion(null);
+          setWinner(null);
+          setShowNextTurn(false);
+          setAllAnswers([]);
         }
-      )
-      .subscribe();
+      },
+    });
 
     return () => {
-      channel.unsubscribe();
+      if (channel) {
+        channel.unsubscribe();
+      }
     };
   }, [game.id, supabase, currentPlayerIndex]);
 
