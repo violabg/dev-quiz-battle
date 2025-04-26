@@ -106,20 +106,20 @@
   --primary: oklch(58.92% 0.25 296.91); /* Purple */
   --primary-foreground: oklch(98% 0.005 210); /* Light gray */
 
-  --secondary: oklch(17.5% 0.02 217.2); /* Dark gray-blue */
+  --secondary: oklch(27.5% 0.02 217.2); /* Dark gray-blue */
   --secondary-foreground: oklch(98% 0.005 210); /* Light gray */
 
-  --muted: oklch(17.5% 0.02 217.2); /* Dark gray-blue */
+  --muted: oklch(37.5% 0.02 217.2); /* Dark gray-blue */
   --muted-foreground: oklch(65.1% 0.01 215); /* Medium gray */
 
-  --accent: oklch(17.5% 0.02 217.2); /* Dark gray-blue */
+  --accent: oklch(37.5% 0.02 217.2); /* Dark gray-blue */
   --accent-foreground: oklch(98% 0.005 210); /* Light gray */
 
   --destructive: oklch(30.6% 0.12 22.5); /* Dark red */
   --destructive-foreground: oklch(98% 0.005 210); /* Light gray */
 
-  --border: oklch(17.5% 0.02 217.2); /* Dark gray-blue */
-  --input: oklch(17.5% 0.02 217.2); /* Dark gray-blue */
+  --border: oklch(37.5% 0.02 217.2); /* Dark gray-blue */
+  --input: oklch(37.5% 0.02 217.2); /* Dark gray-blue */
   --ring: oklch(83.9% 0.01 212.7); /* Light gray-blue */
 
   /* Gradient colors as direct values */

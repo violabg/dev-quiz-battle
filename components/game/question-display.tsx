@@ -172,7 +172,7 @@ export function QuestionDisplay({
                       ? "destructive"
                       : "outline"
                   }
-                  className={`w-full justify-start text-left h-auto py-3 px-4 ${
+                  className={`w-full justify-start text-left h-auto py-3 px-4 whitespace-normal break-words ${
                     state === "correct"
                       ? "ring-2 ring-green-500"
                       : state === "wrong"
