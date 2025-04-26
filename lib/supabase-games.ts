@@ -58,9 +58,14 @@ export function subscribeToGame(
       new: Game | null;
       old: Game | null;
     }) => void;
-  }
+  } = { onUpdate: () => {} } // Add default value for options
 ) {
-  const channelName = options.gameId ? `game-${options.gameId}` : "games";
+  // Ensure options is defined
+  if (!options) {
+    options = { onUpdate: () => {} };
+  }
+
+  const channelName = options?.gameId ? `game-${options.gameId}` : "games";
   return supabase
     .channel(channelName)
     .on(
@@ -69,14 +74,14 @@ export function subscribeToGame(
         event: "*",
         schema: "public",
         table: "games",
-        filter: options.gameId ? `id=eq.${options.gameId}` : undefined,
+        filter: options?.gameId ? `id=eq.${options.gameId}` : undefined,
       },
       (payload: {
         eventType: string;
         new: Record<string, unknown>;
         old: Record<string, unknown>;
       }) => {
-        options.onUpdate({
+        options?.onUpdate?.({
           eventType: payload.eventType,
           new: payload.new as Game | null,
           old: payload.old as Game | null,
@@ -86,6 +91,6 @@ export function subscribeToGame(
     .subscribe();
 }
 
-export function unsubscribeFromChannel(channel: { unsubscribe: () => void }) {
+export function unsubscribeFromGame(channel: { unsubscribe: () => void }) {
   channel.unsubscribe();
 }
