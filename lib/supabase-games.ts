@@ -1,4 +1,4 @@
-import type { Game } from "@/types/supabase";
+import type { Database, Game } from "@/types/supabase";
 import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
 
 export async function createGame(
@@ -25,18 +25,54 @@ export async function getGameByCode(supabase: SupabaseClient, code: string) {
   return { data: data as Game, error };
 }
 
-export async function updateGameStatus(
+export const updateGameTurn = async (
+  supabase: SupabaseClient,
+  gameId: string,
+  nextTurn: number
+) => {
+  const { error } = await supabase
+    .from("games")
+    .update({ current_turn: nextTurn })
+    .eq("id", gameId);
+  return { error };
+};
+
+export const updateGameStatus = async (
   supabase: SupabaseClient,
   gameId: string,
   status: "waiting" | "active" | "completed"
-) {
+) => {
   const { error } = await supabase
     .from("games")
     .update({ status })
     .eq("id", gameId);
-  if (error) throw error;
-  return true;
-}
+  return { error };
+};
+
+export const subscribeToGameUpdates = (
+  supabase: SupabaseClient<Database>,
+  gameId: string,
+  onUpdate: (payload: {
+    new: {
+      current_turn?: number;
+      status?: string;
+    };
+  }) => void
+) => {
+  return supabase
+    .channel("game_updates")
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "games",
+        filter: `id=eq.${gameId}`,
+      },
+      onUpdate
+    )
+    .subscribe();
+};
 
 export function subscribeToGame(
   supabase: SupabaseClient,

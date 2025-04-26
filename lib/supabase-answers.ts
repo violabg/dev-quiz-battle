@@ -65,3 +65,37 @@ export function subscribeToAnswers(
 export function unsubscribeFromAnswers(channel: { unsubscribe: () => void }) {
   channel.unsubscribe();
 }
+
+export const calculateScore = async (
+  supabase: SupabaseClient,
+  responseTimeMs: number
+) => {
+  const { data, error } = await supabase.rpc("calculate_score", {
+    response_time_ms: responseTimeMs,
+  });
+  return { data, error };
+};
+
+export const submitAnswer = async (
+  supabase: SupabaseClient,
+  params: {
+    questionId: string;
+    playerId: string;
+    gameId: string;
+    selectedOption: number;
+    isCorrect: boolean;
+    responseTimeMs: number;
+    scoreEarned: number;
+  }
+) => {
+  const { error } = await supabase.rpc("submit_answer", {
+    p_question_id: params.questionId,
+    p_player_id: params.playerId,
+    p_game_id: params.gameId,
+    p_selected_option: params.selectedOption,
+    p_is_correct: params.isCorrect,
+    p_response_time_ms: params.responseTimeMs,
+    p_score_earned: params.scoreEarned,
+  });
+  return { error };
+};

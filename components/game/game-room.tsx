@@ -14,10 +14,13 @@ import {
 } from "@/components/ui/select";
 import { generateQuestion } from "@/lib/groq";
 import {
+  calculateScore,
   getAnswersWithPlayerForQuestion,
+  submitAnswer,
   subscribeToAnswers,
   unsubscribeFromAnswers,
 } from "@/lib/supabase-answers";
+import { updateGameStatus, updateGameTurn } from "@/lib/supabase-games";
 import { useSupabase } from "@/lib/supabase-provider";
 import {
   getQuestionsForGame,
@@ -248,20 +251,18 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
       const isCorrect = selectedOption === currentQuestion.correct_answer;
 
       // Calculate score based on response time
-      const { data: scoreData } = await supabase.rpc("calculate_score", {
-        response_time_ms: responseTime,
-      });
+      const { data: scoreData } = await calculateScore(supabase, responseTime);
       const scoreEarned = isCorrect ? scoreData : 0;
 
       // Save answer to database in a transaction to ensure data consistency
-      const { error: transactionError } = await supabase.rpc("submit_answer", {
-        p_question_id: currentQuestion.id,
-        p_player_id: user.id,
-        p_game_id: game.id,
-        p_selected_option: selectedOption,
-        p_is_correct: isCorrect,
-        p_response_time_ms: responseTime,
-        p_score_earned: scoreEarned,
+      const { error: transactionError } = await submitAnswer(supabase, {
+        questionId: currentQuestion.id,
+        playerId: user.id,
+        gameId: game.id,
+        selectedOption,
+        isCorrect,
+        responseTimeMs: responseTime,
+        scoreEarned,
       });
 
       if (transactionError) {
@@ -287,10 +288,7 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
     try {
       const nextIndex = (currentPlayerIndex + 1) % game.players.length;
       // Update current_turn in the database for all clients
-      const { error } = await supabase
-        .from("games")
-        .update({ current_turn: nextIndex })
-        .eq("id", game.id);
+      const { error } = await updateGameTurn(supabase, game.id, nextIndex);
 
       if (error) throw error;
 
@@ -331,10 +329,7 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
       setQuestionStartTime(new Date(startedAt).getTime());
       // Aggiorna lo stato della partita a 'active' se non già attivo
       if (game.status !== "active") {
-        await supabase
-          .from("games")
-          .update({ status: "active" })
-          .eq("id", game.id);
+        await updateGameStatus(supabase, game.id, "active");
       }
     } catch {
       toast.error("Errore", {
