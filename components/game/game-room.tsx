@@ -15,11 +15,9 @@ import {
 import { generateQuestion } from "@/lib/groq";
 import {
   getAnswersWithPlayerForQuestion,
-  insertAnswer,
   subscribeToAnswers,
   unsubscribeFromAnswers,
 } from "@/lib/supabase-answers";
-import { addScoreToPlayer } from "@/lib/supabase-game-players";
 import { useSupabase } from "@/lib/supabase-provider";
 import {
   getQuestionsForGame,
@@ -64,6 +62,46 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
     score: number;
   } | null>(null);
   const [showNextTurn, setShowNextTurn] = useState(false);
+
+  // Add subscription to game updates with proper types
+  useEffect(() => {
+    if (!game.id) return;
+
+    const channel = supabase
+      .channel("game_updates")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "games",
+          filter: `id=eq.${game.id}`,
+        },
+        (payload) => {
+          const updatedGame = payload.new as {
+            current_turn?: number;
+            status?: string;
+          };
+          // Handle turn changes
+          if (
+            updatedGame?.current_turn !== undefined &&
+            currentPlayerIndex !== updatedGame.current_turn
+          ) {
+            setCurrentPlayerIndex(updatedGame.current_turn);
+            // Reset question-related state for all clients when turn changes
+            setCurrentQuestion(null);
+            setWinner(null);
+            setShowNextTurn(false);
+            setAllAnswers([]);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [game.id, supabase, currentPlayerIndex]);
 
   // Determine if it's the current user's turn
   const currentPlayer = game.players[currentPlayerIndex];
@@ -205,35 +243,35 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
   const handleSubmitAnswer = async (selectedOption: number) => {
     if (!user || !currentQuestion || !questionStartTime) return;
     try {
-      const responseTime = Date.now() - questionStartTime;
+      const now = Date.now();
+      const responseTime = now - questionStartTime;
       const isCorrect = selectedOption === currentQuestion.correct_answer;
+
       // Calculate score based on response time
       const { data: scoreData } = await supabase.rpc("calculate_score", {
         response_time_ms: responseTime,
       });
       const scoreEarned = isCorrect ? scoreData : 0;
-      // Save answer to database
-      await insertAnswer(supabase, {
-        question_id: currentQuestion.id,
-        player_id: user.id,
-        selected_option: selectedOption,
-        is_correct: isCorrect,
-        response_time_ms: responseTime,
-        score_earned: scoreEarned,
+
+      // Save answer to database in a transaction to ensure data consistency
+      const { error: transactionError } = await supabase.rpc("submit_answer", {
+        p_question_id: currentQuestion.id,
+        p_player_id: user.id,
+        p_game_id: game.id,
+        p_selected_option: selectedOption,
+        p_is_correct: isCorrect,
+        p_response_time_ms: responseTime,
+        p_score_earned: scoreEarned,
       });
-      // If correct, update player's total score in game_players
-      if (isCorrect && scoreEarned > 0) {
-        try {
-          await addScoreToPlayer(supabase, user.id, game.id, scoreEarned);
-        } catch (e) {
-          // Optionally log error, but don't block game flow
-          console.error("Failed to update player score", e);
-        }
+
+      if (transactionError) {
+        throw transactionError;
       }
-      // If correct, end question for everyone (winner will be determined by the answers subscription for all clients)
+
+      // If correct, end question for everyone
       if (isCorrect && !currentQuestion.ended_at) {
         await updateQuestion(supabase, currentQuestion.id, {
-          ended_at: new Date().toISOString(),
+          ended_at: new Date(now).toISOString(),
         });
       }
     } catch {
@@ -243,26 +281,30 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
     }
   };
 
-  // When the game changes (via subscription), sync currentPlayerIndex with game.current_turn if present
-  useEffect(() => {
-    if (typeof game.current_turn === "number") {
-      setCurrentPlayerIndex(game.current_turn);
-    }
-  }, [game.current_turn]);
-
   // Patch: fallback to local state if game.current_turn is not present
-  // Remove sync effect for now, but keep DB update for next turn
+  // Wait for DB update before changing local state
   const handleNextTurn = async () => {
-    const nextIndex = (currentPlayerIndex + 1) % game.players.length;
-    // Try to update current_turn in the database for all clients (ignore TS error if field missing)
-    await supabase
-      .from("games")
-      .update({ current_turn: nextIndex })
-      .eq("id", game.id);
-    setCurrentPlayerIndex(nextIndex); // Optimistic update
-    setCurrentQuestion(null);
-    setWinner(null);
-    setShowNextTurn(false);
+    try {
+      const nextIndex = (currentPlayerIndex + 1) % game.players.length;
+      // Update current_turn in the database for all clients
+      const { error } = await supabase
+        .from("games")
+        .update({ current_turn: nextIndex })
+        .eq("id", game.id);
+
+      if (error) throw error;
+
+      // Local state will be updated by the subscription
+      // Clear question-related state
+      setCurrentQuestion(null);
+      setWinner(null);
+      setShowNextTurn(false);
+      setAllAnswers([]);
+    } catch {
+      toast.error("Errore", {
+        description: "Impossibile passare al turno successivo",
+      });
+    }
   };
 
   const handleCreateQuestion = async () => {

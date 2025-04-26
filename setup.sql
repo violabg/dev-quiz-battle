@@ -117,3 +117,50 @@ BEGIN
   RETURN base_score + time_bonus;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Create function to submit answer and update score atomically
+CREATE OR REPLACE FUNCTION submit_answer(
+  p_question_id UUID,
+  p_player_id UUID,
+  p_game_id UUID,
+  p_selected_option INTEGER,
+  p_is_correct BOOLEAN,
+  p_response_time_ms INTEGER,
+  p_score_earned DECIMAL
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_answer_id UUID;
+BEGIN
+  -- Insert answer
+  INSERT INTO answers (
+    question_id,
+    player_id,
+    selected_option,
+    is_correct,
+    response_time_ms,
+    score_earned
+  )
+  VALUES (
+    p_question_id,
+    p_player_id,
+    p_selected_option,
+    p_is_correct,
+    p_response_time_ms,
+    p_score_earned
+  )
+  RETURNING id INTO v_answer_id;
+
+  -- Update player score if correct
+  IF p_is_correct THEN
+    UPDATE game_players
+    SET score = score + p_score_earned
+    WHERE game_id = p_game_id AND player_id = p_player_id;
+  END IF;
+
+  RETURN v_answer_id;
+END;
+$$;
