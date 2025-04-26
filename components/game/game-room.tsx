@@ -19,6 +19,7 @@ import {
   subscribeToAnswers,
   unsubscribeFromAnswers,
 } from "@/lib/supabase-answers";
+import { addScoreToPlayer } from "@/lib/supabase-game-players";
 import { useSupabase } from "@/lib/supabase-provider";
 import {
   getQuestionsForGame,
@@ -220,6 +221,15 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
         response_time_ms: responseTime,
         score_earned: scoreEarned,
       });
+      // If correct, update player's total score in game_players
+      if (isCorrect && scoreEarned > 0) {
+        try {
+          await addScoreToPlayer(supabase, user.id, game.id, scoreEarned);
+        } catch (e) {
+          // Optionally log error, but don't block game flow
+          console.error("Failed to update player score", e);
+        }
+      }
       // If correct, end question for everyone (winner will be determined by the answers subscription for all clients)
       if (isCorrect && !currentQuestion.ended_at) {
         await updateQuestion(supabase, currentQuestion.id, {

@@ -42,6 +42,29 @@ export async function getPlayerInGame(
   return data as GamePlayer | null;
 }
 
+export async function addScoreToPlayer(
+  supabase: SupabaseClient,
+  player_id: string,
+  game_id: string,
+  scoreToAdd: number
+) {
+  // Get the player row
+  const { data: player, error } = await supabase
+    .from("game_players")
+    .select("id, score")
+    .eq("player_id", player_id)
+    .eq("game_id", game_id)
+    .maybeSingle();
+  if (error || !player) throw error || new Error("Player not found");
+  // Update the score
+  const { error: updateError } = await supabase
+    .from("game_players")
+    .update({ score: player.score + scoreToAdd })
+    .eq("id", player.id);
+  if (updateError) throw updateError;
+  return true;
+}
+
 export function subscribeToGamePlayers(
   supabase: SupabaseClient,
   handler: (payload: {
