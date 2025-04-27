@@ -105,9 +105,15 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
 
   // Prevent further turns if game is completed
   const isRoundComplete = game.status === "completed";
-
+  // Remove duplicate subscribeToGame subscription and all related logic
+  console.log("game.status :>> ", game.status);
+  // Add subscription to game updates with proper types
   useEffect(() => {
+    if (!game.id) return;
+    console.log("[game-room] Setting up subscription with id:", game.id);
+
     if (!game) return;
+
     // Handle turn changes
     if (
       game.current_turn !== undefined &&
@@ -397,16 +403,24 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
     if (!currentQuestion?.ended_at) return;
     const checkIfAllTurnsCompleted = async () => {
       const questions = await getQuestionsForGame(supabase, game.id);
+      console.log("questions :>> ", questions);
       // Only consider questions that are completed
       const completedQuestions = questions.filter((q) => q.ended_at);
       // Get unique player IDs who have created a completed question
       const uniqueCreators = new Set(
         completedQuestions.map((q) => q.created_by_player_id)
       );
+      console.log(
+        "uniqueCreators :>> ",
+        uniqueCreators,
+        "players:",
+        game.players.length
+      );
       if (
         uniqueCreators.size >= game.players.length &&
         game.status !== "completed"
       ) {
+        console.log("Attempting to update game status to completed");
         // Add a guard to prevent multiple updates
         const { data: currentGame } = await supabase
           .from("games")
@@ -422,7 +436,11 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
           );
           if (error) {
             console.error("updateGameStatus error:", error);
+          } else {
+            console.log("Game status updated to completed");
           }
+        } else {
+          console.log("Game is already completed, skipping update");
         }
       }
     };
@@ -434,7 +452,8 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
     game.status,
     supabase,
   ]);
-
+  console.log("game.players :>> ", game.players);
+  console.log("game.status :>> ", game.status);
   return (
     <div className="space-y-8">
       <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-4">

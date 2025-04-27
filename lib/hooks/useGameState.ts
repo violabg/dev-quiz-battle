@@ -15,6 +15,22 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+interface DebugInfo {
+  gameId?: string;
+  gameCode?: string;
+  gameStatus?: string;
+  isHost?: boolean;
+  hostId?: string;
+  userId?: string;
+  playerCount?: number;
+  lastUpdate?: string;
+  updatePayload?: unknown;
+  lastPlayerUpdate?: string;
+  gameDeleted?: boolean;
+  manuallyUpdated?: boolean;
+  startGameTriggered?: string;
+}
+
 export function useGameState({
   code,
   user,
@@ -29,6 +45,7 @@ export function useGameState({
   const [game, setGame] = useState<GameWithPlayers | null>(null);
   const [gameId, setGameId] = useState<string | null>(null);
   const [isHost, setIsHost] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<DebugInfo>({});
 
   const fetchGame = useCallback(async () => {
     if (!user) return;
@@ -44,6 +61,15 @@ export function useGameState({
       } as GameWithPlayers;
       setGame(gameWithPlayers);
       setGameId(gameData.id);
+      setDebugInfo({
+        gameId: gameData.id,
+        gameCode: gameData.code,
+        gameStatus: gameData.status,
+        isHost: user.id === gameData.host_id,
+        hostId: gameData.host_id,
+        userId: user.id,
+        playerCount: playersData.length,
+      });
     } catch (error) {
       console.error("Error fetching game:", error);
       toast.error("Errore", {
@@ -69,6 +95,11 @@ export function useGameState({
       onUpdate: (payload) => {
         if (payload.eventType === "DELETE") {
           setGame(null);
+          setDebugInfo((prev) => ({
+            ...prev,
+            gameDeleted: true,
+            lastUpdate: new Date().toISOString(),
+          }));
           toast("La partita è stata chiusa.");
           router.push("/dashboard");
           return;
@@ -77,6 +108,12 @@ export function useGameState({
           if (!currentGame) return null;
           return { ...currentGame, ...payload.new };
         });
+        setDebugInfo((prev) => ({
+          ...prev,
+          gameStatus: payload.new?.status,
+          lastUpdate: new Date().toISOString(),
+          updatePayload: payload.new,
+        }));
       },
     });
     const playersSubscription = subscribeToGamePlayers(supabase, async () => {
@@ -86,6 +123,11 @@ export function useGameState({
         if (!currentGame) return null;
         return { ...currentGame, players: playersData };
       });
+      setDebugInfo((prev) => ({
+        ...prev,
+        playerCount: playersData.length,
+        lastPlayerUpdate: new Date().toISOString(),
+      }));
     });
     return () => {
       unsubscribeFromGame(gameSubscription);
@@ -101,6 +143,12 @@ export function useGameState({
         if (!currentGame) return null;
         return { ...currentGame, status: "active" };
       });
+      setDebugInfo((prev) => ({
+        ...prev,
+        gameStatus: "active",
+        manuallyUpdated: true,
+        startGameTriggered: new Date().toISOString(),
+      }));
     } catch (error: unknown) {
       toast.error("Errore", {
         description:
@@ -133,5 +181,5 @@ export function useGameState({
     }
   };
 
-  return { loading, game, isHost, handleStartGame, handleLeaveGame };
+  return { loading, game, isHost, debugInfo, handleStartGame, handleLeaveGame };
 }
