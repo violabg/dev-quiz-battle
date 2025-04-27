@@ -1,4 +1,5 @@
 import type { Profile } from "@/types/supabase";
+import * as crypto from "crypto";
 import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
 
 export async function getProfileById(supabase: SupabaseClient, id: string) {
@@ -56,7 +57,7 @@ export async function ensureUserProfile(
   if (!profile) {
     const username =
       user.email?.split("@")[0] ||
-      `user_${Math.random().toString(36).substring(2, 8)}`;
+      `user_${crypto.randomBytes(6).toString("base64url").substring(0, 6)}`;
     try {
       await createProfile(supabase, user.id, username);
     } catch {
