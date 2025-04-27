@@ -2,7 +2,6 @@
 
 import { QuestionDisplay } from "@/components/game/question-display";
 import { QuestionSelection } from "@/components/game/question-selection";
-import { RoundSummary } from "@/components/game/round-summary";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,6 +35,7 @@ import type {
 } from "@/types/supabase";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import GameOver from "./game-over";
 
 interface GameRoomProps {
   game: GameWithPlayers;
@@ -72,12 +72,27 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
       gameId: game.id,
       onUpdate: (payload) => {
         const updatedGame = payload.new;
+        if (!updatedGame) return;
+
+        // Handle turn changes
         if (
-          updatedGame?.current_turn !== undefined &&
+          updatedGame.current_turn !== undefined &&
           currentPlayerIndex !== updatedGame.current_turn
         ) {
           setCurrentPlayerIndex(updatedGame.current_turn);
           // Reset question-related state for all clients when turn changes
+          setCurrentQuestion(null);
+          setWinner(null);
+          setShowNextTurn(false);
+          setAllAnswers([]);
+        }
+
+        // Handle game status changes
+        if (
+          updatedGame.status !== undefined &&
+          updatedGame.status === "completed"
+        ) {
+          // Reset question-related state for all clients when game is completed
           setCurrentQuestion(null);
           setWinner(null);
           setShowNextTurn(false);
@@ -127,7 +142,10 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
     })();
   }, [game.id, supabase]);
 
+  // Subscribe to questions and answers
   useEffect(() => {
+    if (!game.id) return;
+
     // Set up real-time subscription for question updates
     const questionSubscription = subscribeToQuestions(
       supabase,
@@ -143,35 +161,42 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
       }
     );
 
-    // Set up real-time subscription for answer updates (for allAnswers)
-    let answerSubscription: ReturnType<typeof subscribeToAnswers> | undefined;
-    if (currentQuestion) {
-      answerSubscription = subscribeToAnswers(supabase, async (payload) => {
-        if (payload.new && payload.new.question_id === currentQuestion.id) {
-          const answers = await getAnswersWithPlayerForQuestion(
-            supabase,
-            currentQuestion.id
-          );
-          setAllAnswers(answers);
-        }
-      });
-      // Fetch initial answers
-      (async () => {
+    return () => {
+      unsubscribeFromQuestions(questionSubscription);
+    };
+  }, [supabase, game.id]);
+
+  // Handle answers subscription separately
+  useEffect(() => {
+    if (!currentQuestion) {
+      setAllAnswers([]);
+      return;
+    }
+
+    // Set up real-time subscription for answer updates
+    const answerSubscription = subscribeToAnswers(supabase, async (payload) => {
+      if (payload.new && payload.new.question_id === currentQuestion.id) {
         const answers = await getAnswersWithPlayerForQuestion(
           supabase,
           currentQuestion.id
         );
         setAllAnswers(answers);
-      })();
-    } else {
-      setAllAnswers([]);
-    }
+      }
+    });
+
+    // Fetch initial answers
+    (async () => {
+      const answers = await getAnswersWithPlayerForQuestion(
+        supabase,
+        currentQuestion.id
+      );
+      setAllAnswers(answers);
+    })();
 
     return () => {
-      unsubscribeFromQuestions(questionSubscription);
       if (answerSubscription) unsubscribeFromAnswers(answerSubscription);
     };
-  }, [supabase, game.id, currentQuestion, game.players.length, winner]);
+  }, [supabase, currentQuestion]); // Changed dependencies to only include what's needed
 
   // Timer: check if time is up, all answered, or winner, and end question if needed
   useEffect(() => {
@@ -273,11 +298,17 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
   // Wait for DB update before changing local state
   const handleNextTurn = async () => {
     try {
-      const nextIndex = (currentPlayerIndex + 1) % game.players.length;
-      // Update current_turn in the database for all clients
-      const { error } = await updateGameTurn(supabase, game.id, nextIndex);
+      const nextIndex = currentPlayerIndex + 1;
+      const isRoundComplete = nextIndex >= game.players.length;
 
-      if (error) throw error;
+      if (isRoundComplete) {
+        // Update game status to completed when the round is over
+        await updateGameStatus(supabase, game.id, "completed");
+      } else {
+        // Update current_turn in the database for all clients
+        const { error } = await updateGameTurn(supabase, game.id, nextIndex);
+        if (error) throw error;
+      }
 
       // Local state will be updated by the subscription
       // Clear question-related state
@@ -337,32 +368,36 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
 
   // --- Winner sync: determine winner from allAnswers when question is over ---
   useEffect(() => {
-    if (!currentQuestion || !currentQuestion.ended_at) {
-      setWinner(null);
-      return;
-    }
-    // Find the first correct answer (by answered_at)
-    const correct = allAnswers
-      .filter((a) => a.is_correct)
-      .sort(
-        (a, b) =>
-          new Date(a.answered_at).getTime() - new Date(b.answered_at).getTime()
-      )[0];
-    if (correct) {
-      setWinner({
-        playerId: correct.player_id,
-        username: correct.player.username,
-        score: correct.score_earned,
-      });
-    } else {
-      setWinner(null);
-    }
-  }, [currentQuestion, currentQuestion?.ended_at, allAnswers]);
+    // Only run this effect when the question ends or we get new answers
+    if (!currentQuestion?.ended_at) return;
 
-  const isRoundComplete = currentPlayerIndex >= game.players.length;
-  const roundWinner = game.players.reduce((prev, current) =>
-    current.score > prev.score ? current : prev
-  );
+    const determineWinner = () => {
+      // Find the first correct answer (by answered_at)
+      const correct = allAnswers
+        .filter((a) => a.is_correct)
+        .sort(
+          (a, b) =>
+            new Date(a.answered_at).getTime() -
+            new Date(b.answered_at).getTime()
+        )[0];
+
+      if (correct) {
+        setWinner({
+          playerId: correct.player_id,
+          username: correct.player.username,
+          score: correct.score_earned,
+        });
+      } else {
+        setWinner(null);
+      }
+    };
+
+    // Small delay to ensure we have the latest answers
+    const timeoutId = setTimeout(determineWinner, 100);
+    return () => clearTimeout(timeoutId);
+  }, [currentQuestion?.ended_at, allAnswers]);
+
+  const isRoundComplete = game.status === "completed";
 
   return (
     <div className="space-y-8">
@@ -381,9 +416,8 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
       <div className="gap-8 grid lg:grid-cols-3">
         <div className="lg:col-span-2">
           {isRoundComplete ? (
-            <RoundSummary
-              winnerUsername={roundWinner.profile.username}
-              winnerScore={roundWinner.score}
+            <GameOver
+              game={game}
               onNewRound={() => {
                 setCurrentPlayerIndex(0);
                 setCurrentQuestion(null);

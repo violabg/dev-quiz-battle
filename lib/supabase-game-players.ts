@@ -1,4 +1,4 @@
-import type { GamePlayer, Profile } from "@/types/supabase";
+import type { Player, Profile } from "@/types/supabase";
 import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
 
 export async function addPlayerToGame(
@@ -24,7 +24,7 @@ export async function getPlayersForGame(
     .eq("game_id", game_id)
     .order("turn_order", { ascending: true });
   if (error) throw error;
-  return data as (GamePlayer & { profile: Profile })[];
+  return data as (Player & { profile: Profile })[];
 }
 
 export async function getPlayerInGame(
@@ -39,7 +39,7 @@ export async function getPlayerInGame(
     .eq("player_id", player_id)
     .maybeSingle();
   if (error) throw error;
-  return data as GamePlayer | null;
+  return data as Player | null;
 }
 
 export async function addScoreToPlayer(
@@ -69,8 +69,8 @@ export function subscribeToGamePlayers(
   supabase: SupabaseClient,
   handler: (payload: {
     eventType: string;
-    new: GamePlayer | null;
-    old: GamePlayer | null;
+    new: Player | null;
+    old: Player | null;
   }) => void
 ) {
   return supabase
@@ -81,8 +81,8 @@ export function subscribeToGamePlayers(
       (payload) => {
         handler({
           eventType: payload.eventType,
-          new: payload.new as GamePlayer | null,
-          old: payload.old as GamePlayer | null,
+          new: payload.new as Player | null,
+          old: payload.old as Player | null,
         });
       }
     )

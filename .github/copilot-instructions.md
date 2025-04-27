@@ -24,6 +24,7 @@
 - Use React Hook Form for form management.
 - Use Radix UI components.
 - Use Supabase for backend/database interactions.
+- Use arrow functions.
 
 ## Core Gameplay:
 

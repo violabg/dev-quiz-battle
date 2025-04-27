@@ -190,12 +190,12 @@ export interface Database {
 
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Game = Database["public"]["Tables"]["games"]["Row"];
-export type GamePlayer = Database["public"]["Tables"]["game_players"]["Row"];
+export type Player = Database["public"]["Tables"]["game_players"]["Row"];
 export type Question = Database["public"]["Tables"]["questions"]["Row"];
 export type Answer = Database["public"]["Tables"]["answers"]["Row"];
 
 export type GameWithPlayers = Game & {
-  players: (GamePlayer & { profile: Profile })[];
+  players: (Player & { profile: Profile })[];
   host: Profile;
 };
 

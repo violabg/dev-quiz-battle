@@ -103,28 +103,31 @@ export default function GamePage(props: { params: Promise<{ code: string }> }) {
     fetchGame();
 
     // Set up real-time subscription for game updates (INSERT, UPDATE, DELETE)
-    const gameSubscription = subscribeToGame(supabase, game?.id, (payload) => {
-      if (payload.eventType === "DELETE") {
-        setGame(null);
+    const gameSubscription = subscribeToGame(supabase, {
+      gameId: game?.id,
+      onUpdate: (payload) => {
+        if (payload.eventType === "DELETE") {
+          setGame(null);
+          setDebugInfo((prev) => ({
+            ...prev,
+            gameDeleted: true,
+            lastUpdate: new Date().toISOString(),
+          }));
+          toast("La partita è stata chiusa.");
+          router.push("/dashboard");
+          return;
+        }
+        setGame((currentGame) => {
+          if (!currentGame) return null;
+          return { ...currentGame, ...payload.new };
+        });
         setDebugInfo((prev) => ({
           ...prev,
-          gameDeleted: true,
+          gameStatus: payload.new?.status,
           lastUpdate: new Date().toISOString(),
+          updatePayload: payload.new,
         }));
-        toast("La partita è stata chiusa.");
-        router.push("/dashboard");
-        return;
-      }
-      setGame((currentGame) => {
-        if (!currentGame) return null;
-        return { ...currentGame, ...payload.new };
-      });
-      setDebugInfo((prev) => ({
-        ...prev,
-        gameStatus: payload.new?.status,
-        lastUpdate: new Date().toISOString(),
-        updatePayload: payload.new,
-      }));
+      },
     });
 
     // Set up real-time subscription for player updates (INSERT, UPDATE, DELETE)
