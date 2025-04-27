@@ -14,11 +14,7 @@ import {
   subscribeToAnswers,
   unsubscribeFromAnswers,
 } from "@/lib/supabase-answers";
-import {
-  subscribeToGame,
-  updateGameStatus,
-  updateGameTurn,
-} from "@/lib/supabase-games";
+import { updateGameStatus, updateGameTurn } from "@/lib/supabase-games";
 import { useSupabase } from "@/lib/supabase-provider";
 import {
   getQuestionsForGame,
@@ -37,13 +33,22 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import GameOver from "./game-over";
 
+type AnswerWithPlayer = {
+  id: string;
+  player_id: string;
+  selected_option: number;
+  is_correct: boolean;
+  response_time_ms: number;
+  score_earned: number;
+  answered_at: string;
+  player: { id: string; username: string; avatar_url?: string | null };
+};
 interface GameRoomProps {
   game: GameWithPlayers;
-  isHost: boolean;
   onLeaveGame: () => void;
 }
 
-export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
+export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
   const { user, supabase } = useSupabase();
   // Add ended_at to Question type for local use
   type QuestionWithEnd = Question & { ended_at?: string; started_at?: string };
@@ -64,50 +69,6 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
   } | null>(null);
   const [showNextTurn, setShowNextTurn] = useState(false);
 
-  // Add subscription to game updates with proper types
-  useEffect(() => {
-    if (!game.id) return;
-
-    const channel = subscribeToGame(supabase, {
-      gameId: game.id,
-      onUpdate: (payload) => {
-        const updatedGame = payload.new;
-        if (!updatedGame) return;
-
-        // Handle turn changes
-        if (
-          updatedGame.current_turn !== undefined &&
-          currentPlayerIndex !== updatedGame.current_turn
-        ) {
-          setCurrentPlayerIndex(updatedGame.current_turn);
-          // Reset question-related state for all clients when turn changes
-          setCurrentQuestion(null);
-          setWinner(null);
-          setShowNextTurn(false);
-          setAllAnswers([]);
-        }
-
-        // Handle game status changes
-        if (
-          updatedGame.status !== undefined &&
-          updatedGame.status === "completed"
-        ) {
-          // Reset question-related state for all clients when game is completed
-          setCurrentQuestion(null);
-          setWinner(null);
-          setShowNextTurn(false);
-          setAllAnswers([]);
-        }
-      },
-    });
-
-    return () => {
-      if (channel) {
-        channel.unsubscribe();
-      }
-    };
-  }, [game.id, supabase, currentPlayerIndex]);
-
   // Determine if it's the current user's turn
   const currentPlayer = game.players[currentPlayerIndex];
   const isCurrentPlayersTurn = currentPlayer?.player_id === user?.id;
@@ -115,16 +76,58 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
   const isNextPlayersTurn =
     game.players[nextPlayerIndex]?.player_id === user?.id;
 
-  type AnswerWithPlayer = {
-    id: string;
-    player_id: string;
-    selected_option: number;
-    is_correct: boolean;
-    response_time_ms: number;
-    score_earned: number;
-    answered_at: string;
-    player: { id: string; username: string; avatar_url?: string | null };
-  };
+  // --- DB check for game completion: after each question ends, check if all players have completed a turn (unique creators)
+  useEffect(() => {
+    if (!currentQuestion?.ended_at) return;
+    const checkIfAllTurnsCompleted = async () => {
+      const questions = await getQuestionsForGame(supabase, game.id);
+      // Only consider questions that are completed
+      const completedQuestions = questions.filter((q) => q.ended_at);
+      // Get unique player IDs who have created a completed question
+      const uniqueCreators = new Set(
+        completedQuestions.map((q) => q.created_by_player_id)
+      );
+      if (
+        uniqueCreators.size >= game.players.length &&
+        game.status !== "completed"
+      ) {
+        await updateGameStatus(supabase, game.id, "completed");
+      }
+    };
+    checkIfAllTurnsCompleted();
+  }, [
+    currentQuestion?.ended_at,
+    game.id,
+    game.players.length,
+    game.status,
+    supabase,
+  ]);
+
+  // Prevent further turns if game is completed
+  const isRoundComplete = game.status === "completed";
+  // Remove duplicate subscribeToGame subscription and all related logic
+  // console.log("game.status :>> ", game.status);
+  // Add subscription to game updates with proper types
+  useEffect(() => {
+    if (!game.id) return;
+    console.log("[game-room] Setting up subscription with id:", game.id);
+
+    if (!game) return;
+
+    // Handle turn changes
+    if (
+      game.current_turn !== undefined &&
+      currentPlayerIndex !== game.current_turn
+    ) {
+      setCurrentPlayerIndex(game.current_turn);
+      // Reset question-related state for all clients when turn changes
+      setCurrentQuestion(null);
+      setWinner(null);
+      setShowNextTurn(false);
+      setAllAnswers([]);
+    }
+  }, [currentPlayerIndex, game]);
+
   const [allAnswers, setAllAnswers] = useState<AnswerWithPlayer[]>([]);
 
   // Fetch latest question on mount or when game.id changes
@@ -297,21 +300,19 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
   // Patch: fallback to local state if game.current_turn is not present
   // Wait for DB update before changing local state
   const handleNextTurn = async () => {
+    if (isRoundComplete) return; // Prevent next turn if game is over
     try {
       const nextIndex = currentPlayerIndex + 1;
-      const isRoundComplete = nextIndex >= game.players.length;
-
-      if (isRoundComplete) {
-        // Update game status to completed when the round is over
-        await updateGameStatus(supabase, game.id, "completed");
+      const isAllPlayersTurned = nextIndex >= game.players.length;
+      if (isAllPlayersTurned) {
+        // Game will be marked as completed by the effect above
+        return;
       } else {
         // Update current_turn in the database for all clients
         const { error } = await updateGameTurn(supabase, game.id, nextIndex);
         if (error) throw error;
       }
-
       // Local state will be updated by the subscription
-      // Clear question-related state
       setCurrentQuestion(null);
       setWinner(null);
       setShowNextTurn(false);
@@ -397,8 +398,62 @@ export function GameRoom({ game, onLeaveGame }: GameRoomProps) {
     return () => clearTimeout(timeoutId);
   }, [currentQuestion?.ended_at, allAnswers]);
 
-  const isRoundComplete = game.status === "completed";
+  // After each question ends, check in the DB if all players have completed a turn (unique creators)
+  useEffect(() => {
+    if (!currentQuestion?.ended_at) return;
+    const checkIfAllTurnsCompleted = async () => {
+      const questions = await getQuestionsForGame(supabase, game.id);
+      console.log("questions :>> ", questions);
+      // Only consider questions that are completed
+      const completedQuestions = questions.filter((q) => q.ended_at);
+      // Get unique player IDs who have created a completed question
+      const uniqueCreators = new Set(
+        completedQuestions.map((q) => q.created_by_player_id)
+      );
+      console.log(
+        "uniqueCreators :>> ",
+        uniqueCreators,
+        "players:",
+        game.players.length
+      );
+      if (
+        uniqueCreators.size >= game.players.length &&
+        game.status !== "completed"
+      ) {
+        console.log("Attempting to update game status to completed");
+        // Add a guard to prevent multiple updates
+        const { data: currentGame } = await supabase
+          .from("games")
+          .select("status")
+          .eq("id", game.id)
+          .single();
 
+        if (currentGame?.status !== "completed") {
+          const { error } = await updateGameStatus(
+            supabase,
+            game.id,
+            "completed"
+          );
+          if (error) {
+            console.error("updateGameStatus error:", error);
+          } else {
+            console.log("Game status updated to completed");
+          }
+        } else {
+          console.log("Game is already completed, skipping update");
+        }
+      }
+    };
+    checkIfAllTurnsCompleted();
+  }, [
+    currentQuestion?.ended_at,
+    game.id,
+    game.players.length,
+    game.status,
+    supabase,
+  ]);
+  console.log("game.players :>> ", game.players);
+  console.log("game.status :>> ", game.status);
   return (
     <div className="space-y-8">
       <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-4">

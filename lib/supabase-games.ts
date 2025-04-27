@@ -66,6 +66,12 @@ export function subscribeToGame(
   }
 
   const channelName = options?.gameId ? `game-${options.gameId}` : "games";
+  console.log(
+    "[subscribeToGame] channel:",
+    channelName,
+    "filter:",
+    options?.gameId ? `id=eq.${options.gameId}` : undefined
+  );
   return supabase
     .channel(channelName)
     .on(
@@ -81,6 +87,12 @@ export function subscribeToGame(
         new: Record<string, unknown>;
         old: Record<string, unknown>;
       }) => {
+        console.log("[subscribeToGame] received payload:", payload);
+        console.log(
+          "[subscribeToGame] typeof onUpdate:",
+          typeof options?.onUpdate
+        );
+        console.log("[subscribeToGame] about to call onUpdate");
         options?.onUpdate?.({
           eventType: payload.eventType,
           new: payload.new as Game | null,
