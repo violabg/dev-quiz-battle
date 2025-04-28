@@ -38,10 +38,9 @@ export default function Scoreboard({
           <CardTitle className="text-lg">Classifica</CardTitle>
         </CardHeader>
       )}
-      <CardContent className="space-y-8">
+      <CardContent>
         {isRoundComplete ? (
           <>
-            {" "}
             <div className="flex justify-center items-end space-x-4 py-8">
               {winners.length > 1 && (
                 <div className="flex flex-col items-center">
@@ -105,7 +104,6 @@ export default function Scoreboard({
           </>
         ) : (
           <>
-            {" "}
             {[...game.players]
               .sort((a, b) => b.score - a.score)
               .map((player) => (

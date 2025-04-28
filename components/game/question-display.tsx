@@ -121,7 +121,7 @@ export function QuestionDisplay({
   };
 
   return (
-    <Card className="gradient-border glass-card">
+    <Card className="pt-[2px] gradient-border glass-card">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-2 w-full">
           <TabsTrigger value="question">Domanda</TabsTrigger>

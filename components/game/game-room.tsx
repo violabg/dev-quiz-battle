@@ -2,10 +2,12 @@
 
 import { QuestionDisplay } from "@/components/game/question-display";
 import { QuestionSelection } from "@/components/game/question-selection";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// import { Badge } from "@/components/ui/badge";
+import { CurrentTurnCard } from "@/components/game/current-turn-card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Card, CardContent } from "@/components/ui/card";
+import { TurnResultCard } from "@/components/game/turn-result-card";
 import { generateQuestion } from "@/lib/groq";
 import {
   calculateScore,
@@ -31,7 +33,7 @@ import type {
 } from "@/types/supabase";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import Scoreboard from "./game-over";
+import Scoreboard from "./game-scoreboard";
 
 type AnswerWithPlayer = {
   id: string;
@@ -318,19 +320,39 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
     }
   };
 
-  const handleCreateQuestion = async () => {
+  // New: handle form submit from QuestionSelection
+  const handleQuestionFormSubmit = (values: {
+    language: GameLanguage;
+    difficulty: GameDifficulty;
+  }) => {
+    setLanguage(values.language);
+    setDifficulty(values.difficulty);
+    // Call question creation with the selected values
+    handleCreateQuestion(values.language, values.difficulty);
+  };
+
+  // Overload handleCreateQuestion to accept values
+  const handleCreateQuestion = async (
+    selectedLanguage?: GameLanguage,
+    selectedDifficulty?: GameDifficulty
+  ) => {
     if (!user || !isCurrentPlayersTurn) return;
     setIsLoading(true);
     try {
+      const lang = selectedLanguage ?? language;
+      const diff = selectedDifficulty ?? difficulty;
       // Generate question using Groq
-      const questionData = await generateQuestion({ language, difficulty });
+      const questionData = await generateQuestion({
+        language: lang,
+        difficulty: diff,
+      });
       const startedAt = new Date().toISOString();
       // Save question to database (add started_at for timer sync)
       const data = await insertQuestion(supabase, {
         game_id: game.id,
         created_by_player_id: user.id,
-        language,
-        difficulty,
+        language: lang,
+        difficulty: diff,
         question_text: questionData.questionText,
         code_sample: questionData.codeSample,
         options: questionData.options,
@@ -450,70 +472,33 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
               isLoading={isLoading}
               language={language}
               difficulty={difficulty}
-              onLanguageChange={(value) => setLanguage(value)}
-              onDifficultyChange={(value) => setDifficulty(value)}
-              onCreateQuestion={handleCreateQuestion}
+              onSubmit={handleQuestionFormSubmit}
             />
           )}
         </div>
 
-        <div>
+        <div className="flex flex-col gap-4">
           <Scoreboard
             game={game}
             isRoundComplete={isRoundComplete}
             onLeaveGame={onLeaveGame}
           />
-          <Card className="mt-4 gradient-border glass-card">
-            <CardHeader>
-              <CardTitle className="text-lg">Turno attuale</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <Avatar>
-                  <AvatarImage
-                    src={currentPlayer?.profile.avatar_url || undefined}
-                  />
-                  <AvatarFallback>
-                    {currentPlayer?.profile.username
-                      .substring(0, 2)
-                      .toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="font-medium">
-                  {currentPlayer?.profile.username}
-                </span>
-                {isCurrentPlayersTurn && (
-                  <Badge className="ml-1">Il tuo turno</Badge>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <CurrentTurnCard
+            currentPlayer={{
+              ...currentPlayer?.profile,
+              player_id: currentPlayer?.player_id,
+            }}
+            isCurrentPlayersTurn={isCurrentPlayersTurn}
+          />
           {(winner ||
             (currentQuestion && currentQuestion.ended_at && !winner)) && (
-            <Card className="mt-4 gradient-border glass-card">
-              <CardContent className="flex flex-col items-center mt-6">
-                {winner ? (
-                  <div className="mb-2 font-bold text-green-600 text-lg">
-                    {winner.username} ha indovinato! (+{winner.score.toFixed(1)}{" "}
-                    punti)
-                  </div>
-                ) : (
-                  <div className="mb-2 font-bold text-yellow-600 text-lg">
-                    Tempo scaduto! Nessun giocatore ha risposto correttamente.
-                  </div>
-                )}
-                {showNextTurn && isNextPlayersTurn && !isRoundComplete && (
-                  <Button onClick={handleNextTurn} className="mt-2">
-                    Inizia nuovo turno
-                  </Button>
-                )}
-                {showNextTurn && !isNextPlayersTurn && (
-                  <div className="mt-2 text-muted-foreground text-sm">
-                    In attesa che il prossimo giocatore inizi il nuovo turno...
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <TurnResultCard
+              winner={winner}
+              showNextTurn={showNextTurn}
+              isNextPlayersTurn={isNextPlayersTurn}
+              isRoundComplete={isRoundComplete}
+              handleNextTurn={handleNextTurn}
+            />
           )}
         </div>
       </div>
