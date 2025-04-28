@@ -1,6 +1,13 @@
 import type { Player, Profile } from "@/types/supabase";
 import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
 
+export type LeaderboardPlayer = {
+  player_id: string;
+  total_score: number;
+  username: string;
+  avatar_url: string | null;
+};
+
 export async function addPlayerToGame(
   supabase: SupabaseClient,
   game_id: string,
@@ -63,6 +70,21 @@ export async function addScoreToPlayer(
     .eq("id", player.id);
   if (updateError) throw updateError;
   return true;
+}
+
+export async function getLeaderboardPlayers(
+  supabase: SupabaseClient,
+  offset: number,
+  limit: number
+) {
+  // Use Supabase RPC to get leaderboard players (summed score, unique per player, paginated)
+  const { data, error } = await supabase.rpc("get_leaderboard_players", {
+    offset_value: offset,
+    limit_value: limit,
+  });
+  if (error) throw error;
+
+  return data || ([] as LeaderboardPlayer[]);
 }
 
 export function subscribeToGamePlayers(

@@ -7,46 +7,69 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+  getLeaderboardPlayers,
+  LeaderboardPlayer,
+} from "@/lib/supabase-game-players";
 import { createServerSupabase } from "@/lib/supabase-server";
-import type { Player, Profile } from "@/types/supabase";
 import { redirect } from "next/navigation";
 
 const PAGE_SIZE = 10;
 
+// This type matches the shape expected by PlayersStanding
+interface LeaderboardPlayerForStanding {
+  id: string;
+  score: number;
+  profile: {
+    id: string;
+    username: string;
+    avatar_url: string | null;
+    created_at: string;
+    updated_at: string;
+  };
+  // The following fields are required by Player but are not used in leaderboard context
+  game_id: string;
+  player_id: string;
+  turn_order: number;
+  is_active: boolean;
+  joined_at: string;
+}
+
 async function getPlayers(page: number) {
-  const supabase = createServerSupabase();
-  const from = (page - 1) * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
-  // Query unique players by player_id, highest score per player
-  const { data, error } = await supabase
-    .from("game_players")
-    .select("*, profile:profiles(*)")
-    .order("score", { ascending: false })
-    .order("joined_at", { ascending: true })
-    .limit(1000); // fetch enough to dedupe in-memory
-  if (error) throw error;
-  // Deduplicate by player_id, keep highest score
-  const uniqueMap = new Map<string, Player & { profile: Profile }>();
-  (data as (Player & { profile: Profile })[]).forEach((p) => {
-    if (!uniqueMap.has(p.player_id)) {
-      uniqueMap.set(p.player_id, p);
-    }
-  });
-  const uniquePlayers = Array.from(uniqueMap.values()).sort(
-    (a, b) => b.score - a.score
-  );
-  const pagedPlayers = uniquePlayers.slice(from, to + 1);
+  const supabase = await createServerSupabase();
+  const offset = (page - 1) * PAGE_SIZE;
+  const limit = PAGE_SIZE;
+  // Use helper from supabase-game-players
+  const data = await getLeaderboardPlayers(supabase, offset, limit);
+  // Map to expected structure for PlayersStanding
+  const players: LeaderboardPlayerForStanding[] = (
+    data as LeaderboardPlayer[]
+  ).map((p) => ({
+    id: p.player_id,
+    score: Number(p.total_score),
+    profile: {
+      id: p.player_id,
+      username: p.username,
+      avatar_url: p.avatar_url,
+      created_at: "",
+      updated_at: "",
+    },
+    game_id: "",
+    player_id: p.player_id,
+    turn_order: 0,
+    is_active: true,
+    joined_at: "",
+  }));
   return {
-    players: pagedPlayers,
-    count: uniquePlayers.length,
+    players,
+    count: data.length || 0,
   };
 }
 
-export default async function LeaderboardPage({
-  searchParams,
-}: {
+export default async function LeaderboardPage(props: {
   searchParams: { page?: string };
 }) {
+  const searchParams = await props.searchParams;
   const page = Math.max(1, Number(searchParams?.page) || 1);
   const { players, count } = await getPlayers(page);
   const totalPages = Math.ceil(count / PAGE_SIZE);
