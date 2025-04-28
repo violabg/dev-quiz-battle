@@ -16,8 +16,8 @@ export const PlayersStanding = ({ players }: PlayersStandingProps) => {
       <div className="flex justify-center items-end space-x-4 py-8">
         {winners.length > 1 && (
           <div className="flex flex-col items-center">
-            <div className="flex justify-center items-center bg-blue-500 mb-2 rounded-full w-16 h-16">
-              <Medal className="w-8 h-8 text-gray-300" />
+            <div className="flex justify-center items-center mb-2 rounded-full w-16 h-16 silver-gradient emboss">
+              <Medal className="w-8 h-8 text-gray-100/90" />
             </div>
             <div className="text-center">
               <p className="font-medium">{winners[1].profile.username}</p>
@@ -28,8 +28,8 @@ export const PlayersStanding = ({ players }: PlayersStandingProps) => {
 
         {winners.length > 0 && (
           <div className="flex flex-col items-center">
-            <div className="flex justify-center items-center mb-2 rounded-full w-20 h-20 gradient-bg">
-              <Trophy className="w-10 h-10 text-amber-300" />
+            <div className="flex justify-center items-center mb-2 rounded-full w-20 h-20 gold-gradient emboss">
+              <Trophy className="w-10 h-10 text-yellow-50/90" />
             </div>
             <div className="text-center">
               <p className="font-medium">{winners[0].profile.username}</p>
@@ -42,8 +42,8 @@ export const PlayersStanding = ({ players }: PlayersStandingProps) => {
 
         {winners.length > 2 && (
           <div className="flex flex-col items-center">
-            <div className="flex justify-center items-center mb-2 rounded-full w-16 h-16 glass-card">
-              <Award className="w-8 h-8 text-amber-600" />
+            <div className="flex justify-center items-center mb-2 rounded-full w-16 h-16 bronze-gradient emboss">
+              <Award className="w-8 h-8 text-orange-100/90" />
             </div>
             <div className="text-center">
               <p className="font-medium">{winners[2].profile.username}</p>
