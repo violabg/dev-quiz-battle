@@ -7,7 +7,8 @@ import { getAnswersWithPlayerForQuestion } from "@/lib/supabase-answers";
 import { useSupabase } from "@/lib/supabase-provider";
 import type { Question } from "@/types/supabase";
 import { Check, Clock, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Highlight, themes } from "prism-react-renderer";
+import { useEffect, useMemo, useState } from "react";
 
 interface QuestionDisplayProps {
   question: Question & { ended_at?: string; started_at?: string };
@@ -120,6 +121,41 @@ export function QuestionDisplay({
     return "";
   };
 
+  // Map question.language to Prism supported language
+  const prismLanguage = useMemo(() => {
+    switch ((question.language || "").toLowerCase()) {
+      case "javascript":
+      case "js":
+        return "javascript";
+      case "typescript":
+      case "ts":
+        return "typescript";
+      case "python":
+      case "py":
+        return "python";
+      case "java":
+        return "java";
+      case "c#":
+      case "csharp":
+        return "csharp";
+      case "cpp":
+      case "c++":
+        return "cpp";
+      case "go":
+        return "go";
+      case "ruby":
+        return "ruby";
+      case "php":
+        return "php";
+      case "swift":
+        return "swift";
+      case "kotlin":
+        return "kotlin";
+      default:
+        return "javascript";
+    }
+  }, [question.language]);
+
   return (
     <Card className="pt-[2px] gradient-border glass-card">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -149,9 +185,40 @@ export function QuestionDisplay({
 
           {question.code_sample && (
             <div className="mb-6 overflow-x-auto">
-              <pre className="bg-muted p-4 rounded-lg font-mono text-sm">
-                <code>{question.code_sample}</code>
-              </pre>
+              <Highlight
+                theme={themes.vsDark}
+                code={question.code_sample}
+                language={prismLanguage}
+              >
+                {({
+                  className,
+                  style,
+                  tokens,
+                  getLineProps,
+                  getTokenProps,
+                }) => (
+                  <pre
+                    className={
+                      "p-4 rounded-lg font-mono text-sm bg-[oklch(0.18_0.02_260)] text-[oklch(0.95_0_0)] border border-[oklch(0.3_0.02_260)] " +
+                      className
+                    }
+                    style={style}
+                  >
+                    <code>
+                      {tokens.map((line, i) => (
+                        <div key={i} {...getLineProps({ line, key: i })}>
+                          {line.map((token, key) => (
+                            <span
+                              key={key}
+                              {...getTokenProps({ token, key })}
+                            />
+                          ))}
+                        </div>
+                      ))}
+                    </code>
+                  </pre>
+                )}
+              </Highlight>
             </div>
           )}
 
