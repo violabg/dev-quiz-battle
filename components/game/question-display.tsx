@@ -205,16 +205,23 @@ export function QuestionDisplay({
                     style={style}
                   >
                     <code>
-                      {tokens.map((line, i) => (
-                        <div key={i} {...getLineProps({ line, key: i })}>
-                          {line.map((token, key) => (
-                            <span
-                              key={key}
-                              {...getTokenProps({ token, key })}
-                            />
-                          ))}
-                        </div>
-                      ))}
+                      {tokens.map((line, i) => {
+                        const { key: lineKey, ...lineProps } = getLineProps({
+                          line,
+                          key: i,
+                        });
+                        return (
+                          <div key={String(lineKey)} {...lineProps}>
+                            {line.map((token, key) => {
+                              const { key: tokenKey, ...rest } = getTokenProps({
+                                token,
+                                key,
+                              });
+                              return <span key={String(tokenKey)} {...rest} />;
+                            })}
+                          </div>
+                        );
+                      })}
                     </code>
                   </pre>
                 )}
