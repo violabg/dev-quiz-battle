@@ -122,7 +122,13 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                await handleCreateGame();
+              }}
+              className="space-y-4"
+            >
               <div className="space-y-2">
                 <Label htmlFor="max-players">Numero massimo di giocatori</Label>
                 <Input
@@ -136,20 +142,16 @@ export default function DashboardPage() {
                   }
                 />
               </div>
-            </div>
+              <CardFooter className="p-0 pt-4">
+                <Button type="submit" disabled={loading} className="w-full">
+                  {loading ? (
+                    <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                  ) : null}
+                  Crea partita
+                </Button>
+              </CardFooter>
+            </form>
           </CardContent>
-          <CardFooter>
-            <Button
-              onClick={handleCreateGame}
-              disabled={loading}
-              className="w-full"
-            >
-              {loading ? (
-                <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-              ) : null}
-              Crea partita
-            </Button>
-          </CardFooter>
         </Card>
 
         <Card className="gradient-border glass-card">
@@ -160,7 +162,13 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                await handleJoinGame();
+              }}
+              className="space-y-4"
+            >
               <div className="space-y-2">
                 <Label htmlFor="game-code">Codice partita</Label>
                 <Input
@@ -171,20 +179,20 @@ export default function DashboardPage() {
                   maxLength={6}
                 />
               </div>
-            </div>
+              <CardFooter className="p-0 pt-4">
+                <Button
+                  type="submit"
+                  disabled={loading || !gameCode}
+                  className="w-full"
+                >
+                  {loading ? (
+                    <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                  ) : null}
+                  Unisciti
+                </Button>
+              </CardFooter>
+            </form>
           </CardContent>
-          <CardFooter>
-            <Button
-              onClick={handleJoinGame}
-              disabled={loading || !gameCode}
-              className="w-full"
-            >
-              {loading ? (
-                <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-              ) : null}
-              Unisciti
-            </Button>
-          </CardFooter>
         </Card>
       </div>
     </main>
