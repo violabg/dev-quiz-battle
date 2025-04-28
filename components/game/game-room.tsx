@@ -31,7 +31,7 @@ import type {
 } from "@/types/supabase";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import GameOver from "./game-over";
+import Scoreboard from "./game-over";
 
 type AnswerWithPlayer = {
   id: string;
@@ -435,19 +435,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
 
       <div className="gap-8 grid lg:grid-cols-3">
         <div className="lg:col-span-2">
-          {isRoundComplete ? (
-            <GameOver
-              game={game}
-              onNewRound={() => {
-                setCurrentPlayerIndex(0);
-                setCurrentQuestion(null);
-                setWinner(null);
-                setShowNextTurn(false);
-                setAllAnswers([]);
-              }}
-              onLeaveGame={onLeaveGame}
-            />
-          ) : currentQuestion ? (
+          {currentQuestion ? (
             <QuestionDisplay
               question={currentQuestion}
               onSubmitAnswer={handleSubmitAnswer}
@@ -470,44 +458,11 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
         </div>
 
         <div>
-          <Card className="gradient-border glass-card">
-            <CardHeader>
-              <CardTitle className="text-lg">Classifica</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {[...game.players]
-                .sort((a, b) => b.score - a.score)
-                .map((player) => (
-                  <div
-                    key={player.id}
-                    className="flex justify-between items-center p-2 border rounded-lg"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Avatar className="w-8 h-8">
-                        <AvatarImage
-                          src={player.profile.avatar_url || undefined}
-                        />
-                        <AvatarFallback>
-                          {player.profile.username
-                            .substring(0, 2)
-                            .toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">
-                        {player.profile.username}
-                      </span>
-                      {player.player_id === game.host_id && (
-                        <Badge variant="outline" className="ml-1">
-                          Host
-                        </Badge>
-                      )}
-                    </div>
-                    <span className="font-bold">{player.score.toFixed(1)}</span>
-                  </div>
-                ))}
-            </CardContent>
-          </Card>
-
+          <Scoreboard
+            game={game}
+            isRoundComplete={isRoundComplete}
+            onLeaveGame={onLeaveGame}
+          />
           <Card className="mt-4 gradient-border glass-card">
             <CardHeader>
               <CardTitle className="text-lg">Turno attuale</CardTitle>
@@ -547,7 +502,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
                     Tempo scaduto! Nessun giocatore ha risposto correttamente.
                   </div>
                 )}
-                {showNextTurn && isNextPlayersTurn && (
+                {showNextTurn && isNextPlayersTurn && !isRoundComplete && (
                   <Button onClick={handleNextTurn} className="mt-2">
                     Inizia nuovo turno
                   </Button>
