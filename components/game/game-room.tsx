@@ -407,23 +407,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
         uniqueCreators.size >= game.players.length &&
         game.status !== "completed"
       ) {
-        // Add a guard to prevent multiple updates
-        const { data: currentGame } = await supabase
-          .from("games")
-          .select("status")
-          .eq("id", game.id)
-          .single();
-
-        if (currentGame?.status !== "completed") {
-          const { error } = await updateGameStatus(
-            supabase,
-            game.id,
-            "completed"
-          );
-          if (error) {
-            console.error("updateGameStatus error:", error);
-          }
-        }
+        await updateGameStatus(supabase, game.id, "completed");
       }
     };
     checkIfAllTurnsCompleted();
