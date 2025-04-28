@@ -11,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { GradientCard } from "@/components/ui/gradient-card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -98,14 +97,14 @@ export function AuthForm() {
   };
 
   return (
-    <GradientCard className="mx-auto w-full max-w-md">
+    <div className="mx-auto w-full max-w-md">
       <Tabs defaultValue="signin" className="w-full">
         <TabsList className="grid grid-cols-2 w-full">
           <TabsTrigger value="signin">Accedi</TabsTrigger>
           <TabsTrigger value="signup">Registrati</TabsTrigger>
         </TabsList>
         <TabsContent value="signin">
-          <Card>
+          <Card className="gradient-border glass-card">
             <CardHeader>
               <CardTitle className="text-gradient">Bentornato</CardTitle>
               <CardDescription>
@@ -136,7 +135,7 @@ export function AuthForm() {
                   />
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="pt-6">
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Accesso in corso..." : "Accedi"}
                 </Button>
@@ -145,7 +144,7 @@ export function AuthForm() {
           </Card>
         </TabsContent>
         <TabsContent value="signup">
-          <Card>
+          <Card className="gradient-border glass-card">
             <CardHeader>
               <CardTitle className="text-gradient">Crea Account</CardTitle>
               <CardDescription>
@@ -187,7 +186,7 @@ export function AuthForm() {
                   />
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="pt-6">
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Creazione account..." : "Registrati"}
                 </Button>
@@ -196,6 +195,6 @@ export function AuthForm() {
           </Card>
         </TabsContent>
       </Tabs>
-    </GradientCard>
+    </div>
   );
 }

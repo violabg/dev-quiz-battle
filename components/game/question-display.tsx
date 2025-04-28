@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { GradientCard } from "@/components/ui/gradient-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAnswersWithPlayerForQuestion } from "@/lib/supabase-answers";
 import { useSupabase } from "@/lib/supabase-provider";
@@ -122,7 +121,7 @@ export function QuestionDisplay({
   };
 
   return (
-    <GradientCard>
+    <Card className="gradient-border glass-card">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-2 w-full">
           <TabsTrigger value="question">Domanda</TabsTrigger>
@@ -252,6 +251,6 @@ export function QuestionDisplay({
           </div>
         </TabsContent>
       </Tabs>
-    </GradientCard>
+    </Card>
   );
 }

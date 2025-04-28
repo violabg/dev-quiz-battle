@@ -2,7 +2,6 @@
 
 import { GameLobby } from "@/components/game/game-lobby";
 import { GameRoom } from "@/components/game/game-room";
-import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
 import { useGameState } from "@/lib/hooks/useGameState";
 import { useSupabase } from "@/lib/supabase-provider";
@@ -21,32 +20,25 @@ export default function GamePage(props: { params: Promise<{ code: string }> }) {
   // Redirect to login if not authenticated
   if (loading || authLoading) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <main className="flex flex-1 justify-center items-center">
-          <Loader2 className="w-8 h-8 animate-spin" />
-        </main>
-      </div>
+      <main className="flex flex-1 justify-center items-center">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </main>
     );
   }
 
   if (!game) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <main className="flex flex-col flex-1 justify-center items-center py-8 container">
-          <h1 className="mb-4 font-bold text-2xl">Partita non trovata</h1>
-          <Button onClick={() => router.push("/dashboard")}>
-            Torna alla Dashboard
-          </Button>
-        </main>
-      </div>
+      <main className="flex flex-col flex-1 justify-center items-center py-8 container">
+        <h1 className="mb-4 font-bold text-2xl">Partita non trovata</h1>
+        <Button onClick={() => router.push("/dashboard")}>
+          Torna alla Dashboard
+        </Button>
+      </main>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
+    <>
       {game && (
         <main className="flex-1 py-8 container">
           {game.status === "waiting" ? (
@@ -61,6 +53,6 @@ export default function GamePage(props: { params: Promise<{ code: string }> }) {
           )}
         </main>
       )}
-    </div>
+    </>
   );
 }

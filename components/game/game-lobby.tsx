@@ -3,10 +3,10 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { GradientCard } from "@/components/ui/gradient-card";
 import type { GameWithPlayers } from "@/types/supabase";
 import { Copy, Users } from "lucide-react";
 import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
 interface GameLobbyProps {
   game: GameWithPlayers;
@@ -65,39 +65,38 @@ export function GameLobby({
         </div>
       </div>
 
-      <GradientCard>
-        <div className="p-6">
-          <div className="flex items-center gap-2 mb-4">
+      <Card className="gradient-border glass-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
             <Users className="w-5 h-5" />
-            <h2 className="font-semibold text-xl">
+            <span>
               Giocatori ({game.players.length}/{game.max_players})
-            </h2>
-          </div>
-
-          <div className="gap-4 grid md:grid-cols-2">
-            {game.players.map((player) => (
-              <div
-                key={player.id}
-                className="flex items-center gap-3 p-3 border rounded-lg"
-              >
-                <Avatar>
-                  <AvatarImage src={player.profile.avatar_url || undefined} />
-                  <AvatarFallback>
-                    {player.profile.username.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <p className="font-medium">{player.profile.username}</p>
-                  <p className="text-muted-foreground text-sm">
-                    Ordine di turno: {player.turn_order}
-                  </p>
-                </div>
-                {player.player_id === game.host_id && <Badge>Host</Badge>}
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="gap-4 grid md:grid-cols-2">
+          {game.players.map((player) => (
+            <div
+              key={player.id}
+              className="flex items-center gap-3 p-3 border rounded-lg"
+            >
+              <Avatar>
+                <AvatarImage src={player.profile.avatar_url || undefined} />
+                <AvatarFallback>
+                  {player.profile.username.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <p className="font-medium">{player.profile.username}</p>
+                <p className="text-muted-foreground text-sm">
+                  Ordine di turno: {player.turn_order}
+                </p>
               </div>
-            ))}
-          </div>
-        </div>
-      </GradientCard>
+              {player.player_id === game.host_id && <Badge>Host</Badge>}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
       {isHost && (
         <div className="flex flex-col items-center gap-2">
