@@ -1,6 +1,6 @@
 import type { Profile } from "@/types/supabase";
-import * as crypto from "crypto";
 import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
+import * as crypto from "crypto";
 
 export async function getProfileById(supabase: SupabaseClient, id: string) {
   const { data, error } = await supabase
@@ -65,6 +65,26 @@ export async function ensureUserProfile(
     }
   }
   return true;
+}
+
+export type ProfileWithScore = {
+  profile_id: string;
+  username: string;
+  avatar_url: string | null;
+  total_score: number;
+};
+
+export async function getProfileWithScore(
+  supabase: SupabaseClient,
+  userId: string
+) {
+  // Use Supabase RPC to get leaderboard players (summed score, unique per player, paginated)
+  const { data, error } = await supabase.rpc("get_user_profile_with_score", {
+    user_id: userId,
+  });
+  if (error) throw error;
+
+  return data[0] as ProfileWithScore;
 }
 
 export function subscribeToProfiles(

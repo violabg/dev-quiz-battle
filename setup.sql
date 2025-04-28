@@ -198,3 +198,16 @@ BEGIN
   RETURN (SELECT COUNT(DISTINCT player_id) FROM game_players);
 END;
 $$ LANGUAGE plpgsql;
+
+-- Function to user details with player scores
+CREATE OR REPLACE FUNCTION get_user_profile_with_score(user_id uuid)
+RETURNS TABLE(profile_id uuid, username text, avatar_url text, total_score bigint) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT p.id, p.username, p.avatar_url, COALESCE(SUM(gp.score)::bigint, 0) AS total_score
+    FROM profiles p
+    LEFT JOIN game_players gp ON p.id = gp.player_id
+    WHERE p.id = user_id
+    GROUP BY p.id;
+END;
+$$ LANGUAGE plpgsql SECURITY INVOKER;
