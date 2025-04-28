@@ -13,7 +13,7 @@ export const PlayersStanding = ({ players }: PlayersStandingProps) => {
 
   return (
     <>
-      <div className="flex justify-center items-end space-x-4 py-8">
+      <div className="flex justify-center items-end space-x-4 py-8 min-w-lg">
         {winners.length > 1 && (
           <div className="flex flex-col items-center">
             <div className="flex justify-center items-center mb-2 rounded-full w-16 h-16 glass-card">
