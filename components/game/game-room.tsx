@@ -26,6 +26,7 @@ import {
   updateQuestion,
 } from "@/lib/supabase-questions";
 import type {
+  AnswerWithPlayer,
   GameDifficulty,
   GameLanguage,
   GameWithPlayers,
@@ -35,16 +36,6 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Scoreboard from "./game-scoreboard";
 
-type AnswerWithPlayer = {
-  id: string;
-  player_id: string;
-  selected_option: number;
-  is_correct: boolean;
-  response_time_ms: number;
-  score_earned: number;
-  answered_at: string;
-  player: { id: string; username: string; avatar_url?: string | null };
-};
 interface GameRoomProps {
   game: GameWithPlayers;
   onLeaveGame: () => void;
