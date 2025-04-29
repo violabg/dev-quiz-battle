@@ -6,16 +6,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import { CreateGameForm } from "./CreateGameForm";
 import { JoinGameForm } from "./JoinGameForm";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data?.user) {
-    redirect("/auth/login");
-  }
+  const { data } = await supabase.auth.getUser();
+
   const user = data.user;
   return (
     <main className="flex-1 py-8 container">
@@ -30,9 +27,7 @@ export default async function DashboardPage() {
               Imposta una nuova sfida di quiz di programmazione
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <CreateGameForm user={user} />
-          </CardContent>
+          <CardContent>{user && <CreateGameForm user={user} />}</CardContent>
         </Card>
         <Card className="gradient-border glass-card">
           <CardHeader>
@@ -41,9 +36,7 @@ export default async function DashboardPage() {
               Inserisci un codice partita per unirti a una partita esistente
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <JoinGameForm user={user} />
-          </CardContent>
+          <CardContent>{user && <JoinGameForm user={user} />}</CardContent>
         </Card>
       </div>
     </main>
