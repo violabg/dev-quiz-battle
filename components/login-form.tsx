@@ -65,6 +65,27 @@ export function LoginForm({
     }
   };
 
+  const handleSocialLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const supabase = createClient();
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "github",
+        options: {
+          redirectTo: `${window.location.origin}/auth/oauth?next=/protected`,
+        },
+      });
+
+      if (error) throw error;
+    } catch (error: unknown) {
+      console.log("error :>> ", error);
+      //  setError(error instanceof Error ? error.message : 'An error occurred')
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="gradient-border glass-card">
@@ -143,6 +164,14 @@ export function LoginForm({
               </div>
             </form>
           </Form>
+          <form onSubmit={handleSocialLogin}>
+            <div className="flex flex-col gap-6">
+              {/* {error && <p className="text-destructive-500 text-sm">{error}</p>} */}
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Logging in..." : "Continue with Github"}
+              </Button>
+            </div>
+          </form>
         </CardContent>
       </Card>
     </div>
