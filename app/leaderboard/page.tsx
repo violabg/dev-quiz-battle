@@ -11,7 +11,6 @@ import {
   getLeaderboardPlayers,
   LeaderboardPlayer,
 } from "@/lib/supabase-game-players";
-import { createServerSupabase } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 
 const PAGE_SIZE = 10;
@@ -36,11 +35,10 @@ interface LeaderboardPlayerForStanding {
 }
 
 async function getPlayers(page: number) {
-  const supabase = await createServerSupabase();
   const offset = (page - 1) * PAGE_SIZE;
   const limit = PAGE_SIZE;
   // Use helper from supabase-game-players
-  const data = await getLeaderboardPlayers(supabase, offset, limit);
+  const data = await getLeaderboardPlayers(offset, limit);
   // Map to expected structure for PlayersStanding
   const players: LeaderboardPlayerForStanding[] = (
     data as LeaderboardPlayer[]

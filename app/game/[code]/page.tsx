@@ -1,58 +1,28 @@
-"use client";
+import { getGameByCode } from "@/lib/supabase-games";
+import { createClient } from "@/lib/supabase/server";
+import { GameClientPage } from "./GameClientPage";
 
-import { GameLobby } from "@/components/game/game-lobby";
-import { GameRoom } from "@/components/game/game-room";
-import { Button } from "@/components/ui/button";
-import { useGameState } from "@/lib/hooks/useGameState";
-import { useSupabase } from "@/lib/supabase-provider";
-import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { use } from "react";
+export default async function GamePage({
+  params,
+}: {
+  params: { code: string };
+}) {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  const { data: game, error } = await getGameByCode(params.code);
 
-export default function GamePage(props: { params: Promise<{ code: string }> }) {
-  const params = use(props.params);
-  const { code } = params;
-  const { user, supabase, loading: authLoading } = useSupabase();
-  const { loading, game, isHost, handleStartGame, handleLeaveGame } =
-    useGameState({ code, user, supabase });
-  const router = useRouter();
-
-  // Redirect to login if not authenticated
-  if (loading || authLoading) {
-    return (
-      <main className="flex flex-1 justify-center items-center">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </main>
-    );
-  }
-
-  if (!game) {
+  if (error || !game || !data?.user) {
+    // Optionally, you can redirect or render a not found UI
     return (
       <main className="flex flex-col flex-1 justify-center items-center py-8 container">
         <h1 className="mb-4 font-bold text-2xl">Partita non trovata</h1>
-        <Button onClick={() => router.push("/dashboard")}>
+        <a href="/dashboard" className="btn btn-primary">
           Torna alla Dashboard
-        </Button>
+        </a>
       </main>
     );
   }
 
-  return (
-    <>
-      {game && (
-        <main className="flex-1 py-8 container">
-          {game.status === "waiting" ? (
-            <GameLobby
-              game={game}
-              isHost={isHost}
-              onStartGame={handleStartGame}
-              onLeaveGame={handleLeaveGame}
-            />
-          ) : (
-            <GameRoom game={game} onLeaveGame={handleLeaveGame} />
-          )}
-        </main>
-      )}
-    </>
-  );
+  // You may want to fetch user info here as well and pass it to the client component
+  return <GameClientPage code={game.code} user={data.user} />;
 }

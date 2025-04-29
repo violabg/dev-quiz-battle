@@ -3,10 +3,11 @@ import type {
   GetUserProfileWithScoreReturn,
   Profile,
 } from "@/types/supabase";
-import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
 import * as crypto from "crypto";
+import { createClient } from "./supabase/server";
 
-export async function getProfileById(supabase: SupabaseClient, id: string) {
+export async function getProfileById(id: string) {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
@@ -16,10 +17,8 @@ export async function getProfileById(supabase: SupabaseClient, id: string) {
   return data as Profile;
 }
 
-export async function getProfileByUsername(
-  supabase: SupabaseClient,
-  username: string
-) {
+export async function getProfileByUsername(username: string) {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
@@ -29,24 +28,21 @@ export async function getProfileByUsername(
   return data as Profile | null;
 }
 
-export async function createProfile(
-  supabase: SupabaseClient,
-  id: string,
-  username: string
-) {
+export async function createProfile(id: string, username: string) {
+  const supabase = await createClient();
   const { error } = await supabase.from("profiles").insert({ id, username });
   if (error) throw error;
   return true;
 }
 
-export async function ensureUserProfile(
-  supabase: SupabaseClient,
-  user: { id: string; email?: string | null }
-): Promise<boolean> {
+export async function ensureUserProfile(user: {
+  id: string;
+  email?: string | null;
+}): Promise<boolean> {
   if (!user) return false;
   let profile: Profile | null = null;
   try {
-    profile = await getProfileById(supabase, user.id);
+    profile = await getProfileById(user.id);
   } catch (e: unknown) {
     if (
       e &&
@@ -63,7 +59,7 @@ export async function ensureUserProfile(
       user.email?.split("@")[0] ||
       `user_${crypto.randomBytes(6).toString("base64url").substring(0, 6)}`;
     try {
-      await createProfile(supabase, user.id, username);
+      await createProfile(user.id, username);
     } catch {
       return false;
     }
@@ -71,10 +67,8 @@ export async function ensureUserProfile(
   return true;
 }
 
-export async function getProfileWithScore(
-  supabase: SupabaseClient,
-  userId: string
-) {
+export async function getProfileWithScore(userId: string) {
+  const supabase = await createClient();
   // Use Supabase RPC to get leaderboard players (summed score, unique per player, paginated)
   const { data, error } = await supabase.rpc("get_user_profile_with_score", {
     user_id: userId,
@@ -83,14 +77,14 @@ export async function getProfileWithScore(
   return data[0] as GetUserProfileWithScoreReturn;
 }
 
-export function subscribeToProfiles(
-  supabase: SupabaseClient,
+export async function subscribeToProfiles(
   handler: (payload: {
     eventType: string;
     new: Profile | null;
     old: Profile | null;
   }) => void
 ) {
+  const supabase = await createClient();
   return supabase
     .channel("profiles-updates")
     .on(

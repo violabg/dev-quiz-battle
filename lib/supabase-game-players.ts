@@ -4,7 +4,7 @@ import type {
   Player,
   Profile,
 } from "@/types/supabase";
-import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "./supabase/server";
 
 export type LeaderboardPlayer = {
   player_id: string;
@@ -14,11 +14,11 @@ export type LeaderboardPlayer = {
 };
 
 export async function addPlayerToGame(
-  supabase: SupabaseClient,
   game_id: string,
   player_id: string,
   turn_order: number
 ) {
+  const supabase = await createClient();
   const { error } = await supabase
     .from("game_players")
     .insert({ game_id, player_id, turn_order });
@@ -26,10 +26,8 @@ export async function addPlayerToGame(
   return true;
 }
 
-export async function getPlayersForGame(
-  supabase: SupabaseClient,
-  game_id: string
-) {
+export async function getPlayersForGame(game_id: string) {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("game_players")
     .select("*, profile:player_id(id, username, avatar_url)")
@@ -39,11 +37,8 @@ export async function getPlayersForGame(
   return data as (Player & { profile: Profile })[];
 }
 
-export async function getPlayerInGame(
-  supabase: SupabaseClient,
-  game_id: string,
-  player_id: string
-) {
+export async function getPlayerInGame(game_id: string, player_id: string) {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("game_players")
     .select("*")
@@ -54,11 +49,8 @@ export async function getPlayerInGame(
   return data as Player | null;
 }
 
-export async function getLeaderboardPlayers(
-  supabase: SupabaseClient,
-  offset: number,
-  limit: number
-) {
+export async function getLeaderboardPlayers(offset: number, limit: number) {
+  const supabase = await createClient();
   // Use Supabase RPC to get leaderboard players (summed score, unique per player, paginated)
   const { data, error } = await supabase.rpc("get_leaderboard_players", {
     offset_value: offset,
@@ -68,14 +60,14 @@ export async function getLeaderboardPlayers(
   return (data || []) as GetLeaderboardPlayersReturn[];
 }
 
-export function subscribeToGamePlayers(
-  supabase: SupabaseClient,
+export async function subscribeToGamePlayers(
   handler: (payload: {
     eventType: string;
     new: Player | null;
     old: Player | null;
   }) => void
 ) {
+  const supabase = await createClient();
   return supabase
     .channel("game-players-updates")
     .on(

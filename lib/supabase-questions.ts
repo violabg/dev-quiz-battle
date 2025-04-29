@@ -1,10 +1,8 @@
 import type { Question } from "@/types/supabase";
-import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "./supabase/server";
 
-export async function getQuestionsForGame(
-  supabase: SupabaseClient,
-  game_id: string
-) {
+export async function getQuestionsForGame(game_id: string) {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("questions")
     .select("*")
@@ -13,10 +11,8 @@ export async function getQuestionsForGame(
   return data as Question[];
 }
 
-export async function getQuestionById(
-  supabase: SupabaseClient,
-  question_id: string
-) {
+export async function getQuestionById(question_id: string) {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("questions")
     .select("*")
@@ -26,10 +22,8 @@ export async function getQuestionById(
   return data as Question;
 }
 
-export async function insertQuestion(
-  supabase: SupabaseClient,
-  question: Partial<Question>
-) {
+export async function insertQuestion(question: Partial<Question>) {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("questions")
     .insert(question)
@@ -40,10 +34,10 @@ export async function insertQuestion(
 }
 
 export async function updateQuestion(
-  supabase: SupabaseClient,
   questionId: string,
   update: Partial<Question>
 ) {
+  const supabase = await createClient();
   const { error } = await supabase
     .from("questions")
     .update(update)
@@ -53,11 +47,11 @@ export async function updateQuestion(
 }
 
 export async function getQuestionsByLanguageAndDifficulty(
-  supabase: SupabaseClient,
   language: string,
   difficulty: string,
   since?: string
 ) {
+  const supabase = await createClient();
   let query = supabase
     .from("questions")
     .select("*")
@@ -71,14 +65,14 @@ export async function getQuestionsByLanguageAndDifficulty(
   return data as Question[];
 }
 
-export function subscribeToQuestions(
-  supabase: SupabaseClient,
+export async function subscribeToQuestions(
   handler: (payload: {
     eventType: string;
     new: Question | null;
     old: Question | null;
   }) => void
 ) {
+  const supabase = await createClient();
   return supabase
     .channel("questions-updates")
     .on(

@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Code, Cpu, Users } from "lucide-react";
 import Link from "next/link";
 
-export default function Home() {
+export default async function Home() {
   return (
     <main className="flex-1">
       <section className="py-12 md:py-24 lg:py-32">

@@ -3,12 +3,10 @@ import type {
   CalculateScoreArgs,
   CalculateScoreReturn,
 } from "@/types/supabase";
-import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "./supabase/server";
 
-export async function insertAnswer(
-  supabase: SupabaseClient,
-  answer: Partial<Answer>
-) {
+export async function insertAnswer(answer: Partial<Answer>) {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("answers")
     .insert(answer)
@@ -18,10 +16,8 @@ export async function insertAnswer(
   return data as Answer;
 }
 
-export async function getAnswersForQuestion(
-  supabase: SupabaseClient,
-  question_id: string
-) {
+export async function getAnswersForQuestion(question_id: string) {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("answers")
     .select("*")
@@ -30,10 +26,8 @@ export async function getAnswersForQuestion(
   return data as Answer[];
 }
 
-export async function getAnswersWithPlayerForQuestion(
-  supabase: SupabaseClient,
-  question_id: string
-) {
+export async function getAnswersWithPlayerForQuestion(question_id: string) {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("answers")
     .select(`*, player:player_id(id, username, avatar_url)`)
@@ -42,14 +36,14 @@ export async function getAnswersWithPlayerForQuestion(
   return data;
 }
 
-export function subscribeToAnswers(
-  supabase: SupabaseClient,
+export async function subscribeToAnswers(
   handler: (payload: {
     eventType: string;
     new: Answer | null;
     old: Answer | null;
   }) => void
 ) {
+  const supabase = await createClient();
   return supabase
     .channel("answers-updates")
     .on(
@@ -71,25 +65,23 @@ export function unsubscribeFromAnswers(channel: { unsubscribe: () => void }) {
 }
 
 export const calculateScore = async (
-  supabase: SupabaseClient,
   args: CalculateScoreArgs
 ): Promise<{ data: CalculateScoreReturn | null; error: unknown }> => {
+  const supabase = await createClient();
   const { data, error } = await supabase.rpc("calculate_score", args);
   return { data, error };
 };
 
-export const submitAnswer = async (
-  supabase: SupabaseClient,
-  params: {
-    questionId: string;
-    playerId: string;
-    gameId: string;
-    selectedOption: number;
-    isCorrect: boolean;
-    responseTimeMs: number;
-    scoreEarned: number;
-  }
-) => {
+export const submitAnswer = async (params: {
+  questionId: string;
+  playerId: string;
+  gameId: string;
+  selectedOption: number;
+  isCorrect: boolean;
+  responseTimeMs: number;
+  scoreEarned: number;
+}) => {
+  const supabase = await createClient();
   const { error } = await supabase.rpc("submit_answer", {
     p_question_id: params.questionId,
     p_player_id: params.playerId,

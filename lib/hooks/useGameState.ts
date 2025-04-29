@@ -11,32 +11,32 @@ import {
 } from "@/lib/supabase-games";
 import { getProfileById } from "@/lib/supabase-profiles";
 import type { GameWithPlayers } from "@/types/supabase";
-import type { SupabaseClient, User } from "@supabase/auth-helpers-nextjs";
+import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { createClient } from "../supabase/client";
 
 export function useGameState({
   code,
   user,
-  supabase,
 }: {
   code: string;
   user: User | null;
-  supabase: SupabaseClient;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [game, setGame] = useState<GameWithPlayers | null>(null);
   const [gameId, setGameId] = useState<string | null>(null);
   const [isHost, setIsHost] = useState(false);
+  const supabase = createClient();
 
   const fetchGame = useCallback(async () => {
     if (!user) return;
     try {
-      const { data: gameData } = await getGameByCode(supabase, code);
-      const playersData = await getPlayersForGame(supabase, gameData.id);
-      const hostData = await getProfileById(supabase, gameData.host_id);
+      const { data: gameData } = await getGameByCode(code);
+      const playersData = await getPlayersForGame(gameData.id);
+      const hostData = await getProfileById(gameData.host_id);
       setIsHost(user.id === gameData.host_id);
       const gameWithPlayers = {
         ...gameData,
@@ -56,7 +56,7 @@ export function useGameState({
     } finally {
       setLoading(false);
     }
-  }, [user, code, supabase, router]);
+  }, [user, code, router]);
 
   useEffect(() => {
     if (!user) return;
@@ -65,39 +65,45 @@ export function useGameState({
 
   useEffect(() => {
     if (!user || !gameId) return;
-    const gameSubscription = subscribeToGame(supabase, {
-      gameId,
-      onUpdate: (payload) => {
-        if (payload.eventType === "DELETE") {
-          setGame(null);
-          toast("La partita è stata chiusa.");
-          router.push("/dashboard");
-          return;
-        }
+    let gameSubscription: any;
+    let playersSubscription: any;
+
+    (async () => {
+      gameSubscription = await subscribeToGame({
+        gameId,
+        onUpdate: (payload) => {
+          if (payload.eventType === "DELETE") {
+            setGame(null);
+            toast("La partita è stata chiusa.");
+            router.push("/dashboard");
+            return;
+          }
+          setGame((currentGame) => {
+            if (!currentGame) return null;
+            return { ...currentGame, ...payload.new };
+          });
+        },
+      });
+      playersSubscription = subscribeToGamePlayers(async () => {
+        if (!gameId) return;
+        const playersData = await getPlayersForGame(gameId);
         setGame((currentGame) => {
           if (!currentGame) return null;
-          return { ...currentGame, ...payload.new };
+          return { ...currentGame, players: playersData };
         });
-      },
-    });
-    const playersSubscription = subscribeToGamePlayers(supabase, async () => {
-      if (!gameId) return;
-      const playersData = await getPlayersForGame(supabase, gameId);
-      setGame((currentGame) => {
-        if (!currentGame) return null;
-        return { ...currentGame, players: playersData };
       });
-    });
+    })();
+
     return () => {
-      unsubscribeFromGame(gameSubscription);
-      unsubscribeFromGamePlayers(playersSubscription);
+      if (gameSubscription) unsubscribeFromGame(gameSubscription);
+      if (playersSubscription) unsubscribeFromGamePlayers(playersSubscription);
     };
-  }, [user, supabase, router, gameId]);
+  }, [user, router, gameId]);
 
   const handleStartGame = async () => {
     if (!game || !isHost) return;
     try {
-      await updateGameStatus(supabase, game.id, "active");
+      await updateGameStatus(game.id, "active");
       setGame((currentGame) => {
         if (!currentGame) return null;
         return { ...currentGame, status: "active" };
@@ -115,7 +121,7 @@ export function useGameState({
     if (!game || !user) return;
     try {
       if (isHost) {
-        await updateGameStatus(supabase, game.id, "completed");
+        await updateGameStatus(game.id, "completed");
       } else {
         const { error } = await supabase
           .from("game_players")

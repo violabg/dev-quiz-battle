@@ -4,13 +4,13 @@ import { Button } from "@/components/ui/button";
 import { addPlayerToGame } from "@/lib/supabase-game-players";
 import { createGame } from "@/lib/supabase-games";
 import { createProfile, getProfileByUsername } from "@/lib/supabase-profiles";
-import { useSupabase } from "@/lib/supabase-provider";
+import { createClient } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export default function SeedData() {
-  const { supabase } = useSupabase();
+  const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
 
@@ -46,10 +46,7 @@ export default function SeedData() {
       // Create users and profiles
       for (const user of testUsers) {
         // Check if user already exists
-        const existingUser = await getProfileByUsername(
-          supabase,
-          user.username
-        );
+        const existingUser = await getProfileByUsername(user.username);
         if (existingUser) {
           addLog(`User ${user.username} already exists, skipping...`);
           createdUsers.push(existingUser);
@@ -81,7 +78,7 @@ export default function SeedData() {
         // Create profile
         addLog(`Creating profile for ${user.username}...`);
         try {
-          await createProfile(supabase, authData.user.id, user.username);
+          await createProfile(authData.user.id, user.username);
         } catch (profileError: unknown) {
           addLog(
             `Error creating profile for ${user.username}: ${
@@ -101,7 +98,7 @@ export default function SeedData() {
         addLog(`Creating sample game with host ${createdUsers[0].username}...`);
         let gameData;
         try {
-          const { data } = await createGame(supabase, hostId, 4);
+          const { data } = await createGame(hostId, 4);
           gameData = data;
         } catch (gameError: unknown) {
           addLog(
@@ -116,12 +113,7 @@ export default function SeedData() {
           for (let i = 0; i < createdUsers.length; i++) {
             addLog(`Adding player ${createdUsers[i].username} to game...`);
             try {
-              await addPlayerToGame(
-                supabase,
-                gameData.id,
-                createdUsers[i].id,
-                i + 1
-              );
+              await addPlayerToGame(gameData.id, createdUsers[i].id, i + 1);
               addLog(`Added player ${createdUsers[i].username} to game`);
             } catch (playerError: unknown) {
               addLog(

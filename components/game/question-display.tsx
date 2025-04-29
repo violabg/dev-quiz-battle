@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAnswersWithPlayerForQuestion } from "@/lib/supabase-answers";
-import { useSupabase } from "@/lib/supabase-provider";
-import type { Question } from "@/types/supabase";
+import type { AnswerWithPlayer, Question } from "@/types/supabase";
+import { User } from "@supabase/supabase-js";
 import { Check, Clock, X } from "lucide-react";
 import { Highlight, themes } from "prism-react-renderer";
 import { useEffect, useMemo, useState } from "react";
@@ -16,9 +16,8 @@ interface QuestionDisplayProps {
   winner?: { playerId: string; username: string; score: number } | null;
   allAnswers: AnswerWithPlayer[];
   timeIsUp?: boolean;
+  user: User;
 }
-
-import type { AnswerWithPlayer } from "@/types/supabase";
 
 export function QuestionDisplay({
   question,
@@ -26,8 +25,8 @@ export function QuestionDisplay({
   winner,
   allAnswers,
   timeIsUp,
+  user,
 }: QuestionDisplayProps) {
-  const { user, supabase } = useSupabase();
   const [hasAnswered, setHasAnswered] = useState(false);
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [activeTab, setActiveTab] = useState<string>("question");
@@ -74,10 +73,7 @@ export function QuestionDisplay({
     // Check if user has already answered
     const checkUserAnswer = async () => {
       if (!user) return;
-      const answers = await getAnswersWithPlayerForQuestion(
-        supabase,
-        question.id
-      );
+      const answers = await getAnswersWithPlayerForQuestion(question.id);
       if (answers && answers.some((a) => a.player_id === user.id)) {
         setHasAnswered(true);
       }
@@ -88,7 +84,7 @@ export function QuestionDisplay({
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [question.id, question.started_at, supabase, user]);
+  }, [question.id, question.started_at, user]);
 
   const handleSelectOption = (index: number) => {
     if (hasAnswered || winner) return;

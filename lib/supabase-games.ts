@@ -3,14 +3,14 @@ import type {
   GenerateUniqueGameCodeArgs,
   GenerateUniqueGameCodeReturn,
 } from "@/types/supabase";
-import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "./supabase/server";
 
 export async function createGame(
-  supabase: SupabaseClient,
   host_id: string,
   max_players: number,
   time_limit: number = 120
 ) {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("games")
     .insert({ host_id, status: "waiting", max_players, code: "", time_limit })
@@ -20,7 +20,8 @@ export async function createGame(
   return { data: data as Game, error };
 }
 
-export async function getGameByCode(supabase: SupabaseClient, code: string) {
+export async function getGameByCode(code: string) {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("games")
     .select("*")
@@ -31,18 +32,15 @@ export async function getGameByCode(supabase: SupabaseClient, code: string) {
 }
 
 export async function generateUniqueGameCode(
-  supabase: SupabaseClient,
   args: GenerateUniqueGameCodeArgs = {}
 ): Promise<{ data: GenerateUniqueGameCodeReturn | null; error: unknown }> {
+  const supabase = await createClient();
   const { data, error } = await supabase.rpc("generate_unique_game_code", args);
   return { data, error };
 }
 
-export const updateGameTurn = async (
-  supabase: SupabaseClient,
-  gameId: string,
-  nextTurn: number
-) => {
+export const updateGameTurn = async (gameId: string, nextTurn: number) => {
+  const supabase = await createClient();
   const { error } = await supabase
     .from("games")
     .update({ current_turn: nextTurn })
@@ -51,10 +49,10 @@ export const updateGameTurn = async (
 };
 
 export const updateGameStatus = async (
-  supabase: SupabaseClient,
   gameId: string,
   status: "waiting" | "active" | "completed"
 ) => {
+  const supabase = await createClient();
   const { error } = await supabase
     .from("games")
     .update({ status })
@@ -62,8 +60,7 @@ export const updateGameStatus = async (
   return { error };
 };
 
-export function subscribeToGame(
-  supabase: SupabaseClient,
+export async function subscribeToGame(
   options: {
     gameId?: string;
     onUpdate: (payload: {
@@ -73,6 +70,7 @@ export function subscribeToGame(
     }) => void;
   } = { onUpdate: () => {} } // Add default value for options
 ) {
+  const supabase = await createClient();
   // Ensure options is defined
   if (!options) {
     options = { onUpdate: () => {} };

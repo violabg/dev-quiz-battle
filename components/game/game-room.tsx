@@ -17,7 +17,6 @@ import {
   unsubscribeFromAnswers,
 } from "@/lib/supabase-answers";
 import { updateGameStatus, updateGameTurn } from "@/lib/supabase-games";
-import { useSupabase } from "@/lib/supabase-provider";
 import {
   getQuestionsForGame,
   insertQuestion,
@@ -32,6 +31,7 @@ import type {
   GameWithPlayers,
   Question,
 } from "@/types/supabase";
+import { User } from "@supabase/supabase-js";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import Scoreboard from "./game-scoreboard";
@@ -39,10 +39,14 @@ import Scoreboard from "./game-scoreboard";
 interface GameRoomProps {
   game: GameWithPlayers;
   onLeaveGame: () => void;
+  user: User;
 }
 
-export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
-  const { user, supabase } = useSupabase();
+export function GameRoom({
+  game,
+  user,
+  onLeaveGame,
+}: Omit<GameRoomProps, "isHost">) {
   // --- Place these at the very top to avoid 'used before declaration' errors ---
   const [allAnswers, setAllAnswers] = useState<AnswerWithPlayer[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
@@ -78,7 +82,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
     if (!currentQuestion?.ended_at) return;
     // --- DB check for game completion: after each question ends, check if all players have completed a turn (unique creators)
     const checkIfAllTurnsCompleted = async () => {
-      const questions = await getQuestionsForGame(supabase, game.id);
+      const questions = await getQuestionsForGame(game.id);
       // Only consider questions that are completed
       const completedQuestions = questions.filter((q) => q.ended_at);
       // Get unique player IDs who have created a completed question
@@ -89,18 +93,12 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
         uniqueCreators.size >= game.players.length &&
         game.status !== "completed"
       ) {
-        await updateGameStatus(supabase, game.id, "completed");
+        await updateGameStatus(game.id, "completed");
       }
     };
 
     checkIfAllTurnsCompleted();
-  }, [
-    currentQuestion?.ended_at,
-    game.id,
-    game.players.length,
-    game.status,
-    supabase,
-  ]);
+  }, [currentQuestion?.ended_at, game.id, game.players.length, game.status]);
 
   // Prevent further turns if game is completed
   const isRoundComplete = game.status === "completed";
@@ -124,7 +122,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
   useEffect(() => {
     if (!game.id) return;
     (async () => {
-      const questions = await getQuestionsForGame(supabase, game.id);
+      const questions = await getQuestionsForGame(game.id);
       if (questions && questions.length > 0) {
         const data = questions[0];
         setCurrentQuestion(data as Question);
@@ -133,16 +131,16 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
         );
       }
     })();
-  }, [game.id, supabase]);
+  }, [game.id]);
 
   // Subscribe to questions and answers
   useEffect(() => {
     if (!game.id) return;
 
-    // Set up real-time subscription for question updates
-    const questionSubscription = subscribeToQuestions(
-      supabase,
-      async (payload) => {
+    let questionSubscription: any;
+
+    const subscribe = async () => {
+      questionSubscription = await subscribeToQuestions(async (payload) => {
         if (payload.new && payload.new.game_id === game.id) {
           setCurrentQuestion(payload.new as Question);
           setQuestionStartTime(
@@ -151,13 +149,17 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
               : Date.now()
           );
         }
-      }
-    );
+      });
+    };
+
+    subscribe();
 
     return () => {
-      unsubscribeFromQuestions(questionSubscription);
+      if (questionSubscription) {
+        unsubscribeFromQuestions(questionSubscription);
+      }
     };
-  }, [supabase, game.id]);
+  }, [game.id]);
 
   // Handle answers subscription separately
   useEffect(() => {
@@ -167,29 +169,30 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
     }
 
     // Set up real-time subscription for answer updates
-    const answerSubscription = subscribeToAnswers(supabase, async (payload) => {
-      if (payload.new && payload.new.question_id === currentQuestion.id) {
-        const answers = await getAnswersWithPlayerForQuestion(
-          supabase,
-          currentQuestion.id
-        );
-        setAllAnswers(answers);
-      }
-    });
+    let answerSubscription: any;
+
+    const subscribe = async () => {
+      answerSubscription = await subscribeToAnswers(async (payload) => {
+        if (payload.new && payload.new.question_id === currentQuestion.id) {
+          const answers = await getAnswersWithPlayerForQuestion(
+            currentQuestion.id
+          );
+          setAllAnswers(answers);
+        }
+      });
+    };
+    subscribe();
 
     // Fetch initial answers
     (async () => {
-      const answers = await getAnswersWithPlayerForQuestion(
-        supabase,
-        currentQuestion.id
-      );
+      const answers = await getAnswersWithPlayerForQuestion(currentQuestion.id);
       setAllAnswers(answers);
     })();
 
     return () => {
       if (answerSubscription) unsubscribeFromAnswers(answerSubscription);
     };
-  }, [supabase, currentQuestion]); // Changed dependencies to only include what's needed
+  }, [currentQuestion]); // Changed dependencies to only include what's needed
 
   // Timer: check if time is up, all answered, or winner, and end question if needed
   useEffect(() => {
@@ -205,7 +208,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
       if (now - questionStartTime >= TIME_LIMIT || allPlayersAnswered) {
         // End question: update ended_at in DB if not already set
         if (!currentQuestion.ended_at) {
-          await updateQuestion(supabase, currentQuestion.id, {
+          await updateQuestion(currentQuestion.id, {
             ended_at: new Date().toISOString(),
           });
         }
@@ -219,7 +222,6 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
     game.players.length,
     game.time_limit,
     questionStartTime,
-    supabase,
     winner,
   ]);
 
@@ -255,7 +257,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
       const isCorrect = selectedOption === currentQuestion.correct_answer;
 
       // Calculate score based on response time and game time limit
-      const { data: scoreData } = await calculateScore(supabase, {
+      const { data: scoreData } = await calculateScore({
         response_time_ms: responseTime,
         time_limit_ms:
           typeof game.time_limit === "number" ? game.time_limit * 1000 : 120000,
@@ -263,7 +265,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
       const scoreEarned = isCorrect ? scoreData ?? 0 : 0;
 
       // Save answer to database in a transaction to ensure data consistency
-      const { error: transactionError } = await submitAnswer(supabase, {
+      const { error: transactionError } = await submitAnswer({
         questionId: currentQuestion.id,
         playerId: user.id,
         gameId: game.id,
@@ -279,7 +281,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
 
       // If correct, end question for everyone
       if (isCorrect && !currentQuestion.ended_at) {
-        await updateQuestion(supabase, currentQuestion.id, {
+        await updateQuestion(currentQuestion.id, {
           ended_at: new Date(now).toISOString(),
         });
       }
@@ -302,7 +304,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
         return;
       } else {
         // Update current_turn in the database for all clients
-        const { error } = await updateGameTurn(supabase, game.id, nextIndex);
+        const { error } = await updateGameTurn(game.id, nextIndex);
         if (error) throw error;
       }
       // Local state will be updated by the subscription
@@ -342,7 +344,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
       });
       const startedAt = new Date().toISOString();
       // Save question to database (add started_at for timer sync)
-      const data = await insertQuestion(supabase, {
+      const data = await insertQuestion({
         game_id: game.id,
         created_by_player_id: user.id,
         language: lang,
@@ -358,7 +360,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
       setQuestionStartTime(new Date(startedAt).getTime());
       // Aggiorna lo stato della partita a 'active' se non già attivo
       if (game.status !== "active") {
-        await updateGameStatus(supabase, game.id, "active");
+        await updateGameStatus(game.id, "active");
       }
     } catch {
       toast.error("Errore", {
@@ -431,6 +433,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
               winner={winner}
               allAnswers={allAnswers}
               timeIsUp={!!currentQuestion.ended_at}
+              user={user}
             />
           ) : (
             <QuestionSelection

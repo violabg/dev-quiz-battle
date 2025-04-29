@@ -10,13 +10,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useSupabase } from "@/lib/supabase-provider";
-import { LogOut, User } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { User } from "@supabase/supabase-js";
+import { LogOut, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export function Navbar() {
-  const { user, supabase } = useSupabase();
+export function Navbar({ user }: { user: User }) {
+  const supabase = createClient();
   const pathname = usePathname();
 
   const handleSignOut = async () => {
@@ -58,7 +59,7 @@ export function Navbar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
-                  <User className="w-5 h-5" />
+                  <UserIcon className="w-5 h-5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -79,7 +80,7 @@ export function Navbar() {
             </DropdownMenu>
           ) : (
             <Button asChild>
-              <Link href="/login">Accedi</Link>
+              <Link href="/auth/login">Accedi</Link>
             </Button>
           )}
         </div>
