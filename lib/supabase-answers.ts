@@ -3,10 +3,10 @@ import type {
   CalculateScoreArgs,
   CalculateScoreReturn,
 } from "@/types/supabase";
-import { createClient } from "./supabase/server";
+import { createClient } from "./supabase/client";
 
 export async function insertAnswer(answer: Partial<Answer>) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("answers")
     .insert(answer)
@@ -17,7 +17,7 @@ export async function insertAnswer(answer: Partial<Answer>) {
 }
 
 export async function getAnswersForQuestion(question_id: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("answers")
     .select("*")
@@ -27,7 +27,7 @@ export async function getAnswersForQuestion(question_id: string) {
 }
 
 export async function getAnswersWithPlayerForQuestion(question_id: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("answers")
     .select(`*, player:player_id(id, username, avatar_url)`)
@@ -43,7 +43,7 @@ export async function subscribeToAnswers(
     old: Answer | null;
   }) => void
 ) {
-  const supabase = await createClient();
+  const supabase = createClient();
   return supabase
     .channel("answers-updates")
     .on(
@@ -67,7 +67,7 @@ export function unsubscribeFromAnswers(channel: { unsubscribe: () => void }) {
 export const calculateScore = async (
   args: CalculateScoreArgs
 ): Promise<{ data: CalculateScoreReturn | null; error: unknown }> => {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase.rpc("calculate_score", args);
   return { data, error };
 };
@@ -81,7 +81,7 @@ export const submitAnswer = async (params: {
   responseTimeMs: number;
   scoreEarned: number;
 }) => {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { error } = await supabase.rpc("submit_answer", {
     p_question_id: params.questionId,
     p_player_id: params.playerId,

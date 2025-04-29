@@ -4,7 +4,7 @@ import type {
   Player,
   Profile,
 } from "@/types/supabase";
-import { createClient } from "./supabase/server";
+import { createClient } from "./supabase/client";
 
 export type LeaderboardPlayer = {
   player_id: string;
@@ -18,7 +18,7 @@ export async function addPlayerToGame(
   player_id: string,
   turn_order: number
 ) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { error } = await supabase
     .from("game_players")
     .insert({ game_id, player_id, turn_order });
@@ -27,7 +27,7 @@ export async function addPlayerToGame(
 }
 
 export async function getPlayersForGame(game_id: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("game_players")
     .select("*, profile:player_id(id, username, avatar_url)")
@@ -38,7 +38,7 @@ export async function getPlayersForGame(game_id: string) {
 }
 
 export async function getPlayerInGame(game_id: string, player_id: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("game_players")
     .select("*")
@@ -50,7 +50,7 @@ export async function getPlayerInGame(game_id: string, player_id: string) {
 }
 
 export async function getLeaderboardPlayers(offset: number, limit: number) {
-  const supabase = await createClient();
+  const supabase = createClient();
   // Use Supabase RPC to get leaderboard players (summed score, unique per player, paginated)
   const { data, error } = await supabase.rpc("get_leaderboard_players", {
     offset_value: offset,
@@ -67,7 +67,7 @@ export async function subscribeToGamePlayers(
     old: Player | null;
   }) => void
 ) {
-  const supabase = await createClient();
+  const supabase = createClient();
   return supabase
     .channel("game-players-updates")
     .on(

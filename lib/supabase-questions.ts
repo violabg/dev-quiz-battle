@@ -1,8 +1,8 @@
 import type { Question } from "@/types/supabase";
-import { createClient } from "./supabase/server";
+import { createClient } from "./supabase/client";
 
 export async function getQuestionsForGame(game_id: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("questions")
     .select("*")
@@ -12,7 +12,7 @@ export async function getQuestionsForGame(game_id: string) {
 }
 
 export async function getQuestionById(question_id: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("questions")
     .select("*")
@@ -23,7 +23,7 @@ export async function getQuestionById(question_id: string) {
 }
 
 export async function insertQuestion(question: Partial<Question>) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("questions")
     .insert(question)
@@ -37,7 +37,7 @@ export async function updateQuestion(
   questionId: string,
   update: Partial<Question>
 ) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { error } = await supabase
     .from("questions")
     .update(update)
@@ -51,7 +51,7 @@ export async function getQuestionsByLanguageAndDifficulty(
   difficulty: string,
   since?: string
 ) {
-  const supabase = await createClient();
+  const supabase = createClient();
   let query = supabase
     .from("questions")
     .select("*")
@@ -72,7 +72,7 @@ export async function subscribeToQuestions(
     old: Question | null;
   }) => void
 ) {
-  const supabase = await createClient();
+  const supabase = createClient();
   return supabase
     .channel("questions-updates")
     .on(

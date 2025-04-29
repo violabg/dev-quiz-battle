@@ -4,10 +4,10 @@ import type {
   Profile,
 } from "@/types/supabase";
 import * as crypto from "crypto";
-import { createClient } from "./supabase/server";
+import { createClient } from "./supabase/client";
 
 export async function getProfileById(id: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
@@ -18,7 +18,7 @@ export async function getProfileById(id: string) {
 }
 
 export async function getProfileByUsername(username: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
@@ -29,7 +29,7 @@ export async function getProfileByUsername(username: string) {
 }
 
 export async function createProfile(id: string, username: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { error } = await supabase.from("profiles").insert({ id, username });
   if (error) throw error;
   return true;
@@ -68,7 +68,7 @@ export async function ensureUserProfile(user: {
 }
 
 export async function getProfileWithScore(userId: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
   // Use Supabase RPC to get leaderboard players (summed score, unique per player, paginated)
   const { data, error } = await supabase.rpc("get_user_profile_with_score", {
     user_id: userId,
@@ -84,7 +84,7 @@ export async function subscribeToProfiles(
     old: Profile | null;
   }) => void
 ) {
-  const supabase = await createClient();
+  const supabase = createClient();
   return supabase
     .channel("profiles-updates")
     .on(
