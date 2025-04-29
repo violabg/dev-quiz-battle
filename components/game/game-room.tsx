@@ -32,7 +32,7 @@ import type {
   GameWithPlayers,
   Question,
 } from "@/types/supabase";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import Scoreboard from "./game-scoreboard";
 
@@ -69,9 +69,9 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
   const isNextPlayersTurn =
     game.players[nextPlayerIndex]?.player_id === user?.id;
 
-  // --- DB check for game completion: after each question ends, check if all players have completed a turn (unique creators)
   useEffect(() => {
     if (!currentQuestion?.ended_at) return;
+    // --- DB check for game completion: after each question ends, check if all players have completed a turn (unique creators)
     const checkIfAllTurnsCompleted = async () => {
       const questions = await getQuestionsForGame(supabase, game.id);
       // Only consider questions that are completed
@@ -87,14 +87,9 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
         await updateGameStatus(supabase, game.id, "completed");
       }
     };
+
     checkIfAllTurnsCompleted();
-  }, [
-    currentQuestion?.ended_at,
-    game.id,
-    game.players.length,
-    game.status,
-    supabase,
-  ]);
+  }, [currentQuestion, game, supabase]);
 
   // Prevent further turns if game is completed
   const isRoundComplete = game.status === "completed";
@@ -108,11 +103,9 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
     ) {
       setCurrentPlayerIndex(game.current_turn);
       // Reset question-related state for all clients when turn changes
-      setCurrentQuestion(null);
-      setWinner(null);
-      setShowNextTurn(false);
-      setAllAnswers([]);
+      resetQuestionState();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPlayerIndex, game]);
 
   const [allAnswers, setAllAnswers] = useState<AnswerWithPlayer[]>([]);
@@ -211,13 +204,13 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
     }, 1000);
     return () => clearInterval(interval);
   }, [
-    currentQuestion,
-    questionStartTime,
-    winner,
-    supabase,
     allAnswers.length,
+    currentQuestion,
     game.players.length,
     game.time_limit,
+    questionStartTime,
+    supabase,
+    winner,
   ]);
 
   // Show next turn button if there is a winner OR if time is up and no winner
@@ -242,11 +235,6 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
   // Only show correct answer (green) if someone answered correctly or time is up
   // Mark wrong answers in red for everyone as soon as they are given
   // Reset answer state on new turn
-  useEffect(() => {
-    // Reset winner and answer state on new question
-    setWinner(null);
-    setShowNextTurn(false);
-  }, [currentQuestion?.id]);
 
   // When an answer is submitted, check if it's correct and if so, set winner and end question
   const handleSubmitAnswer = async (selectedOption: number) => {
@@ -413,32 +401,13 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
     return () => clearTimeout(timeoutId);
   }, [currentQuestion?.ended_at, allAnswers]);
 
-  // After each question ends, check in the DB if all players have completed a turn (unique creators)
-  useEffect(() => {
-    if (!currentQuestion?.ended_at) return;
-    const checkIfAllTurnsCompleted = async () => {
-      const questions = await getQuestionsForGame(supabase, game.id);
-      // Only consider questions that are completed
-      const completedQuestions = questions.filter((q) => q.ended_at);
-      // Get unique player IDs who have created a completed question
-      const uniqueCreators = new Set(
-        completedQuestions.map((q) => q.created_by_player_id)
-      );
-      if (
-        uniqueCreators.size >= game.players.length &&
-        game.status !== "completed"
-      ) {
-        await updateGameStatus(supabase, game.id, "completed");
-      }
-    };
-    checkIfAllTurnsCompleted();
-  }, [
-    currentQuestion?.ended_at,
-    game.id,
-    game.players.length,
-    game.status,
-    supabase,
-  ]);
+  // Helper to reset question-related state
+  const resetQuestionState = useCallback(() => {
+    setCurrentQuestion(null);
+    setWinner(null);
+    setShowNextTurn(false);
+    setAllAnswers([]);
+  }, []);
 
   return (
     <div className="space-y-8">
