@@ -29,6 +29,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [gameCode, setGameCode] = useState("");
   const [maxPlayers, setMaxPlayers] = useState(4);
+  const [timeLimit, setTimeLimit] = useState(120);
   const [loading, setLoading] = useState(false);
 
   // Redirect to login if not authenticated
@@ -45,7 +46,13 @@ export default function DashboardPage() {
       // Ensure user profile exists
       const profileExists = await ensureUserProfile(supabase, user);
       if (!profileExists) return;
-      const { data, error } = await createGame(supabase, user.id, maxPlayers);
+      // Pass timeLimit to createGame
+      const { data, error } = await createGame(
+        supabase,
+        user.id,
+        maxPlayers,
+        timeLimit
+      );
       if (error) throw error;
       // Add the host as the first player with turn_order 1
       await addPlayerToGame(supabase, data.id, user.id, 1);
@@ -139,6 +146,21 @@ export default function DashboardPage() {
                   value={maxPlayers}
                   onChange={(e) =>
                     setMaxPlayers(Number.parseInt(e.target.value))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="time-limit">
+                  Tempo limite per domanda (secondi)
+                </Label>
+                <Input
+                  id="time-limit"
+                  type="number"
+                  min={30}
+                  max={300}
+                  value={timeLimit}
+                  onChange={(e) =>
+                    setTimeLimit(Number.parseInt(e.target.value))
                   }
                 />
               </div>

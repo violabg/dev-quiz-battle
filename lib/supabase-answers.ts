@@ -68,10 +68,12 @@ export function unsubscribeFromAnswers(channel: { unsubscribe: () => void }) {
 
 export const calculateScore = async (
   supabase: SupabaseClient,
-  responseTimeMs: number
+  responseTimeMs: number,
+  timeLimitMs: number
 ) => {
   const { data, error } = await supabase.rpc("calculate_score", {
     response_time_ms: responseTimeMs,
+    time_limit_ms: timeLimitMs,
   });
   return { data, error };
 };

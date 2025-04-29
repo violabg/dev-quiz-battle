@@ -40,6 +40,7 @@ export interface Database {
           status: "waiting" | "active" | "completed";
           current_turn: number;
           max_players: number;
+          time_limit: number;
           created_at: string;
           updated_at: string;
         };
@@ -50,6 +51,7 @@ export interface Database {
           status: "waiting" | "active" | "completed";
           current_turn: number;
           max_players?: number;
+          time_limit?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -60,6 +62,7 @@ export interface Database {
           status?: "waiting" | "active" | "completed";
           current_turn: number;
           max_players?: number;
+          time_limit?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -177,6 +180,7 @@ export interface Database {
       calculate_score: {
         Args: {
           response_time_ms: number;
+          time_limit_ms: number;
         };
         Returns: number;
       };

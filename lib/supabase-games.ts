@@ -4,11 +4,12 @@ import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
 export async function createGame(
   supabase: SupabaseClient,
   host_id: string,
-  max_players: number
+  max_players: number,
+  time_limit: number = 120
 ) {
   const { data, error } = await supabase
     .from("games")
-    .insert({ host_id, status: "waiting", max_players, code: "" })
+    .insert({ host_id, status: "waiting", max_players, code: "", time_limit })
     .select()
     .single();
   if (error) throw error;

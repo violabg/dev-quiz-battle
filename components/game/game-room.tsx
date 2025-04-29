@@ -191,7 +191,10 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
   // Timer: check if time is up, all answered, or winner, and end question if needed
   useEffect(() => {
     if (!currentQuestion || !questionStartTime || winner) return;
-    const TIME_LIMIT = 120 * 1000; // 120 seconds
+    const TIME_LIMIT =
+      (typeof game.time_limit === "number" && !isNaN(game.time_limit)
+        ? game.time_limit
+        : 120) * 1000;
     const interval = setInterval(async () => {
       const now = Date.now();
       const allPlayersAnswered =
@@ -214,6 +217,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
     supabase,
     allAnswers.length,
     game.players.length,
+    game.time_limit,
   ]);
 
   // Show next turn button if there is a winner OR if time is up and no winner
@@ -252,8 +256,12 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
       const responseTime = now - questionStartTime;
       const isCorrect = selectedOption === currentQuestion.correct_answer;
 
-      // Calculate score based on response time
-      const { data: scoreData } = await calculateScore(supabase, responseTime);
+      // Calculate score based on response time and game time limit
+      const { data: scoreData } = await calculateScore(
+        supabase,
+        responseTime,
+        typeof game.time_limit === "number" ? game.time_limit * 1000 : 120000
+      );
       const scoreEarned = isCorrect ? scoreData : 0;
 
       // Save answer to database in a transaction to ensure data consistency

@@ -14,10 +14,13 @@ CREATE TABLE IF NOT EXISTS games (
   host_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
   status TEXT NOT NULL CHECK (status IN ('waiting', 'active', 'completed')),
   max_players INTEGER NOT NULL DEFAULT 8,
-  current_turn INTEGER NOT NULL DEFAULT 0;
+  current_turn INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  time_limit INTEGER NOT NULL DEFAULT 120
 );
+
+ALTER TABLE games ADD COLUMN IF NOT EXISTS 
 
 -- Game players
 CREATE TABLE IF NOT EXISTS game_players (
@@ -98,22 +101,47 @@ FOR EACH ROW
 EXECUTE FUNCTION set_game_code();
 
 -- Create function to calculate score based on response time
-CREATE OR REPLACE FUNCTION calculate_score(response_time_ms INTEGER)
+CREATE OR REPLACE FUNCTION calculate_score(
+  response_time_ms INTEGER,
+  time_limit_ms INTEGER
+)
 RETURNS DECIMAL AS $$
 DECLARE
   base_score DECIMAL := 1.0;
   time_bonus DECIMAL := 0.0;
+  t1 DECIMAL := time_limit_ms * 0.05;   -- 5%
+  t2 DECIMAL := time_limit_ms * 0.10;   -- 10%
+  t3 DECIMAL := time_limit_ms * 0.15;   -- 15%
+  t4 DECIMAL := time_limit_ms * 0.20;   -- 20%
+  t5 DECIMAL := time_limit_ms * 0.30;   -- 30%
+  t6 DECIMAL := time_limit_ms * 0.40;   -- 40%
+  t7 DECIMAL := time_limit_ms * 0.55;   -- 55%
+  t8 DECIMAL := time_limit_ms * 0.70;   -- 70%
+  t9 DECIMAL := time_limit_ms * 0.85;   -- 85%
+  t10 DECIMAL := time_limit_ms;         -- 100%
 BEGIN
-  IF response_time_ms < 15000 THEN
+  IF response_time_ms < t1 THEN
+    time_bonus := 9.0;
+  ELSIF response_time_ms < t2 THEN
+    time_bonus := 8.0;
+  ELSIF response_time_ms < t3 THEN
+    time_bonus := 7.0;
+  ELSIF response_time_ms < t4 THEN
+    time_bonus := 6.0;
+  ELSIF response_time_ms < t5 THEN
+    time_bonus := 5.0;
+  ELSIF response_time_ms < t6 THEN
+    time_bonus := 4.0;
+  ELSIF response_time_ms < t7 THEN
     time_bonus := 3.0;
-  ELSIF response_time_ms < 30000 THEN
+  ELSIF response_time_ms < t8 THEN
     time_bonus := 2.0;
-  ELSIF response_time_ms < 60000 THEN
+  ELSIF response_time_ms < t9 THEN
     time_bonus := 1.0;
-  ELSIF response_time_ms < 120000 THEN
+  ELSIF response_time_ms < t10 THEN
     time_bonus := 0.5;
   END IF;
-  
+
   RETURN base_score + time_bonus;
 END;
 $$ LANGUAGE plpgsql;
