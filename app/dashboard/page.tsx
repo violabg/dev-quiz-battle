@@ -9,8 +9,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+// import { Label } from "@/components/ui/label";
 import {
   addPlayerToGame,
   getPlayerInGame,
@@ -19,18 +27,50 @@ import {
 import { createGame, getGameByCode } from "@/lib/supabase-games";
 import { ensureUserProfile } from "@/lib/supabase-profiles";
 import { useSupabase } from "@/lib/supabase-provider";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
+
+const createGameSchema = z.object({
+  maxPlayers: z.number().min(2, "Minimo 2 giocatori"),
+  timeLimit: z
+    .number()
+    .min(30, "Minimo 30 secondi")
+    .max(300, "Massimo 300 secondi"),
+});
+type CreateGameForm = z.infer<typeof createGameSchema>;
+
+const joinGameSchema = z.object({
+  gameCode: z
+    .string()
+    .length(6, "Il codice deve essere di 6 caratteri")
+    .regex(/^[A-Z0-9]{6}$/, "Codice non valido"),
+});
+type JoinGameForm = z.infer<typeof joinGameSchema>;
 
 export default function DashboardPage() {
   const { user, supabase, loading: authLoading } = useSupabase();
   const router = useRouter();
-  const [gameCode, setGameCode] = useState("");
-  const [maxPlayers, setMaxPlayers] = useState(4);
-  const [timeLimit, setTimeLimit] = useState(120);
+  // const [gameCode, setGameCode] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const form = useForm<CreateGameForm>({
+    resolver: zodResolver(createGameSchema),
+    defaultValues: { maxPlayers: 4, timeLimit: 120 },
+    mode: "onChange",
+  });
+  const { handleSubmit } = form;
+
+  const joinForm = useForm<JoinGameForm>({
+    resolver: zodResolver(joinGameSchema),
+    defaultValues: { gameCode: "" },
+    mode: "onChange",
+  });
+  const { handleSubmit: handleJoinSubmit } = joinForm;
 
   // Redirect to login if not authenticated
   if (!authLoading && !user) {
@@ -39,7 +79,7 @@ export default function DashboardPage() {
   }
 
   // Modify the handleCreateGame function to ensure profile exists first
-  const handleCreateGame = async () => {
+  const handleCreateGame = async (values: CreateGameForm) => {
     if (!user) return;
     setLoading(true);
     try {
@@ -50,8 +90,8 @@ export default function DashboardPage() {
       const { data, error } = await createGame(
         supabase,
         user.id,
-        maxPlayers,
-        timeLimit
+        values.maxPlayers,
+        values.timeLimit
       );
       if (error) throw error;
       // Add the host as the first player with turn_order 1
@@ -67,8 +107,8 @@ export default function DashboardPage() {
   };
 
   // Also modify the handleJoinGame function to ensure profile exists first
-  const handleJoinGame = async () => {
-    if (!user || !gameCode) return;
+  const handleJoinGame = async (values: JoinGameForm) => {
+    if (!user || !values.gameCode) return;
     setLoading(true);
     try {
       // Ensure user profile exists
@@ -77,7 +117,7 @@ export default function DashboardPage() {
       // Find the game by code
       const { data: game, error: gameError } = await getGameByCode(
         supabase,
-        gameCode
+        values.gameCode
       );
       if (gameError) throw new Error("Game not found");
       if (game.status !== "waiting") {
@@ -86,7 +126,7 @@ export default function DashboardPage() {
       // Check if player is already in the game
       const existingPlayer = await getPlayerInGame(supabase, game.id, user.id);
       if (existingPlayer) {
-        router.push(`/game/${gameCode}`);
+        router.push(`/game/${values.gameCode}`);
         return;
       }
       // Count current players to determine turn order
@@ -96,7 +136,7 @@ export default function DashboardPage() {
       }
       // Add player to the game with the next turn order
       await addPlayerToGame(supabase, game.id, user.id, players.length + 1);
-      router.push(`/game/${gameCode}`);
+      router.push(`/game/${values.gameCode}`);
     } catch (error: unknown) {
       toast.error("Error", {
         description: error instanceof Error ? error.message : String(error),
@@ -129,50 +169,59 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                await handleCreateGame();
-              }}
-              className="space-y-4"
-            >
-              <div className="space-y-2">
-                <Label htmlFor="max-players">Numero massimo di giocatori</Label>
-                <Input
-                  id="max-players"
-                  type="number"
-                  min={2}
-                  max={8}
-                  value={maxPlayers}
-                  onChange={(e) =>
-                    setMaxPlayers(Number.parseInt(e.target.value))
-                  }
+            <Form {...form}>
+              <form
+                onSubmit={handleSubmit(handleCreateGame)}
+                className="space-y-4"
+                autoComplete="off"
+              >
+                <FormField
+                  name="maxPlayers"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Numero massimo di giocatori</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={2}
+                          disabled={loading}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="time-limit">
-                  Tempo limite per domanda (secondi)
-                </Label>
-                <Input
-                  id="time-limit"
-                  type="number"
-                  min={30}
-                  max={300}
-                  value={timeLimit}
-                  onChange={(e) =>
-                    setTimeLimit(Number.parseInt(e.target.value))
-                  }
+                <FormField
+                  name="timeLimit"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tempo limite per domanda (secondi)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={30}
+                          max={300}
+                          disabled={loading}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <CardFooter className="p-0 pt-4">
-                <Button type="submit" disabled={loading} className="w-full">
-                  {loading ? (
-                    <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                  ) : null}
-                  Crea partita
-                </Button>
-              </CardFooter>
-            </form>
+                <CardFooter className="p-0 pt-4">
+                  <Button type="submit" disabled={loading} className="w-full">
+                    {loading ? (
+                      <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                    ) : null}
+                    Crea partita
+                  </Button>
+                </CardFooter>
+              </form>
+            </Form>
           </CardContent>
         </Card>
 
@@ -184,36 +233,48 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form
-              onSubmit={async (e) => {
-                e.preventDefault();
-                await handleJoinGame();
-              }}
-              className="space-y-4"
-            >
-              <div className="space-y-2">
-                <Label htmlFor="game-code">Codice partita</Label>
-                <Input
-                  id="game-code"
-                  placeholder="Enter 6-digit code"
-                  value={gameCode}
-                  onChange={(e) => setGameCode(e.target.value.toUpperCase())}
-                  maxLength={6}
+            <Form {...joinForm}>
+              <form
+                onSubmit={handleJoinSubmit(handleJoinGame)}
+                className="space-y-4"
+                autoComplete="off"
+              >
+                <FormField
+                  name="gameCode"
+                  control={joinForm.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Codice partita</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter 6-digit code"
+                          maxLength={6}
+                          {...field}
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(e.target.value.toUpperCase())
+                          }
+                          disabled={loading}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <CardFooter className="p-0 pt-4">
-                <Button
-                  type="submit"
-                  disabled={loading || !gameCode}
-                  className="w-full"
-                >
-                  {loading ? (
-                    <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                  ) : null}
-                  Unisciti
-                </Button>
-              </CardFooter>
-            </form>
+                <CardFooter className="p-0 pt-4">
+                  <Button
+                    type="submit"
+                    disabled={loading || !joinForm.formState.isValid}
+                    className="w-full"
+                  >
+                    {loading ? (
+                      <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                    ) : null}
+                    Unisciti
+                  </Button>
+                </CardFooter>
+              </form>
+            </Form>
           </CardContent>
         </Card>
       </div>
