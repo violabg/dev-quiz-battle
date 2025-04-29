@@ -2,7 +2,6 @@ import { Navbar } from "@/components/layout/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { createClient } from "@/lib/supabase/server";
 import { Inter } from "next/font/google";
-import { redirect } from "next/navigation";
 import type React from "react";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -20,10 +19,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data?.user) {
-    redirect("/auth/login");
-  }
+  const { data } = await supabase.auth.getUser();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>

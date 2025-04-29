@@ -1,5 +1,6 @@
 import {
   getPlayersForGame,
+  setPlayerInactive,
   subscribeToGamePlayers,
   unsubscribeFromGamePlayers,
 } from "@/lib/supabase-game-players";
@@ -15,7 +16,6 @@ import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { createClient } from "../supabase/client";
 
 export function useGameState({
   code,
@@ -29,7 +29,6 @@ export function useGameState({
   const [game, setGame] = useState<GameWithPlayers | null>(null);
   const [gameId, setGameId] = useState<string | null>(null);
   const [isHost, setIsHost] = useState(false);
-  const supabase = createClient();
 
   const fetchGame = useCallback(async () => {
     if (!user) return;
@@ -65,38 +64,34 @@ export function useGameState({
 
   useEffect(() => {
     if (!user || !gameId) return;
-    let gameSubscription: any;
-    let playersSubscription: any;
 
-    (async () => {
-      gameSubscription = await subscribeToGame({
-        gameId,
-        onUpdate: (payload) => {
-          if (payload.eventType === "DELETE") {
-            setGame(null);
-            toast("La partita è stata chiusa.");
-            router.push("/dashboard");
-            return;
-          }
-          setGame((currentGame) => {
-            if (!currentGame) return null;
-            return { ...currentGame, ...payload.new };
-          });
-        },
-      });
-      playersSubscription = subscribeToGamePlayers(async () => {
-        if (!gameId) return;
-        const playersData = await getPlayersForGame(gameId);
+    const gameSubscription = subscribeToGame({
+      gameId,
+      onUpdate: (payload) => {
+        if (payload.eventType === "DELETE") {
+          setGame(null);
+          toast("La partita è stata chiusa.");
+          router.push("/dashboard");
+          return;
+        }
         setGame((currentGame) => {
           if (!currentGame) return null;
-          return { ...currentGame, players: playersData };
+          return { ...currentGame, ...payload.new };
         });
+      },
+    });
+    const playersSubscription = subscribeToGamePlayers(async () => {
+      if (!gameId) return;
+      const playersData = await getPlayersForGame(gameId);
+      setGame((currentGame) => {
+        if (!currentGame) return null;
+        return { ...currentGame, players: playersData };
       });
-    })();
+    });
 
     return () => {
-      if (gameSubscription) unsubscribeFromGame(gameSubscription);
-      if (playersSubscription) unsubscribeFromGamePlayers(playersSubscription);
+      unsubscribeFromGame(gameSubscription);
+      unsubscribeFromGamePlayers(playersSubscription);
     };
   }, [user, router, gameId]);
 
@@ -123,12 +118,7 @@ export function useGameState({
       if (isHost) {
         await updateGameStatus(game.id, "completed");
       } else {
-        const { error } = await supabase
-          .from("game_players")
-          .update({ is_active: false })
-          .eq("game_id", game.id)
-          .eq("player_id", user.id);
-        if (error) throw error;
+        await setPlayerInactive(game.id, user.id);
       }
       router.push("/dashboard");
     } catch (error: unknown) {

@@ -36,7 +36,7 @@ export async function getAnswersWithPlayerForQuestion(question_id: string) {
   return data;
 }
 
-export async function subscribeToAnswers(
+export function subscribeToAnswers(
   handler: (payload: {
     eventType: string;
     new: Answer | null;

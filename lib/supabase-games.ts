@@ -60,7 +60,7 @@ export const updateGameStatus = async (
   return { error };
 };
 
-export async function subscribeToGame(
+export function subscribeToGame(
   options: {
     gameId?: string;
     onUpdate: (payload: {

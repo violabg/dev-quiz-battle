@@ -60,7 +60,7 @@ export async function getLeaderboardPlayers(offset: number, limit: number) {
   return (data || []) as GetLeaderboardPlayersReturn[];
 }
 
-export async function subscribeToGamePlayers(
+export function subscribeToGamePlayers(
   handler: (payload: {
     eventType: string;
     new: Player | null;
@@ -88,4 +88,15 @@ export function unsubscribeFromGamePlayers(channel: {
   unsubscribe: () => void;
 }) {
   channel.unsubscribe();
+}
+
+export async function setPlayerInactive(game_id: string, player_id: string) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("game_players")
+    .update({ is_active: false })
+    .eq("game_id", game_id)
+    .eq("player_id", player_id);
+  if (error) throw error;
+  return true;
 }

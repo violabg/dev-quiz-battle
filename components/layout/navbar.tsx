@@ -14,14 +14,16 @@ import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { LogOut, User as UserIcon } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
-export function Navbar({ user }: { user: User }) {
+export function Navbar({ user }: { user?: User | null }) {
   const supabase = createClient();
   const pathname = usePathname();
+  const router = useRouter();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    router.push("/auth/login");
   };
 
   const navItems = [

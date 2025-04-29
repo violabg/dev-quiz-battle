@@ -137,27 +137,19 @@ export function GameRoom({
   useEffect(() => {
     if (!game.id) return;
 
-    let questionSubscription: any;
-
-    const subscribe = async () => {
-      questionSubscription = await subscribeToQuestions(async (payload) => {
-        if (payload.new && payload.new.game_id === game.id) {
-          setCurrentQuestion(payload.new as Question);
-          setQuestionStartTime(
-            payload.new.started_at
-              ? new Date(payload.new.started_at).getTime()
-              : Date.now()
-          );
-        }
-      });
-    };
-
-    subscribe();
+    const questionSubscription = subscribeToQuestions(async (payload) => {
+      if (payload.new && payload.new.game_id === game.id) {
+        setCurrentQuestion(payload.new as Question);
+        setQuestionStartTime(
+          payload.new.started_at
+            ? new Date(payload.new.started_at).getTime()
+            : Date.now()
+        );
+      }
+    });
 
     return () => {
-      if (questionSubscription) {
-        unsubscribeFromQuestions(questionSubscription);
-      }
+      unsubscribeFromQuestions(questionSubscription);
     };
   }, [game.id]);
 
@@ -168,20 +160,14 @@ export function GameRoom({
       return;
     }
 
-    // Set up real-time subscription for answer updates
-    let answerSubscription: any;
-
-    const subscribe = async () => {
-      answerSubscription = await subscribeToAnswers(async (payload) => {
-        if (payload.new && payload.new.question_id === currentQuestion.id) {
-          const answers = await getAnswersWithPlayerForQuestion(
-            currentQuestion.id
-          );
-          setAllAnswers(answers);
-        }
-      });
-    };
-    subscribe();
+    const answerSubscription = subscribeToAnswers(async (payload) => {
+      if (payload.new && payload.new.question_id === currentQuestion.id) {
+        const answers = await getAnswersWithPlayerForQuestion(
+          currentQuestion.id
+        );
+        setAllAnswers(answers);
+      }
+    });
 
     // Fetch initial answers
     (async () => {
@@ -190,7 +176,7 @@ export function GameRoom({
     })();
 
     return () => {
-      if (answerSubscription) unsubscribeFromAnswers(answerSubscription);
+      unsubscribeFromAnswers(answerSubscription);
     };
   }, [currentQuestion]); // Changed dependencies to only include what's needed
 

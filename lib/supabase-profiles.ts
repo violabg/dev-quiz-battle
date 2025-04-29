@@ -77,7 +77,7 @@ export async function getProfileWithScore(userId: string) {
   return data[0] as GetUserProfileWithScoreReturn;
 }
 
-export async function subscribeToProfiles(
+export function subscribeToProfiles(
   handler: (payload: {
     eventType: string;
     new: Profile | null;

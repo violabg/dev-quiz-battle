@@ -23,6 +23,5 @@ export default async function GamePage({
     );
   }
 
-  // You may want to fetch user info here as well and pass it to the client component
   return <GameClientPage code={game.code} user={data.user} />;
 }

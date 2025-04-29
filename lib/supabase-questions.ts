@@ -65,7 +65,7 @@ export async function getQuestionsByLanguageAndDifficulty(
   return data as Question[];
 }
 
-export async function subscribeToQuestions(
+export function subscribeToQuestions(
   handler: (payload: {
     eventType: string;
     new: Question | null;
