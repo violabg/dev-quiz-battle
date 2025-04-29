@@ -43,8 +43,8 @@ interface GameRoomProps {
 
 export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
   const { user, supabase } = useSupabase();
-  // Add ended_at to Question type for local use
-  type QuestionWithEnd = Question & { ended_at?: string; started_at?: string };
+  // --- Place these at the very top to avoid 'used before declaration' errors ---
+  const [allAnswers, setAllAnswers] = useState<AnswerWithPlayer[]>([]);
   const [currentQuestion, setCurrentQuestion] =
     useState<QuestionWithEnd | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,13 +54,19 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
   const [questionStartTime, setQuestionStartTime] = useState<number | null>(
     null
   );
-  // Stato per chi ha indovinato e punteggio assegnato
   const [winner, setWinner] = useState<{
     playerId: string;
     username: string;
     score: number;
   } | null>(null);
   const [showNextTurn, setShowNextTurn] = useState(false);
+  // Helper to reset question-related state
+  const resetQuestionState = useCallback(() => {
+    setCurrentQuestion(null);
+    setWinner(null);
+    setShowNextTurn(false);
+    setAllAnswers([]);
+  }, [setCurrentQuestion, setWinner, setShowNextTurn, setAllAnswers]);
 
   // Determine if it's the current user's turn
   const currentPlayer = game.players[currentPlayerIndex];
@@ -89,7 +95,13 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
     };
 
     checkIfAllTurnsCompleted();
-  }, [currentQuestion, game, supabase]);
+  }, [
+    currentQuestion?.ended_at,
+    game.id,
+    game.players.length,
+    game.status,
+    supabase,
+  ]);
 
   // Prevent further turns if game is completed
   const isRoundComplete = game.status === "completed";
@@ -101,14 +113,13 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
       game.current_turn !== undefined &&
       currentPlayerIndex !== game.current_turn
     ) {
-      setCurrentPlayerIndex(game.current_turn);
+      if (currentPlayerIndex !== game.current_turn) {
+        setCurrentPlayerIndex(game.current_turn);
+      }
       // Reset question-related state for all clients when turn changes
       resetQuestionState();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPlayerIndex, game]);
-
-  const [allAnswers, setAllAnswers] = useState<AnswerWithPlayer[]>([]);
+  }, [currentPlayerIndex, game, resetQuestionState]);
 
   // Fetch latest question on mount or when game.id changes
   useEffect(() => {
@@ -237,7 +248,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
   // Reset answer state on new turn
 
   // When an answer is submitted, check if it's correct and if so, set winner and end question
-  const handleSubmitAnswer = async (selectedOption: number) => {
+  const handleSubmitAnswer = async (selectedOption: number): Promise<void> => {
     if (!user || !currentQuestion || !questionStartTime) return;
     try {
       const now = Date.now();
@@ -282,7 +293,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
 
   // Patch: fallback to local state if game.current_turn is not present
   // Wait for DB update before changing local state
-  const handleNextTurn = async () => {
+  const handleNextTurn = async (): Promise<void> => {
     if (isRoundComplete) return; // Prevent next turn if game is over
     try {
       const nextIndex = currentPlayerIndex + 1;
@@ -296,10 +307,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
         if (error) throw error;
       }
       // Local state will be updated by the subscription
-      setCurrentQuestion(null);
-      setWinner(null);
-      setShowNextTurn(false);
-      setAllAnswers([]);
+      resetQuestionState();
     } catch {
       toast.error("Errore", {
         description: "Impossibile passare al turno successivo",
@@ -322,7 +330,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
   const handleCreateQuestion = async (
     selectedLanguage?: GameLanguage,
     selectedDifficulty?: GameDifficulty
-  ) => {
+  ): Promise<void> => {
     if (!user || !isCurrentPlayersTurn) return;
     setIsLoading(true);
     try {
@@ -401,14 +409,6 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
     return () => clearTimeout(timeoutId);
   }, [currentQuestion?.ended_at, allAnswers]);
 
-  // Helper to reset question-related state
-  const resetQuestionState = useCallback(() => {
-    setCurrentQuestion(null);
-    setWinner(null);
-    setShowNextTurn(false);
-    setAllAnswers([]);
-  }, []);
-
   return (
     <div className="space-y-8">
       <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-4">
@@ -473,3 +473,6 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
     </div>
   );
 }
+
+// Add ended_at to Question type for local use
+type QuestionWithEnd = Question & { ended_at?: string; started_at?: string };
