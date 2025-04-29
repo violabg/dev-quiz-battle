@@ -1,4 +1,8 @@
-import type { Game } from "@/types/supabase";
+import type {
+  Game,
+  GenerateUniqueGameCodeArgs,
+  GenerateUniqueGameCodeReturn,
+} from "@/types/supabase";
 import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
 
 export async function createGame(
@@ -24,6 +28,14 @@ export async function getGameByCode(supabase: SupabaseClient, code: string) {
     .single();
   if (error) throw error;
   return { data: data as Game, error };
+}
+
+export async function generateUniqueGameCode(
+  supabase: SupabaseClient,
+  args: GenerateUniqueGameCodeArgs = {}
+): Promise<{ data: GenerateUniqueGameCodeReturn | null; error: unknown }> {
+  const { data, error } = await supabase.rpc("generate_unique_game_code", args);
+  return { data, error };
 }
 
 export const updateGameTurn = async (

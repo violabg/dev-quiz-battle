@@ -11,6 +11,7 @@ import {
 } from "@/lib/supabase-games";
 import { getProfileById } from "@/lib/supabase-profiles";
 import type { GameWithPlayers } from "@/types/supabase";
+import type { SupabaseClient, User } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -21,8 +22,8 @@ export function useGameState({
   supabase,
 }: {
   code: string;
-  user: any;
-  supabase: any;
+  user: User | null;
+  supabase: SupabaseClient;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);

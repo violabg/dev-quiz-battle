@@ -257,12 +257,12 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
       const isCorrect = selectedOption === currentQuestion.correct_answer;
 
       // Calculate score based on response time and game time limit
-      const { data: scoreData } = await calculateScore(
-        supabase,
-        responseTime,
-        typeof game.time_limit === "number" ? game.time_limit * 1000 : 120000
-      );
-      const scoreEarned = isCorrect ? scoreData : 0;
+      const { data: scoreData } = await calculateScore(supabase, {
+        response_time_ms: responseTime,
+        time_limit_ms:
+          typeof game.time_limit === "number" ? game.time_limit * 1000 : 120000,
+      });
+      const scoreEarned = isCorrect ? scoreData ?? 0 : 0;
 
       // Save answer to database in a transaction to ensure data consistency
       const { error: transactionError } = await submitAnswer(supabase, {

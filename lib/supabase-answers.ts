@@ -1,4 +1,8 @@
-import type { Answer } from "@/types/supabase";
+import type {
+  Answer,
+  CalculateScoreArgs,
+  CalculateScoreReturn,
+} from "@/types/supabase";
 import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
 
 export async function insertAnswer(
@@ -68,13 +72,9 @@ export function unsubscribeFromAnswers(channel: { unsubscribe: () => void }) {
 
 export const calculateScore = async (
   supabase: SupabaseClient,
-  responseTimeMs: number,
-  timeLimitMs: number
-) => {
-  const { data, error } = await supabase.rpc("calculate_score", {
-    response_time_ms: responseTimeMs,
-    time_limit_ms: timeLimitMs,
-  });
+  args: CalculateScoreArgs
+): Promise<{ data: CalculateScoreReturn | null; error: unknown }> => {
+  const { data, error } = await supabase.rpc("calculate_score", args);
   return { data, error };
 };
 

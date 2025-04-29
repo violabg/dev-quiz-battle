@@ -1,4 +1,9 @@
-import type { Player, Profile } from "@/types/supabase";
+import type {
+  GetLeaderboardPlayersArgs,
+  GetLeaderboardPlayersReturn,
+  Player,
+  Profile,
+} from "@/types/supabase";
 import type { SupabaseClient } from "@supabase/auth-helpers-nextjs";
 
 export type LeaderboardPlayer = {
@@ -58,10 +63,9 @@ export async function getLeaderboardPlayers(
   const { data, error } = await supabase.rpc("get_leaderboard_players", {
     offset_value: offset,
     limit_value: limit,
-  });
+  } as GetLeaderboardPlayersArgs);
   if (error) throw error;
-
-  return data || ([] as LeaderboardPlayer[]);
+  return (data || []) as GetLeaderboardPlayersReturn[];
 }
 
 export function subscribeToGamePlayers(

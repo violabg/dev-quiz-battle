@@ -36,8 +36,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 const createGameSchema = z.object({
-  maxPlayers: z.number().min(2, "Minimo 2 giocatori"),
-  timeLimit: z
+  maxPlayers: z.coerce.number().min(2, "Minimo 2 giocatori"),
+  timeLimit: z.coerce
     .number()
     .min(30, "Minimo 30 secondi")
     .max(300, "Massimo 300 secondi"),

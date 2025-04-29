@@ -188,9 +188,73 @@ export interface Database {
         Args: Record<string, never>;
         Returns: string;
       };
+      get_leaderboard_players: {
+        Args: {
+          offset_value: number;
+          limit_value: number;
+        };
+        Returns: {
+          player_id: string;
+          total_score: number;
+          username: string;
+          avatar_url: string | null;
+        }[];
+      };
+      count_unique_players: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
+      get_user_profile_with_score: {
+        Args: {
+          user_id: string;
+        };
+        Returns: {
+          profile_id: string;
+          username: string;
+          avatar_url: string | null;
+          total_score: number;
+        }[];
+      };
     };
   };
 }
+
+// Supabase RPC (Function) Types
+export type CalculateScoreArgs =
+  Database["public"]["Functions"]["calculate_score"]["Args"];
+
+export type CalculateScoreReturn =
+  Database["public"]["Functions"]["calculate_score"]["Returns"];
+
+export type GenerateUniqueGameCodeArgs =
+  Database["public"]["Functions"]["generate_unique_game_code"]["Args"];
+
+export type GenerateUniqueGameCodeReturn =
+  Database["public"]["Functions"]["generate_unique_game_code"]["Returns"];
+
+export type GetLeaderboardPlayersArgs = {
+  offset_value: number;
+  limit_value: number;
+};
+export type GetLeaderboardPlayersReturn = {
+  player_id: string;
+  total_score: number;
+  username: string;
+  avatar_url: string | null;
+};
+
+export type CountUniquePlayersArgs = Record<string, never>;
+export type CountUniquePlayersReturn = number;
+
+export type GetUserProfileWithScoreArgs = {
+  user_id: string;
+};
+export type GetUserProfileWithScoreReturn = {
+  profile_id: string;
+  username: string;
+  avatar_url: string | null;
+  total_score: number;
+};
 
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Game = Database["public"]["Tables"]["games"]["Row"];
