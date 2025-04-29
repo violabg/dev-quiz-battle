@@ -45,8 +45,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
   const { user, supabase } = useSupabase();
   // --- Place these at the very top to avoid 'used before declaration' errors ---
   const [allAnswers, setAllAnswers] = useState<AnswerWithPlayer[]>([]);
-  const [currentQuestion, setCurrentQuestion] =
-    useState<QuestionWithEnd | null>(null);
+  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [language, setLanguage] = useState<GameLanguage>("javascript");
   const [difficulty, setDifficulty] = useState<GameDifficulty>("medium");
@@ -128,7 +127,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
       const questions = await getQuestionsForGame(supabase, game.id);
       if (questions && questions.length > 0) {
         const data = questions[0];
-        setCurrentQuestion(data as QuestionWithEnd);
+        setCurrentQuestion(data as Question);
         setQuestionStartTime(
           data.started_at ? new Date(data.started_at).getTime() : Date.now()
         );
@@ -145,7 +144,7 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
       supabase,
       async (payload) => {
         if (payload.new && payload.new.game_id === game.id) {
-          setCurrentQuestion(payload.new as QuestionWithEnd);
+          setCurrentQuestion(payload.new as Question);
           setQuestionStartTime(
             payload.new.started_at
               ? new Date(payload.new.started_at).getTime()
@@ -473,6 +472,3 @@ export function GameRoom({ game, onLeaveGame }: Omit<GameRoomProps, "isHost">) {
     </div>
   );
 }
-
-// Add ended_at to Question type for local use
-type QuestionWithEnd = Question & { ended_at?: string; started_at?: string };
