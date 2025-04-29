@@ -66,9 +66,9 @@ export function UpdatePasswordForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="gradient-border glass-card">
         <CardHeader>
-          <CardTitle className="text-2xl">Reset Your Password</CardTitle>
+          <CardTitle className="text-2xl">Reimposta la password</CardTitle>
           <CardDescription>
-            Please enter your new password below.
+            Inserisci la tua nuova password qui sotto.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -83,7 +83,7 @@ export function UpdatePasswordForm({
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>New password</FormLabel>
+                    <FormLabel>Nuova password</FormLabel>
                     <FormControl>
                       <PasswordInput
                         placeholder="New password"
@@ -101,7 +101,7 @@ export function UpdatePasswordForm({
                 className="w-full"
                 disabled={isLoading || !form.formState.isValid}
               >
-                {isLoading ? "Saving..." : "Save new password"}
+                {isLoading ? "Salvataggio..." : "Salva nuova password"}
               </Button>
             </form>
           </Form>

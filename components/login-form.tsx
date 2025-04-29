@@ -69,9 +69,9 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="gradient-border glass-card">
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
+          <CardTitle className="text-2xl">Accedi</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            Inserisci la tua email per accedere al tuo account
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -111,7 +111,7 @@ export function LoginForm({
                         href="/auth/forgot-password"
                         className="inline-block ml-auto text-sm hover:underline underline-offset-4"
                       >
-                        Forgot your password?
+                        Password dimenticata?
                       </Link>
                     </div>
                     <FormControl>
@@ -130,15 +130,15 @@ export function LoginForm({
                 className="w-full"
                 disabled={isLoading || !form.formState.isValid}
               >
-                {isLoading ? "Logging in..." : "Login"}
+                {isLoading ? "Accesso in corso..." : "Accedi"}
               </Button>
               <div className="mt-4 text-sm text-center">
-                Don&apos;t have an account?{" "}
+                Non hai un account?{" "}
                 <Link
                   href="/auth/sign-up"
                   className="underline underline-offset-4"
                 >
-                  Sign up
+                  Registrati
                 </Link>
               </div>
             </form>

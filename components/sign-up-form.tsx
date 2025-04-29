@@ -79,8 +79,8 @@ export function SignUpForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="gradient-border glass-card">
         <CardHeader>
-          <CardTitle className="text-2xl">Sign up</CardTitle>
-          <CardDescription>Create a new account</CardDescription>
+          <CardTitle className="text-2xl">Registrati</CardTitle>
+          <CardDescription>Crea un nuovo account</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -130,7 +130,7 @@ export function SignUpForm({
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Repeat Password</FormLabel>
+                    <FormLabel>Ripeti Password</FormLabel>
                     <FormControl>
                       <PasswordInput
                         autoComplete="new-password"
@@ -147,15 +147,15 @@ export function SignUpForm({
                 className="w-full"
                 disabled={isLoading || !form.formState.isValid}
               >
-                {isLoading ? "Creating an account..." : "Sign up"}
+                {isLoading ? "Creazione account..." : "Registrati"}
               </Button>
               <div className="mt-4 text-sm text-center">
-                Already have an account?{" "}
+                Hai già un account?{" "}
                 <Link
                   href="/auth/login"
                   className="underline underline-offset-4"
                 >
-                  Login
+                  Accedi
                 </Link>
               </div>
             </form>

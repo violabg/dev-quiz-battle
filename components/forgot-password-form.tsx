@@ -70,22 +70,24 @@ export function ForgotPasswordForm({
       {success ? (
         <Card className="gradient-border glass-card">
           <CardHeader>
-            <CardTitle className="text-2xl">Check Your Email</CardTitle>
-            <CardDescription>Password reset instructions sent</CardDescription>
+            <CardTitle className="text-2xl">Controlla la tua email</CardTitle>
+            <CardDescription>
+              Istruzioni per il reset della password inviate
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground text-sm">
-              If you registered using your email and password, you will receive
-              a password reset email.
+              Se ti sei registrato con email e password, riceverai una email per
+              il reset della password.
             </p>
           </CardContent>
         </Card>
       ) : (
         <Card className="gradient-border glass-card">
           <CardHeader>
-            <CardTitle className="text-2xl">Reset Your Password</CardTitle>
+            <CardTitle className="text-2xl">Reimposta la password</CardTitle>
             <CardDescription>
-              Type in your email and we&apos;ll send you a link to reset your
+              Inserisci la tua email e ti invieremo un link per reimpostare la
               password
             </CardDescription>
           </CardHeader>
@@ -120,15 +122,15 @@ export function ForgotPasswordForm({
                   className="w-full"
                   disabled={isLoading || !form.formState.isValid}
                 >
-                  {isLoading ? "Sending..." : "Send reset email"}
+                  {isLoading ? "Invio in corso..." : "Invia email di reset"}
                 </Button>
                 <div className="mt-4 text-sm text-center">
-                  Already have an account?{" "}
+                  Hai già un account?{" "}
                   <Link
                     href="/auth/login"
                     className="underline underline-offset-4"
                   >
-                    Login
+                    Accedi
                   </Link>
                 </div>
               </form>
