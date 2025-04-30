@@ -7,7 +7,6 @@ import { useCurrentUserName } from "@/hooks/use-current-user-name";
 export const CurrentUserAvatar = () => {
   const profileImage = useCurrentUserImage();
   const name = useCurrentUserName();
-  console.log("🚀 ~ CurrentUserAvatar ~ name:", name);
 
   const initials = name
     ?.split(" ")

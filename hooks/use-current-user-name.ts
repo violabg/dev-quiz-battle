@@ -10,7 +10,6 @@ export const useCurrentUserName = () => {
       if (error) {
         console.error(error);
       }
-      console.log("🚀 ~ fetchProfileName ~ data:", data.session?.user);
 
       setName(
         data.session?.user.user_metadata.full_name
