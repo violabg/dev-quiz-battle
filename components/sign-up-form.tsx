@@ -30,6 +30,14 @@ import PasswordInput from "./ui/password-input";
 
 const signUpSchema = z
   .object({
+    username: z
+      .string()
+      .min(3, { message: "Username deve essere almeno 3 caratteri" })
+      .max(20, { message: "Username deve essere massimo 20 caratteri" })
+      .regex(/^[a-zA-Z0-9_-]+$/, {
+        message:
+          "Username può contenere solo lettere, numeri, underscore e trattini",
+      }),
     email: z.string().email({ message: "Email non valida" }),
     password: z.string().min(6, { message: "Minimo 6 caratteri" }),
     repeatPassword: z.string().min(6, { message: "Minimo 6 caratteri" }),
@@ -48,7 +56,12 @@ export function SignUpForm({
   const router = useRouter();
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
-    defaultValues: { email: "", password: "", repeatPassword: "" },
+    defaultValues: {
+      username: "",
+      email: "",
+      password: "",
+      repeatPassword: "",
+    },
     mode: "onChange",
   });
   const { handleSubmit, setError } = form;
@@ -62,6 +75,9 @@ export function SignUpForm({
         password: values.password,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            username: values.username,
+          },
         },
       });
       if (error) throw error;
@@ -89,6 +105,25 @@ export function SignUpForm({
               className="space-y-4"
               autoComplete="off"
             >
+              <FormField
+                name="username"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder="johndoe"
+                        autoComplete="username"
+                        disabled={isLoading}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 name="email"
                 control={form.control}

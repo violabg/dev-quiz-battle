@@ -11,9 +11,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/supabase/supabase-provider";
-import { Loader2, LogOut, User as UserIcon } from "lucide-react";
+import { Loader2, LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { CurrentUserAvatar } from "../current-user-avatar";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -64,7 +65,7 @@ export function Navbar() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon">
-                      <UserIcon className="w-5 h-5" />
+                      <CurrentUserAvatar />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
