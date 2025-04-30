@@ -1,5 +1,6 @@
 "use client";
 
+import { GithubIcon } from "@/components/icons/github";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,6 +27,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import PasswordInput from "./ui/password-input";
+import { Separator } from "./ui/separator";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Email non valida" }),
@@ -74,7 +76,7 @@ export function LoginForm({
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "github",
         options: {
-          redirectTo: `${window.location.origin}/auth/oauth?next=/protected`,
+          redirectTo: `${window.location.origin}/auth/oauth?next=/dashboard`,
         },
       });
 
@@ -164,11 +166,19 @@ export function LoginForm({
               </div>
             </form>
           </Form>
+          <Separator className="my-4" />
           <form onSubmit={handleSocialLogin}>
             <div className="flex flex-col gap-6">
-              {/* {error && <p className="text-destructive-500 text-sm">{error}</p>} */}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Continue with Github"}
+              {/* {error && <p className=\"text-destructive-500 text-sm\">{error}</p>} */}
+              <Button
+                type="submit"
+                className="flex justify-center items-center gap-2 bg-background hover:bg-accent border border-input w-full text-black dark:text-white transition-colors hover:text-accent-foreground"
+                disabled={isLoading}
+              >
+                <GithubIcon className="w-5 h-5" />
+                <span className="font-medium">
+                  {isLoading ? "Logging in..." : "Login con GitHub"}
+                </span>
               </Button>
             </div>
           </form>

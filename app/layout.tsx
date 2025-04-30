@@ -1,6 +1,5 @@
 import { Navbar } from "@/components/layout/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
-import { createClient } from "@/lib/supabase/server";
 import { Inter } from "next/font/google";
 import type React from "react";
 import { Toaster } from "sonner";
@@ -18,9 +17,6 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
@@ -31,7 +27,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <div className="flex flex-col min-h-screen">
-            <Navbar user={data.user} />
+            <Navbar />
             {children}
             <footer className="py-6 md:py-0 border-t">
               <div className="flex md:flex-row flex-col justify-between items-center gap-4 md:h-16 container">
