@@ -137,6 +137,9 @@ export function QuestionDisplay({
         return "swift";
       case "kotlin":
         return "kotlin";
+      case "html":
+      case "css":
+        return "markup";
       default:
         return "javascript";
     }

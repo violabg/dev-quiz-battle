@@ -5,11 +5,12 @@ import { GameClientPage } from "./GameClientPage";
 export default async function GamePage({
   params,
 }: {
-  params: { code: string };
+  params: Promise<{ code: string }>;
 }) {
+  const resolvedParams = await params;
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
-  const { data: game, error } = await getGameByCode(params.code);
+  const { data: game, error } = await getGameByCode(resolvedParams.code);
 
   if (error || !game || !data?.user) {
     // Optionally, you can redirect or render a not found UI

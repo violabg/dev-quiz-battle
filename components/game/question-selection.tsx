@@ -38,11 +38,17 @@ interface QuestionSelectionProps {
 
 const questionSelectionSchema = z.object({
   language: z.enum([
+    "css",
+    "html",
     "javascript",
+    "typescript",
+    "react",
+    "vue",
+    "angular",
+    "nodejs",
     "python",
     "java",
     "csharp",
-    "typescript",
     "go",
     "rust",
     "ruby",
@@ -53,10 +59,16 @@ type QuestionSelectionForm = z.infer<typeof questionSelectionSchema>;
 
 const LANGUAGE_OPTIONS = [
   { value: "javascript", label: "JavaScript" },
+  { value: "typescript", label: "TypeScript" },
+  { value: "html", label: "HTML" },
+  { value: "css", label: "CSS" },
+  { value: "react", label: "React" },
+  { value: "vue", label: "Vue" },
+  { value: "angular", label: "Angular" },
+  { value: "nodejs", label: "Node.js" },
   { value: "python", label: "Python" },
   { value: "java", label: "Java" },
   { value: "csharp", label: "C#" },
-  { value: "typescript", label: "TypeScript" },
   { value: "go", label: "Go" },
   { value: "rust", label: "Rust" },
   { value: "ruby", label: "Ruby" },

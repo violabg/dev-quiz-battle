@@ -272,11 +272,17 @@ export type QuestionWithAnswers = Question & {
 };
 
 export type GameLanguage =
+  | "css"
+  | "html"
   | "javascript"
+  | "typescript"
+  | "react"
+  | "vue"
+  | "angular"
+  | "nodejs"
   | "python"
   | "java"
   | "csharp"
-  | "typescript"
   | "go"
   | "rust"
   | "ruby";
