@@ -200,10 +200,6 @@ export interface Database {
           avatar_url: string | null;
         }[];
       };
-      count_unique_players: {
-        Args: Record<string, never>;
-        Returns: number;
-      };
       get_user_profile_with_score: {
         Args: {
           user_id: string;

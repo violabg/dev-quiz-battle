@@ -157,7 +157,6 @@ CREATE OR REPLACE FUNCTION submit_answer(
   p_score_earned DECIMAL
 )
 RETURNS UUID
-LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
@@ -191,7 +190,7 @@ BEGIN
 
   RETURN v_answer_id;
 END;
-$$;
+$$ LANGUAGE plpgsql;
 
 -- Leaderboard function: sum scores per player, join profile, paginated
 CREATE OR REPLACE FUNCTION get_leaderboard_players(
@@ -216,14 +215,6 @@ BEGIN
     GROUP BY gp.player_id, p.username, p.avatar_url
     ORDER BY total_score DESC
     LIMIT limit_value OFFSET offset_value;  -- Corrected order of LIMIT and OFFSET
-END;
-$$ LANGUAGE plpgsql;
-
--- Function to get game details with player scores
-CREATE OR REPLACE FUNCTION count_unique_players()
-RETURNS integer AS $$
-BEGIN
-  RETURN (SELECT COUNT(DISTINCT player_id) FROM game_players);
 END;
 $$ LANGUAGE plpgsql;
 

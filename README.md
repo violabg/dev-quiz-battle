@@ -91,7 +91,6 @@ GROQ_API_KEY="gsk_***"
 - `calculate_score` — Calculates score based on response time and time limit.
 - `generate_unique_game_code` — Generates a unique game room code.
 - `get_leaderboard_players` — Returns leaderboard player data (id, score, username, avatar).
-- `count_unique_players` — Returns the number of unique players.
 - `get_user_profile_with_score` — Returns a user's profile and total score.
 
 ### 10. State Rules
