@@ -221,6 +221,10 @@ export function QuestionDisplay({
           <div className="space-y-3">
             {options.map((option, index) => {
               const state = getOptionState(index);
+              // Find all players who selected this option and got it wrong
+              const wrongPlayers = allAnswers.filter(
+                (a) => a.selected_option === index && !a.is_correct
+              );
               return (
                 <Button
                   key={index}
@@ -241,14 +245,29 @@ export function QuestionDisplay({
                   onClick={() => handleSelectOption(index)}
                   disabled={hasAnswered || !!winner || timeIsUp}
                 >
-                  <div className="flex items-center">
-                    {state === "correct" && (
-                      <Check className="mr-2 w-5 h-5 text-green-500" />
+                  <div className="flex justify-between items-center w-full">
+                    <div className="flex items-center">
+                      {state === "correct" && (
+                        <Check className="mr-2 w-5 h-5 text-green-500" />
+                      )}
+                      {state === "wrong" && (
+                        <X className="mr-2 w-5 h-5 text-red-500" />
+                      )}
+                      <span>{option.text}</span>
+                    </div>
+                    {/* Show wrong player usernames for this option */}
+                    {wrongPlayers.length > 0 && (
+                      <div className="flex flex-col items-end ml-4">
+                        {wrongPlayers.map((a) => (
+                          <span
+                            key={a.player.id}
+                            className="bg-[oklch(0.98_0.005_210)] shadow mt-1 px-2 py-1 border border-[oklch(0.6_0.18_22.5)] rounded font-bold text-[oklch(0.65_0.18_22.5)] text-xs uppercase tracking-wide"
+                          >
+                            {a.player.username}
+                          </span>
+                        ))}
+                      </div>
                     )}
-                    {state === "wrong" && (
-                      <X className="mr-2 w-5 h-5 text-red-500" />
-                    )}
-                    <span>{option.text}</span>
                   </div>
                 </Button>
               );
