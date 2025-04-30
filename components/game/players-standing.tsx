@@ -15,24 +15,28 @@ export const PlayersStanding = ({ players }: PlayersStandingProps) => {
     <>
       <div className="flex justify-center items-end space-x-4 py-8">
         {winners.length > 1 && (
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center w-32 min-w-0">
             <div className="flex justify-center items-center mb-2 rounded-full w-16 h-16 silver-gradient emboss">
-              <Medal className="w-8 h-8 text-gray-100/90" />
+              <Medal className="w-8 h-8 text-white dark:text-black" />
             </div>
-            <div className="text-center">
-              <p className="font-medium">{winners[1].profile.username}</p>
+            <div className="w-full min-w-0 text-center">
+              <p className="max-w-full font-medium break-words whitespace-pre-line hyphens-auto">
+                {winners[1].profile.username}
+              </p>
               <p className="font-bold text-2xl">{winners[1].score}</p>
             </div>
           </div>
         )}
 
         {winners.length > 0 && (
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center w-32 min-w-0">
             <div className="flex justify-center items-center mb-2 rounded-full w-20 h-20 gold-gradient emboss">
-              <Trophy className="w-10 h-10 text-yellow-50/90" />
+              <Trophy className="w-10 h-10 text-white dark:text-black" />
             </div>
-            <div className="text-center">
-              <p className="font-medium">{winners[0].profile.username}</p>
+            <div className="w-full min-w-0 text-center">
+              <p className="max-w-full font-medium break-words whitespace-pre-line hyphens-auto">
+                {winners[0].profile.username}
+              </p>
               <p className="font-bold text-gradient text-3xl">
                 {winners[0].score}
               </p>
@@ -41,12 +45,14 @@ export const PlayersStanding = ({ players }: PlayersStandingProps) => {
         )}
 
         {winners.length > 2 && (
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center w-32 min-w-0">
             <div className="flex justify-center items-center mb-2 rounded-full w-16 h-16 bronze-gradient emboss">
-              <Award className="w-8 h-8 text-orange-100/90" />
+              <Award className="w-8 h-8 text-white dark:text-black" />
             </div>
-            <div className="text-center">
-              <p className="font-medium">{winners[2].profile.username}</p>
+            <div className="w-full min-w-0 text-center">
+              <p className="max-w-full font-medium break-words whitespace-pre-line hyphens-auto">
+                {winners[2].profile.username}
+              </p>
               <p className="font-bold text-2xl">{winners[2].score}</p>
             </div>
           </div>
