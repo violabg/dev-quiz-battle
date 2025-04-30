@@ -7,10 +7,12 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { createClient } from "@/lib/supabase/server";
 import {
   getLeaderboardPlayers,
   LeaderboardPlayer,
 } from "@/lib/supabase/supabase-game-players";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 
 const PAGE_SIZE = 10;
@@ -34,11 +36,11 @@ interface LeaderboardPlayerForStanding {
   joined_at: string;
 }
 
-async function getPlayers(page: number) {
+async function getPlayers(supabase: SupabaseClient, page: number) {
   const offset = (page - 1) * PAGE_SIZE;
   const limit = PAGE_SIZE;
   // Use helper from supabase-game-players
-  const data = await getLeaderboardPlayers(offset, limit);
+  const data = await getLeaderboardPlayers(supabase, offset, limit);
   // Map to expected structure for PlayersStanding
   const players: LeaderboardPlayerForStanding[] = (
     data as LeaderboardPlayer[]
@@ -68,8 +70,9 @@ export default async function LeaderboardPage(props: {
   searchParams: { page?: string };
 }) {
   const searchParams = await props.searchParams;
+  const supabase = await createClient();
   const page = Math.max(1, Number(searchParams?.page) || 1);
-  const { players, count } = await getPlayers(page);
+  const { players, count } = await getPlayers(supabase, page);
   const totalPages = Math.ceil(count / PAGE_SIZE);
 
   if (page > totalPages && totalPages > 0)

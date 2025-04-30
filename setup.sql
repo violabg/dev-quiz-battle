@@ -230,3 +230,71 @@ BEGIN
     GROUP BY p.id;
 END;
 $$ LANGUAGE plpgsql SECURITY INVOKER;
+
+-- Enable RLS and add authenticated policies for all game tables
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE games ENABLE ROW LEVEL SECURITY;
+ALTER TABLE game_players ENABLE ROW LEVEL SECURITY;
+ALTER TABLE questions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE answers ENABLE ROW LEVEL SECURITY;
+
+-- Policies for tables
+CREATE POLICY "Anyone can insert profiles" ON profiles
+  FOR INSERT
+  WITH CHECK (TRUE);
+
+CREATE POLICY "Authenticated users can select their profile" ON profiles
+  FOR SELECT TO authenticated
+  WITH CHECK (TRUE);
+
+CREATE POLICY "Authenticated users can update their profile" ON profiles
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = id);
+
+CREATE POLICY "Authenticated users can insert games" ON games
+  FOR INSERT TO authenticated
+  WITH CHECK (TRUE);
+
+CREATE POLICY "Authenticated users can select games" ON games
+  FOR SELECT TO authenticated
+  USING (TRUE);
+
+CREATE POLICY "Authenticated users can update games" ON games
+  FOR UPDATE TO authenticated
+  USING (TRUE);
+
+CREATE POLICY "Authenticated users can insert game_players" ON game_players
+  FOR INSERT TO authenticated
+  WITH CHECK (TRUE);
+
+CREATE POLICY "Authenticated users can select game_players" ON game_players
+  FOR SELECT TO authenticated
+  USING (TRUE);
+
+CREATE POLICY "Authenticated users can update game_players" ON game_players
+  FOR UPDATE TO authenticated
+  USING (TRUE);
+
+CREATE POLICY "Authenticated users can insert questions" ON questions
+  FOR INSERT TO authenticated
+  WITH CHECK (TRUE);
+
+CREATE POLICY "Authenticated users can select questions" ON questions
+  FOR SELECT TO authenticated
+  USING (TRUE);
+
+CREATE POLICY "Authenticated users can update questions" ON questions
+  FOR UPDATE TO authenticated
+  USING (TRUE);
+
+CREATE POLICY "Authenticated users can insert answers" ON answers
+  FOR INSERT TO authenticated
+  WITH CHECK (TRUE);
+
+CREATE POLICY "Authenticated users can select answers" ON answers
+  FOR SELECT TO authenticated
+  USING (TRUE);
+
+CREATE POLICY "Authenticated users can update answers" ON answers
+  FOR UPDATE TO authenticated
+  USING (TRUE);

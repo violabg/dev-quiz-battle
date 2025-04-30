@@ -12,16 +12,18 @@ import {
 } from "@/lib/supabase/supabase-games";
 import { getProfileById } from "@/lib/supabase/supabase-profiles";
 import type { GameWithPlayers } from "@/types/supabase";
-import { User } from "@supabase/supabase-js";
+import { SupabaseClient, User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 export function useGameState({
   code,
+  supabase,
   user,
 }: {
   code: string;
+  supabase: SupabaseClient;
   user: User | null;
 }) {
   const router = useRouter();
@@ -33,7 +35,7 @@ export function useGameState({
   const fetchGame = useCallback(async () => {
     if (!user) return;
     try {
-      const { data: gameData } = await getGameByCode(code);
+      const { data: gameData } = await getGameByCode(supabase, code);
       const playersData = await getPlayersForGame(gameData.id);
       const hostData = await getProfileById(gameData.host_id);
       setIsHost(user.id === gameData.host_id);
@@ -55,7 +57,7 @@ export function useGameState({
     } finally {
       setLoading(false);
     }
-  }, [user, code, router]);
+  }, [user, supabase, code, router]);
 
   useEffect(() => {
     if (!user) return;

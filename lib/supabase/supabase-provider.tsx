@@ -37,7 +37,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       listener?.subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase.auth]);
 
   return (
     <SupabaseContext.Provider value={{ loading, supabase, user }}>

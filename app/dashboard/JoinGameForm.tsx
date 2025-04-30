@@ -11,6 +11,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { createClient } from "@/lib/supabase/client";
 import {
   addPlayerToGame,
   getPlayerInGame,
@@ -36,6 +37,7 @@ const joinGameSchema = z.object({
 type JoinGameForm = z.infer<typeof joinGameSchema>;
 
 export const JoinGameForm = ({ user }: { user: User }) => {
+  const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const form = useForm<JoinGameForm>({
@@ -52,6 +54,7 @@ export const JoinGameForm = ({ user }: { user: User }) => {
       const profileExists = await ensureUserProfile(user);
       if (!profileExists) return;
       const { data: game, error: gameError } = await getGameByCode(
+        supabase,
         values.gameCode
       );
       if (gameError) throw new Error("Game not found");

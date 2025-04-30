@@ -4,13 +4,15 @@ import { GameLobby } from "@/components/game/game-lobby";
 import { GameRoom } from "@/components/game/game-room";
 import { Button } from "@/components/ui/button";
 import { useGameState } from "@/lib/hooks/useGameState";
+import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export function GameClientPage({ code, user }: { code: string; user: User }) {
+  const supabase = createClient();
   const { loading, game, isHost, handleStartGame, handleLeaveGame } =
-    useGameState({ code, user });
+    useGameState({ supabase, code, user });
   const router = useRouter();
 
   if (loading) {

@@ -4,6 +4,7 @@ import type {
   Player,
   Profile,
 } from "@/types/supabase";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./client";
 
 export type LeaderboardPlayer = {
@@ -49,8 +50,11 @@ export async function getPlayerInGame(game_id: string, player_id: string) {
   return data as Player | null;
 }
 
-export async function getLeaderboardPlayers(offset: number, limit: number) {
-  const supabase = createClient();
+export async function getLeaderboardPlayers(
+  supabase: SupabaseClient,
+  offset: number,
+  limit: number
+) {
   // Use Supabase RPC to get leaderboard players (summed score, unique per player, paginated)
   const { data, error } = await supabase.rpc("get_leaderboard_players", {
     offset_value: offset,

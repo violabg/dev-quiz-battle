@@ -3,6 +3,7 @@ import type {
   GenerateUniqueGameCodeArgs,
   GenerateUniqueGameCodeReturn,
 } from "@/types/supabase";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./client";
 
 export async function createGame(
@@ -20,8 +21,7 @@ export async function createGame(
   return { data: data as Game, error };
 }
 
-export async function getGameByCode(code: string) {
-  const supabase = createClient();
+export async function getGameByCode(supabase: SupabaseClient, code: string) {
   const { data, error } = await supabase
     .from("games")
     .select("*")
