@@ -10,7 +10,7 @@ import {
 import {
   getLeaderboardPlayers,
   LeaderboardPlayer,
-} from "@/lib/supabase-game-players";
+} from "@/lib/supabase/supabase-game-players";
 import { redirect } from "next/navigation";
 
 const PAGE_SIZE = 10;

@@ -4,7 +4,7 @@ import type {
   Profile,
 } from "@/types/supabase";
 import * as crypto from "crypto";
-import { createClient } from "./supabase/client";
+import { createClient } from "./client";
 
 export async function getProfileById(id: string) {
   const supabase = createClient();

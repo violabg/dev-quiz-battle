@@ -11,9 +11,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { addPlayerToGame } from "@/lib/supabase-game-players";
-import { createGame } from "@/lib/supabase-games";
-import { ensureUserProfile } from "@/lib/supabase-profiles";
+import { addPlayerToGame } from "@/lib/supabase/supabase-game-players";
+import { createGame } from "@/lib/supabase/supabase-games";
+import { ensureUserProfile } from "@/lib/supabase/supabase-profiles";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { User } from "@supabase/supabase-js";
 import { Loader2 } from "lucide-react";

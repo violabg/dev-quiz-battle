@@ -1,5 +1,5 @@
 import type { Question } from "@/types/supabase";
-import { createClient } from "./supabase/client";
+import { createClient } from "./client";
 
 export async function getQuestionsForGame(game_id: string) {
   const supabase = createClient();

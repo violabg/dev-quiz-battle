@@ -15,9 +15,9 @@ import {
   addPlayerToGame,
   getPlayerInGame,
   getPlayersForGame,
-} from "@/lib/supabase-game-players";
-import { getGameByCode } from "@/lib/supabase-games";
-import { ensureUserProfile } from "@/lib/supabase-profiles";
+} from "@/lib/supabase/supabase-game-players";
+import { getGameByCode } from "@/lib/supabase/supabase-games";
+import { ensureUserProfile } from "@/lib/supabase/supabase-profiles";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { User } from "@supabase/supabase-js";
 import { Loader2 } from "lucide-react";

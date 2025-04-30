@@ -1,5 +1,5 @@
-import { getGameByCode } from "@/lib/supabase-games";
 import { createClient } from "@/lib/supabase/server";
+import { getGameByCode } from "@/lib/supabase/supabase-games";
 import { GameClientPage } from "./GameClientPage";
 
 export default async function GamePage({

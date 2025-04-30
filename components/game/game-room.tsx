@@ -15,15 +15,18 @@ import {
   submitAnswer,
   subscribeToAnswers,
   unsubscribeFromAnswers,
-} from "@/lib/supabase-answers";
-import { updateGameStatus, updateGameTurn } from "@/lib/supabase-games";
+} from "@/lib/supabase/supabase-answers";
+import {
+  updateGameStatus,
+  updateGameTurn,
+} from "@/lib/supabase/supabase-games";
 import {
   getQuestionsForGame,
   insertQuestion,
   subscribeToQuestions,
   unsubscribeFromQuestions,
   updateQuestion,
-} from "@/lib/supabase-questions";
+} from "@/lib/supabase/supabase-questions";
 import type {
   AnswerWithPlayer,
   GameDifficulty,

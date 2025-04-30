@@ -3,14 +3,14 @@ import {
   setPlayerInactive,
   subscribeToGamePlayers,
   unsubscribeFromGamePlayers,
-} from "@/lib/supabase-game-players";
+} from "@/lib/supabase/supabase-game-players";
 import {
   getGameByCode,
   subscribeToGame,
   unsubscribeFromGame,
   updateGameStatus,
-} from "@/lib/supabase-games";
-import { getProfileById } from "@/lib/supabase-profiles";
+} from "@/lib/supabase/supabase-games";
+import { getProfileById } from "@/lib/supabase/supabase-profiles";
 import type { GameWithPlayers } from "@/types/supabase";
 import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";

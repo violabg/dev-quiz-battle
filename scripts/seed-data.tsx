@@ -1,10 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { addPlayerToGame } from "@/lib/supabase-game-players";
-import { createGame } from "@/lib/supabase-games";
-import { createProfile, getProfileByUsername } from "@/lib/supabase-profiles";
 import { createClient } from "@/lib/supabase/client";
+import { addPlayerToGame } from "@/lib/supabase/supabase-game-players";
+import { createGame } from "@/lib/supabase/supabase-games";
+import {
+  createProfile,
+  getProfileByUsername,
+} from "@/lib/supabase/supabase-profiles";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";

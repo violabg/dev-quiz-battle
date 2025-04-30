@@ -3,7 +3,7 @@ import type {
   GenerateUniqueGameCodeArgs,
   GenerateUniqueGameCodeReturn,
 } from "@/types/supabase";
-import { createClient } from "./supabase/client";
+import { createClient } from "./client";
 
 export async function createGame(
   host_id: string,

@@ -4,7 +4,7 @@ import type {
   Player,
   Profile,
 } from "@/types/supabase";
-import { createClient } from "./supabase/client";
+import { createClient } from "./client";
 
 export type LeaderboardPlayer = {
   player_id: string;

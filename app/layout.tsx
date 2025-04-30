@@ -1,6 +1,6 @@
-import { AuthProvider } from "@/components/auth-provider";
 import { Navbar } from "@/components/layout/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SupabaseProvider } from "@/lib/supabase/supabase-provider";
 import { Inter } from "next/font/google";
 import type React from "react";
 import { Toaster } from "sonner";
@@ -27,7 +27,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>
+          <SupabaseProvider>
             <div className="flex flex-col min-h-screen">
               <Navbar />
               {children}
@@ -41,7 +41,7 @@ export default async function RootLayout({
               </footer>
             </div>
             <Toaster richColors />
-          </AuthProvider>
+          </SupabaseProvider>
         </ThemeProvider>
       </body>
     </html>

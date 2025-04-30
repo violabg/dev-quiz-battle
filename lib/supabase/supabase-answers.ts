@@ -3,7 +3,7 @@ import type {
   CalculateScoreArgs,
   CalculateScoreReturn,
 } from "@/types/supabase";
-import { createClient } from "./supabase/client";
+import { createClient } from "./client";
 
 export async function insertAnswer(answer: Partial<Answer>) {
   const supabase = createClient();

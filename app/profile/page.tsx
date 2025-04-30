@@ -1,5 +1,5 @@
-import { getProfileWithScore } from "@/lib/supabase-profiles";
 import { createClient } from "@/lib/supabase/server";
+import { getProfileWithScore } from "@/lib/supabase/supabase-profiles";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ProfileContent } from "./ProfileContent";

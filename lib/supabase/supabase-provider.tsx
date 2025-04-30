@@ -1,24 +1,26 @@
 "use client";
 import { createClient } from "@/lib/supabase/client";
-import type { User } from "@supabase/supabase-js";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { createContext, useContext, useEffect, useState } from "react";
 
-interface AuthContextValue {
-  user: User | null;
+interface SupabaseContextValue {
   loading: boolean;
+  supabase: SupabaseClient;
+  user: User | null;
 }
 
-const AuthContext = createContext<AuthContextValue>({
+const SupabaseContext = createContext<SupabaseContextValue>({
   user: null,
   loading: true,
+  supabase: createClient(),
 });
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
-    const supabase = createClient();
     let mounted = true;
     supabase.auth.getUser().then(({ data }) => {
       if (mounted) {
@@ -38,12 +40,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <SupabaseContext.Provider value={{ loading, supabase, user }}>
       {children}
-    </AuthContext.Provider>
+    </SupabaseContext.Provider>
   );
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  return useContext(SupabaseContext);
 }

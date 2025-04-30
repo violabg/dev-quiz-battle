@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getAnswersWithPlayerForQuestion } from "@/lib/supabase-answers";
+import { getAnswersWithPlayerForQuestion } from "@/lib/supabase/supabase-answers";
 import type { AnswerWithPlayer, Question } from "@/types/supabase";
 import { User } from "@supabase/supabase-js";
 import { Check, Clock, X } from "lucide-react";

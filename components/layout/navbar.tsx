@@ -1,6 +1,5 @@
 "use client";
 
-import { useAuth } from "@/components/auth-provider";
 import { ModeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,16 +10,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/lib/supabase/supabase-provider";
 import { Loader2, LogOut, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 export function Navbar() {
-  const supabase = createClient();
   const pathname = usePathname();
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { loading, supabase, user } = useAuth();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -59,7 +57,7 @@ export function Navbar() {
         <div className="flex items-center gap-4">
           <ModeToggle />
           {loading ? (
-            <Loader2 />
+            <Loader2 className="mr-2 w-4 h-4 animate-spin" />
           ) : (
             <>
               {user ? (
