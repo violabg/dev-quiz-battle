@@ -14,7 +14,7 @@ DevQuizBattle is a multiplayer, turn-based coding quiz game powered by AI. The f
 2. **Game Joining**
 
    - Players join by entering a game code.
-   - Players select a username and avatar before joining.
+   - Players select a user_name and avatar before joining.
    - All active players are visible in a waiting area.
    - The host can start the game when ready.
 

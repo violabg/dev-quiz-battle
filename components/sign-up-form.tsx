@@ -39,7 +39,7 @@ const signUpSchema = z
       .string()
       .min(2, { message: "Cognome deve essere almeno 2 caratteri" })
       .max(30, { message: "Cognome deve essere massimo 30 caratteri" }),
-    username: z
+    user_name: z
       .string()
       .min(3, { message: "Username deve essere almeno 3 caratteri" })
       .max(20, { message: "Username deve essere massimo 20 caratteri" })
@@ -68,7 +68,7 @@ export function SignUpForm({
     defaultValues: {
       first_name: "",
       last_name: "",
-      username: "",
+      user_name: "",
       email: "",
       password: "",
       repeatPassword: "",
@@ -87,9 +87,9 @@ export function SignUpForm({
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            username: values.username,
-            first_name: values.first_name,
-            last_name: values.last_name,
+            user_name: values.user_name,
+            name: `${values.first_name} ${values.last_name}`,
+            full_name: `${values.first_name} ${values.last_name}`,
           },
         },
       });
@@ -159,7 +159,7 @@ export function SignUpForm({
                 )}
               />
               <FormField
-                name="username"
+                name="user_name"
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
@@ -168,7 +168,7 @@ export function SignUpForm({
                       <Input
                         type="text"
                         placeholder="johndoe"
-                        autoComplete="username"
+                        autoComplete="user_name"
                         disabled={isLoading}
                         {...field}
                       />

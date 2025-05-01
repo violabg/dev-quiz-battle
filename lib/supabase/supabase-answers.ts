@@ -30,7 +30,7 @@ export async function getAnswersWithPlayerForQuestion(question_id: string) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("answers")
-    .select(`*, player:player_id(id, username, avatar_url)`)
+    .select(`*, player:player_id(id, user_name, avatar_url)`)
     .eq("question_id", question_id);
   if (error) throw error;
   return data;

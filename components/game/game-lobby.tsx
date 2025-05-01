@@ -38,7 +38,7 @@ export function GameLobby({
   } else if (game.status === "active") {
     lobbyMessage =
       "In attesa che venga generata la domanda da " +
-      (currentTurnPlayer?.profile.username || "...");
+      (currentTurnPlayer?.profile.user_name || "...");
   }
 
   return (
@@ -83,11 +83,11 @@ export function GameLobby({
               <Avatar>
                 <AvatarImage src={player.profile.avatar_url || undefined} />
                 <AvatarFallback>
-                  {player.profile.username.substring(0, 2).toUpperCase()}
+                  {player.profile.user_name.substring(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <p className="font-medium">{player.profile.username}</p>
+                <p className="font-medium">{player.profile.user_name}</p>
                 <p className="text-muted-foreground text-sm">
                   Ordine di turno: {player.turn_order}
                 </p>

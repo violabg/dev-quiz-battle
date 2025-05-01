@@ -62,7 +62,7 @@ export function GameRoom({
   );
   const [winner, setWinner] = useState<{
     playerId: string;
-    username: string;
+    user_name: string;
     score: number;
   } | null>(null);
   const [showNextTurn, setShowNextTurn] = useState(false);
@@ -386,7 +386,7 @@ export function GameRoom({
       if (correct) {
         setWinner({
           playerId: correct.player_id,
-          username: correct.player.username,
+          user_name: correct.player.user_name,
           score: correct.score_earned,
         });
       } else {
@@ -427,7 +427,7 @@ export function GameRoom({
           ) : (
             <QuestionSelection
               isCurrentPlayersTurn={isCurrentPlayersTurn}
-              currentPlayerUsername={currentPlayer?.profile.username}
+              currentPlayerUsername={currentPlayer?.profile.user_name}
               isLoading={isLoading}
               language={language}
               difficulty={difficulty}

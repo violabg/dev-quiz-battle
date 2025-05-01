@@ -23,10 +23,10 @@ export const CurrentTurnCard = ({
         <Avatar>
           <AvatarImage src={currentPlayer?.avatar_url || undefined} />
           <AvatarFallback>
-            {currentPlayer?.username?.substring(0, 2).toUpperCase()}
+            {currentPlayer?.user_name?.substring(0, 2).toUpperCase()}
           </AvatarFallback>
         </Avatar>
-        <span className="font-medium">{currentPlayer?.username}</span>
+        <span className="font-medium">{currentPlayer?.user_name}</span>
         {isCurrentPlayersTurn && <Badge className="ml-1">Il tuo turno</Badge>}
       </div>
     </CardContent>

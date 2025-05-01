@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 
 interface ProfileData {
   id: string;
-  username: string;
+  user_name: string;
   avatar_url?: string | null;
   total_score: number;
 }
@@ -15,14 +15,14 @@ export function ProfileContent({ profile }: { profile: ProfileData }) {
         <Avatar className="mb-4 border-4 border-gradient w-20 h-20">
           <AvatarImage
             src={profile.avatar_url || "/placeholder-user.jpg"}
-            alt={profile.username || "Avatar"}
+            alt={profile.user_name || "Avatar"}
           />
           <AvatarFallback className="text-3xl">
-            {profile.username?.[0]?.toUpperCase() || "U"}
+            {profile.user_name?.[0]?.toUpperCase() || "U"}
           </AvatarFallback>
         </Avatar>
         <h2 className="mb-2 font-bold text-gradient text-2xl">
-          {profile.username}
+          {profile.user_name}
         </h2>
         <div className="flex flex-col items-center gap-2">
           <span className="font-semibold text-lg">Punteggio totale</span>

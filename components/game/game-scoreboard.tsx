@@ -91,11 +91,11 @@ export default function Scoreboard({
                         src={player.profile.avatar_url || undefined}
                       />
                       <AvatarFallback>
-                        {player.profile.username.substring(0, 2).toUpperCase()}
+                        {player.profile.user_name.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <span className="font-medium">
-                      {player.profile.username}
+                      {player.profile.user_name}
                     </span>
                     {player.player_id === game.host_id && (
                       <Badge variant="outline" className="ml-1">

@@ -12,21 +12,27 @@ export interface Database {
       profiles: {
         Row: {
           id: string;
-          username: string;
+          name: string;
+          full_name: string;
+          user_name: string;
           avatar_url: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id: string;
-          username: string;
+          name: string;
+          full_name: string;
+          user_name: string;
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          username?: string;
+          name?: string;
+          full_name?: string;
+          user_name?: string;
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -196,7 +202,7 @@ export interface Database {
         Returns: {
           player_id: string;
           total_score: number;
-          username: string;
+          user_name: string;
           avatar_url: string | null;
         }[];
       };
@@ -206,7 +212,7 @@ export interface Database {
         };
         Returns: {
           profile_id: string;
-          username: string;
+          user_name: string;
           avatar_url: string | null;
           total_score: number;
         }[];
@@ -235,7 +241,9 @@ export type GetLeaderboardPlayersArgs = {
 export type GetLeaderboardPlayersReturn = {
   player_id: string;
   total_score: number;
-  username: string;
+  name: string;
+  full_name: string;
+  user_name: string;
   avatar_url: string | null;
 };
 
@@ -247,7 +255,9 @@ export type GetUserProfileWithScoreArgs = {
 };
 export type GetUserProfileWithScoreReturn = {
   profile_id: string;
-  username: string;
+  name: string;
+  full_name: string;
+  user_name: string;
   avatar_url: string | null;
   total_score: number;
 };
@@ -296,5 +306,5 @@ export type AnswerWithPlayer = {
   response_time_ms: number;
   score_earned: number;
   answered_at: string;
-  player: { id: string; username: string; avatar_url?: string | null };
+  player: { id: string; user_name: string; avatar_url?: string | null };
 };

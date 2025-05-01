@@ -13,7 +13,7 @@ import { useEffect, useMemo, useState } from "react";
 interface QuestionDisplayProps {
   question: Question & { ended_at?: string; started_at?: string };
   onSubmitAnswer: (selectedOption: number) => void;
-  winner?: { playerId: string; username: string; score: number } | null;
+  winner?: { playerId: string; user_name: string; score: number } | null;
   allAnswers: AnswerWithPlayer[];
   timeIsUp?: boolean;
   user: User;
@@ -255,7 +255,7 @@ export function QuestionDisplay({
                       )}
                       <span>{option.text}</span>
                     </div>
-                    {/* Show wrong player usernames for this option */}
+                    {/* Show wrong player user_names for this option */}
                     {wrongPlayers.length > 0 && (
                       <div className="flex flex-col items-end ml-4">
                         {wrongPlayers.map((a) => (
@@ -263,7 +263,7 @@ export function QuestionDisplay({
                             key={a.player.id}
                             className="bg-[oklch(0.98_0.005_210)] shadow mt-1 px-2 py-1 border border-[oklch(0.6_0.18_22.5)] rounded font-bold text-[oklch(0.65_0.18_22.5)] text-xs uppercase tracking-wide"
                           >
-                            {a.player.username}
+                            {a.player.user_name}
                           </span>
                         ))}
                       </div>
@@ -299,7 +299,7 @@ export function QuestionDisplay({
                   ) : (
                     <X className="mr-2 w-5 h-5 text-red-500" />
                   )}
-                  <span className="font-medium">{answer.player.username}</span>
+                  <span className="font-medium">{answer.player.user_name}</span>
                   {winner && answer.player_id === winner.playerId && (
                     <span className="ml-2 font-bold text-green-700">
                       (Vincitore)

@@ -55,7 +55,7 @@ GROQ_API_KEY="gsk_***"
 
 ### 3. Profiles Table
 
-- Handles user profile management (username, avatar, etc.).
+- Handles user profile management (user_name, avatar, etc.).
 - CRUD operations for profiles (insert, select, check existence).
 
 ### 4. Games Table
@@ -90,7 +90,7 @@ GROQ_API_KEY="gsk_***"
 
 - `calculate_score` — Calculates score based on response time and time limit.
 - `generate_unique_game_code` — Generates a unique game room code.
-- `get_leaderboard_players` — Returns leaderboard player data (id, score, username, avatar).
+- `get_leaderboard_players` — Returns leaderboard player data (id, score, user_name, avatar).
 - `get_user_profile_with_score` — Returns a user's profile and total score.
 
 ### 10. State Rules

@@ -7,13 +7,6 @@ import type {
 import { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./client";
 
-export type LeaderboardPlayer = {
-  player_id: string;
-  total_score: number;
-  username: string;
-  avatar_url: string | null;
-};
-
 export async function addPlayerToGame(
   game_id: string,
   player_id: string,
@@ -31,7 +24,7 @@ export async function getPlayersForGame(game_id: string) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("game_players")
-    .select("*, profile:player_id(id, username, avatar_url)")
+    .select("*, profile:player_id(id, user_name, avatar_url)")
     .eq("game_id", game_id)
     .order("turn_order", { ascending: true });
   if (error) throw error;

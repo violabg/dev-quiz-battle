@@ -8,10 +8,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { createClient } from "@/lib/supabase/server";
-import {
-  getLeaderboardPlayers,
-  LeaderboardPlayer,
-} from "@/lib/supabase/supabase-game-players";
+import { getLeaderboardPlayers } from "@/lib/supabase/supabase-game-players";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 
@@ -23,8 +20,10 @@ interface LeaderboardPlayerForStanding {
   score: number;
   profile: {
     id: string;
-    username: string;
     avatar_url: string | null;
+    user_name: string;
+    name: string;
+    full_name: string;
     created_at: string;
     updated_at: string;
   };
@@ -42,14 +41,14 @@ async function getPlayers(supabase: SupabaseClient, page: number) {
   // Use helper from supabase-game-players
   const data = await getLeaderboardPlayers(supabase, offset, limit);
   // Map to expected structure for PlayersStanding
-  const players: LeaderboardPlayerForStanding[] = (
-    data as LeaderboardPlayer[]
-  ).map((p) => ({
+  const players: LeaderboardPlayerForStanding[] = data.map((p) => ({
     id: p.player_id,
     score: Number(p.total_score),
     profile: {
       id: p.player_id,
-      username: p.username,
+      name: p.name,
+      full_name: p.full_name,
+      user_name: p.user_name,
       avatar_url: p.avatar_url,
       created_at: "",
       updated_at: "",

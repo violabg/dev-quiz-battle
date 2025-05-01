@@ -13,7 +13,7 @@ async function ProfileLoader({ userId }: { userId: string }) {
       <ProfileContent
         profile={{
           id: profileData.profile_id,
-          username: profileData.username,
+          user_name: profileData.user_name,
           avatar_url: profileData.avatar_url,
           total_score: profileData.total_score,
         }}

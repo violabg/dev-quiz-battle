@@ -17,20 +17,20 @@ export async function getProfileById(id: string) {
   return data as Profile;
 }
 
-export async function getProfileByUsername(username: string) {
+export async function getProfileByUsername(user_name: string) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
-    .eq("username", username)
+    .eq("user_name", user_name)
     .maybeSingle();
   if (error) throw error;
   return data as Profile | null;
 }
 
-export async function createProfile(id: string, username: string) {
+export async function createProfile(id: string, user_name: string) {
   const supabase = createClient();
-  const { error } = await supabase.from("profiles").insert({ id, username });
+  const { error } = await supabase.from("profiles").insert({ id, user_name });
   if (error) throw error;
   return true;
 }
@@ -55,11 +55,11 @@ export async function ensureUserProfile(user: {
     }
   }
   if (!profile) {
-    const username =
+    const user_name =
       user.email?.split("@")[0] ||
       `user_${crypto.randomBytes(6).toString("base64url").substring(0, 6)}`;
     try {
-      await createProfile(user.id, username);
+      await createProfile(user.id, user_name);
     } catch {
       return false;
     }

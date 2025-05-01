@@ -14,7 +14,7 @@ export const useCurrentUserName = () => {
       setName(
         data.session?.user.user_metadata.full_name
           ? data.session?.user.user_metadata.full_name
-          : data.session?.user.user_metadata.username ?? "?"
+          : data.session?.user.user_metadata.user_name ?? "?"
       );
     };
 

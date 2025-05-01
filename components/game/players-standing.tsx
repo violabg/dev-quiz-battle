@@ -21,7 +21,7 @@ export const PlayersStanding = ({ players }: PlayersStandingProps) => {
             </div>
             <div className="w-full min-w-0 text-center">
               <p className="max-w-full font-medium break-words whitespace-pre-line hyphens-auto">
-                {winners[1].profile.username}
+                {winners[1].profile.user_name}
               </p>
               <p className="font-bold text-2xl">{winners[1].score}</p>
             </div>
@@ -35,7 +35,7 @@ export const PlayersStanding = ({ players }: PlayersStandingProps) => {
             </div>
             <div className="w-full min-w-0 text-center">
               <p className="max-w-full font-medium break-words whitespace-pre-line hyphens-auto">
-                {winners[0].profile.username}
+                {winners[0].profile.user_name}
               </p>
               <p className="font-bold text-gradient text-3xl">
                 {winners[0].score}
@@ -51,7 +51,7 @@ export const PlayersStanding = ({ players }: PlayersStandingProps) => {
             </div>
             <div className="w-full min-w-0 text-center">
               <p className="max-w-full font-medium break-words whitespace-pre-line hyphens-auto">
-                {winners[2].profile.username}
+                {winners[2].profile.user_name}
               </p>
               <p className="font-bold text-2xl">{winners[2].score}</p>
             </div>
@@ -72,7 +72,7 @@ export const PlayersStanding = ({ players }: PlayersStandingProps) => {
                 <span className="font-medium text-muted-foreground">
                   #{index + 1}
                 </span>
-                <span>{player.profile.username}</span>
+                <span>{player.profile.user_name}</span>
               </div>
               <span className="font-bold">{player.score}</span>
             </li>
