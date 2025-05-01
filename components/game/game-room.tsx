@@ -442,13 +442,6 @@ export function GameRoom({
             isRoundComplete={isRoundComplete}
             onLeaveGame={onLeaveGame}
           />
-          <CurrentTurnCard
-            currentPlayer={{
-              ...currentPlayer?.profile,
-              player_id: currentPlayer?.player_id,
-            }}
-            isCurrentPlayersTurn={isCurrentPlayersTurn}
-          />
           {(winner ||
             (currentQuestion && currentQuestion.ended_at && !winner)) && (
             <TurnResultCard
@@ -459,6 +452,13 @@ export function GameRoom({
               handleNextTurn={handleNextTurn}
             />
           )}
+          <CurrentTurnCard
+            currentPlayer={{
+              ...currentPlayer?.profile,
+              player_id: currentPlayer?.player_id,
+            }}
+            isCurrentPlayersTurn={isCurrentPlayersTurn}
+          />
         </div>
       </div>
     </div>
