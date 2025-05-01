@@ -101,7 +101,7 @@ CREATE OR REPLACE FUNCTION public.generate_unique_game_code()
 RETURNS text
 LANGUAGE plpgsql
 SECURITY INVOKER
-SET search_path = '' 
+SET search_path = 'public' 
 AS $$
 DECLARE
   chars TEXT := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -129,7 +129,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY INVOKER SET search_path = 'public';
 
 CREATE TRIGGER trigger_set_game_code
 BEFORE INSERT ON games
@@ -144,7 +144,7 @@ CREATE OR REPLACE FUNCTION calculate_score(
 RETURNS DECIMAL 
 LANGUAGE plpgsql
 SECURITY INVOKER
-SET search_path = '' 
+SET search_path = 'public' 
 AS $$
 DECLARE
   base_score DECIMAL := 1.0;
@@ -197,7 +197,6 @@ CREATE OR REPLACE FUNCTION submit_answer(
   p_score_earned DECIMAL
 )
 RETURNS UUID
-SECURITY DEFINER
 AS $$
 DECLARE
   v_answer_id UUID;
@@ -230,7 +229,7 @@ BEGIN
 
   RETURN v_answer_id;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY INVOKER SET search_path = 'public';
 
 -- Leaderboard function: sum scores per player, join profile, paginated
 CREATE OR REPLACE FUNCTION get_leaderboard_players(
@@ -260,7 +259,7 @@ BEGIN
     ORDER BY total_score DESC
     LIMIT limit_value OFFSET offset_value;  -- Corrected order of LIMIT and OFFSET
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY INVOKER SET search_path = 'public';
 
 CREATE OR REPLACE FUNCTION get_user_profile_with_score(user_id uuid)
 RETURNS TABLE(profile_id uuid, name text, full_name text, user_name text, avatar_url text, total_score bigint) AS $$
@@ -272,7 +271,7 @@ BEGIN
     WHERE p.id = user_id
     GROUP BY p.id;
 END;
-$$ LANGUAGE plpgsql SECURITY INVOKER;
+$$ LANGUAGE plpgsql SECURITY INVOKER SET search_path = 'public';
 
 -- Policies for row-level security
 alter table public.profiles enable row level security;
