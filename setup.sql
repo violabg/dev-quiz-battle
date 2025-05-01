@@ -96,6 +96,13 @@ CREATE TABLE IF NOT EXISTS answers (
   UNIQUE(question_id, player_id)
 );
 
+-- Enable Realtime for all tables
+alter publication supabase_realtime add table public.profiles;
+alter publication supabase_realtime add table public.games;
+alter publication supabase_realtime add table public.game_players;
+alter publication supabase_realtime add table public.questions;
+alter publication supabase_realtime add table public.answers;
+
 -- Create function to generate unique game codes
 CREATE OR REPLACE FUNCTION public.generate_unique_game_code()
 RETURNS text
@@ -279,6 +286,13 @@ alter table public.games enable row level security;
 alter table public.game_players enable row level security;
 alter table public.questions enable row level security;
 alter table public.answers enable row level security;
+
+-- Enable Realtime for all tables
+alter publication supabase_realtime add table public.profiles;
+alter publication supabase_realtime add table public.games;
+alter publication supabase_realtime add table public.game_players;
+alter publication supabase_realtime add table public.questions;
+alter publication supabase_realtime add table public.answers;
 
 -- RLS policies for table: profiles
 -- Explanation: Allow all users (authenticated and anonymous) to select profiles. Permissive policy for public profile data.
