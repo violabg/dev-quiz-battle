@@ -17,13 +17,13 @@ export const TurnResultCard = ({
   handleNextTurn,
 }: TurnResultCardProps) => (
   <Card className="gradient-border glass-card">
-    <CardContent className="flex flex-col items-center mt-6">
+    <CardContent className="flex flex-col items-center">
       {winner ? (
         <div className="mb-2 font-bold text-green-600 text-lg">
           {winner.user_name} ha indovinato! (+{winner.score.toFixed(1)} punti)
         </div>
       ) : (
-        <div className="mb-2 font-bold text-yellow-600 text-lg">
+        <div className="font-bold text-yellow-600 text-lg">
           Tempo scaduto! Nessun giocatore ha risposto correttamente.
         </div>
       )}
