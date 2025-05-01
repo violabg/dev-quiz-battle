@@ -10,8 +10,6 @@ create table public.profiles (
   primary key (id)
 );
 
-alter table public.profiles enable row level security;
-
 -- inserts a row into public.profiles
 create function public.handle_new_user()
 returns trigger
@@ -274,8 +272,157 @@ END;
 $$ LANGUAGE plpgsql SECURITY INVOKER;
 
 -- Policies for row-level security
-CREATE POLICY "Allow authenticated and anonymous users to select profiles" 
-ON profiles 
-FOR SELECT 
-TO authenticated, anon 
+alter table public.profiles enable row level security;
+alter table public.games enable row level security;
+alter table public.game_players enable row level security;
+alter table public.questions enable row level security;
+alter table public.answers enable row level security;
+
+-- RLS policies for table: profiles
+-- Explanation: Allow all users (authenticated and anonymous) to select profiles. Permissive policy for public profile data.
+CREATE POLICY "Allow authenticated and anonymous users to select profiles"
+ON profiles
+FOR SELECT
+TO authenticated, anon
 USING (true);
+
+-- Explanation: Allow only authenticated users to insert their own profile. (Supabase creates profile on signup)
+CREATE POLICY "Allow authenticated users to insert their own profile"
+ON profiles
+FOR INSERT
+TO authenticated
+WITH CHECK ((select auth.uid()) = id);
+
+-- Explanation: Allow only authenticated users to update their own profile.
+CREATE POLICY "Allow authenticated users to update their own profile"
+ON profiles
+FOR UPDATE
+TO authenticated
+USING ((select auth.uid()) = id)
+WITH CHECK ((select auth.uid()) = id);
+
+-- Explanation: Allow only authenticated users to delete their own profile.
+CREATE POLICY "Allow authenticated users to delete their own profile"
+ON profiles
+FOR DELETE
+TO authenticated
+USING ((select auth.uid()) = id);
+
+-- RLS policies for table: games
+-- Explanation: Allow all users to select games (public game data).
+CREATE POLICY "Allow authenticated and anonymous users to select games"
+ON games
+FOR SELECT
+TO authenticated, anon
+USING (true);
+
+-- Explanation: Allow only authenticated users to insert games (host a game).
+CREATE POLICY "Allow authenticated users to insert games"
+ON games
+FOR INSERT
+TO authenticated
+WITH CHECK ((select auth.uid()) = host_id);
+
+-- Explanation: Allow only the host to update their own games.
+CREATE POLICY "Allow authenticated and anonymous to update the games"
+ON games
+FOR UPDATE
+TO authenticated, anon
+USING (true);
+
+-- Explanation: Allow only the host to delete their own games.
+CREATE POLICY "Allow host to delete their own games"
+ON games
+FOR DELETE
+TO authenticated
+USING ((select auth.uid()) = host_id);
+
+-- RLS policies for table: game_players
+-- Explanation: Allow all users to select game_players (public leaderboard/scoreboard).
+CREATE POLICY "Allow authenticated and anonymous users to select game_players"
+ON game_players
+FOR SELECT
+TO authenticated, anon
+USING (true);
+
+-- Explanation: Allow authenticated users to insert themselves as game_players.
+CREATE POLICY "Allow authenticated users to insert themselves as game_players"
+ON game_players
+FOR INSERT
+TO authenticated
+WITH CHECK ((select auth.uid()) = player_id);
+
+-- Explanation: Allow authenticated users to update their own game_player row.
+CREATE POLICY "Allow authenticated users to update their own game_player row"
+ON game_players
+FOR UPDATE
+TO authenticated
+USING ((select auth.uid()) = player_id)
+WITH CHECK ((select auth.uid()) = player_id);
+
+-- Explanation: Allow authenticated users to delete their own game_player row.
+CREATE POLICY "Allow authenticated users to delete their own game_player row"
+ON game_players
+FOR DELETE
+TO authenticated
+USING ((select auth.uid()) = player_id);
+
+-- RLS policies for table: questions
+-- Explanation: Allow all users to select questions (public game data).
+CREATE POLICY "Allow authenticated and anonymous users to select questions"
+ON questions
+FOR SELECT
+TO authenticated, anon
+USING (true);
+
+-- Explanation: Allow authenticated users to insert questions they authored.
+CREATE POLICY "Allow authenticated users to insert questions they authored"
+ON questions
+FOR INSERT
+TO authenticated
+WITH CHECK ((select auth.uid()) = created_by_player_id);
+
+-- Explanation: Allow only the author to update their own questions.
+CREATE POLICY "Allow author to update their own questions"
+ON questions
+FOR UPDATE
+TO authenticated
+USING ((select auth.uid()) = created_by_player_id)
+WITH CHECK ((select auth.uid()) = created_by_player_id);
+
+-- Explanation: Allow only the author to delete their own questions.
+CREATE POLICY "Allow author to delete their own questions"
+ON questions
+FOR DELETE
+TO authenticated
+USING ((select auth.uid()) = created_by_player_id);
+
+-- RLS policies for table: answers
+-- Explanation: Allow all users to select answers (public game data).
+CREATE POLICY "Allow authenticated and anonymous users to select answers"
+ON answers
+FOR SELECT
+TO authenticated, anon
+USING (true);
+
+-- Explanation: Allow authenticated users to insert their own answers.
+CREATE POLICY "Allow authenticated users to insert their own answers"
+ON answers
+FOR INSERT
+TO authenticated
+WITH CHECK ((select auth.uid()) = player_id);
+
+-- Explanation: Allow authenticated users to update their own answers.
+CREATE POLICY "Allow authenticated users to update their own answers"
+ON answers
+FOR UPDATE
+TO authenticated
+USING ((select auth.uid()) = player_id)
+WITH CHECK ((select auth.uid()) = player_id);
+
+-- Explanation: Allow authenticated users to delete their own answers.
+CREATE POLICY "Allow authenticated users to delete their own answers"
+ON answers
+FOR DELETE
+TO authenticated
+USING ((select auth.uid()) = player_id);
