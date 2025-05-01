@@ -7,8 +7,8 @@
       "file": ".github/copilot-instructions.md"
     }
   ],
-  "chat.promptFiles": true,
-  "chat.promptFilesLocations": {
-    "default": [".github/prompts"]
-  }
+  "chat.promptFiles": true
+  // "chat.promptFilesLocations": {
+  //   "default": [".github/prompts"]
+  // }
 }
