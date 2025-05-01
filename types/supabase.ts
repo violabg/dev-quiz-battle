@@ -202,6 +202,8 @@ export interface Database {
         Returns: {
           player_id: string;
           total_score: number;
+          name: string;
+          full_name: string;
           user_name: string;
           avatar_url: string | null;
         }[];
@@ -212,6 +214,8 @@ export interface Database {
         };
         Returns: {
           profile_id: string;
+          name: string;
+          full_name: string;
           user_name: string;
           avatar_url: string | null;
           total_score: number;

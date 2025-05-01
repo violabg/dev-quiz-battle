@@ -10,6 +10,7 @@ export const PlayersStanding = ({ players }: PlayersStandingProps) => {
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
   // Get top 3 players
   const winners = sortedPlayers.slice(0, 3);
+  console.log("🚀 ~ PlayersStanding ~ winners:", winners);
 
   return (
     <>
@@ -21,7 +22,7 @@ export const PlayersStanding = ({ players }: PlayersStandingProps) => {
             </div>
             <div className="w-full min-w-0 text-center">
               <p className="max-w-full font-medium break-words whitespace-pre-line hyphens-auto">
-                {winners[1].profile.user_name}
+                {winners[1].profile.full_name}
               </p>
               <p className="font-bold text-2xl">{winners[1].score}</p>
             </div>
@@ -35,7 +36,7 @@ export const PlayersStanding = ({ players }: PlayersStandingProps) => {
             </div>
             <div className="w-full min-w-0 text-center">
               <p className="max-w-full font-medium break-words whitespace-pre-line hyphens-auto">
-                {winners[0].profile.user_name}
+                {winners[0].profile.full_name}
               </p>
               <p className="font-bold text-gradient text-3xl">
                 {winners[0].score}
@@ -51,7 +52,7 @@ export const PlayersStanding = ({ players }: PlayersStandingProps) => {
             </div>
             <div className="w-full min-w-0 text-center">
               <p className="max-w-full font-medium break-words whitespace-pre-line hyphens-auto">
-                {winners[2].profile.user_name}
+                {winners[2].profile.full_name}
               </p>
               <p className="font-bold text-2xl">{winners[2].score}</p>
             </div>
@@ -72,7 +73,7 @@ export const PlayersStanding = ({ players }: PlayersStandingProps) => {
                 <span className="font-medium text-muted-foreground">
                   #{index + 1}
                 </span>
-                <span>{player.profile.user_name}</span>
+                <span>{player.profile.full_name}</span>
               </div>
               <span className="font-bold">{player.score}</span>
             </li>

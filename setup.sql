@@ -240,6 +240,8 @@ CREATE OR REPLACE FUNCTION get_leaderboard_players(
 RETURNS TABLE (
   player_id uuid,
   total_score numeric,
+  name text,
+  full_name text,
   user_name text,
   avatar_url text
 ) AS $$
@@ -248,22 +250,23 @@ BEGIN
     SELECT
       gp.player_id,
       SUM(gp.score) AS total_score,
+      p.name,
+      p.full_name,
       p.user_name,
       p.avatar_url
     FROM game_players gp
     JOIN profiles p ON gp.player_id = p.id
-    GROUP BY gp.player_id, p.user_name, p.avatar_url
+    GROUP BY gp.player_id, p.name, p.full_name, p.user_name, p.avatar_url
     ORDER BY total_score DESC
     LIMIT limit_value OFFSET offset_value;  -- Corrected order of LIMIT and OFFSET
 END;
 $$ LANGUAGE plpgsql;
 
--- Function to user details with player scores
 CREATE OR REPLACE FUNCTION get_user_profile_with_score(user_id uuid)
-RETURNS TABLE(profile_id uuid, user_name text, avatar_url text, total_score bigint) AS $$
+RETURNS TABLE(profile_id uuid, name text, full_name text, user_name text, avatar_url text, total_score bigint) AS $$
 BEGIN
     RETURN QUERY
-    SELECT p.id, p.user_name, p.avatar_url, COALESCE(SUM(gp.score)::bigint, 0) AS total_score
+    SELECT p.id, p.name, p.full_name, p.user_name, p.avatar_url, COALESCE(SUM(gp.score)::bigint, 0) AS total_score
     FROM profiles p
     LEFT JOIN game_players gp ON p.id = gp.player_id
     WHERE p.id = user_id

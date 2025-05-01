@@ -87,7 +87,7 @@ export function GameLobby({
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <p className="font-medium">{player.profile.user_name}</p>
+                <p className="font-medium">{player.profile.full_name}</p>
                 <p className="text-muted-foreground text-sm">
                   Ordine di turno: {player.turn_order}
                 </p>

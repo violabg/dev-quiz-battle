@@ -80,32 +80,36 @@ export default function Scoreboard({
           <>
             {[...game.players]
               .sort((a, b) => b.score - a.score)
-              .map((player) => (
-                <div
-                  key={player.id}
-                  className="flex justify-between items-center p-2 border rounded-lg"
-                >
-                  <div className="flex items-center gap-2">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage
-                        src={player.profile.avatar_url || undefined}
-                      />
-                      <AvatarFallback>
-                        {player.profile.user_name.substring(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">
-                      {player.profile.user_name}
-                    </span>
-                    {player.player_id === game.host_id && (
-                      <Badge variant="outline" className="ml-1">
-                        Host
-                      </Badge>
-                    )}
+              .map((player) => {
+                return (
+                  <div
+                    key={player.id}
+                    className="flex justify-between items-center p-2 border rounded-lg"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage
+                          src={player.profile.avatar_url || undefined}
+                        />
+                        <AvatarFallback>
+                          {player.profile.user_name
+                            .substring(0, 2)
+                            .toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">
+                        {player.profile.full_name}
+                      </span>
+                      {player.player_id === game.host_id && (
+                        <Badge variant="outline" className="ml-1">
+                          Host
+                        </Badge>
+                      )}
+                    </div>
+                    <span className="font-bold">{player.score.toFixed(1)}</span>
                   </div>
-                  <span className="font-bold">{player.score.toFixed(1)}</span>
-                </div>
-              ))}
+                );
+              })}
           </>
         )}
       </CardContent>

@@ -24,7 +24,7 @@ export async function getPlayersForGame(game_id: string) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("game_players")
-    .select("*, profile:player_id(id, user_name, avatar_url)")
+    .select("*, profile:player_id(id, name, full_name, user_name, avatar_url)")
     .eq("game_id", game_id)
     .order("turn_order", { ascending: true });
   if (error) throw error;
