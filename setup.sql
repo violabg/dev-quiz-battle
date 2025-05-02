@@ -206,7 +206,21 @@ RETURNS UUID
 AS $$
 DECLARE
   v_answer_id UUID;
+  v_ended_at TIMESTAMP;
+  v_duplicate INT;
 BEGIN
+  -- Check if question already ended
+  SELECT ended_at INTO v_ended_at FROM questions WHERE id = p_question_id FOR UPDATE;
+  IF v_ended_at IS NOT NULL THEN
+    RETURN NULL; -- Question already ended, do not accept answer
+  END IF;
+
+  -- Check for duplicate answer (should be prevented by unique constraint, but explicit for clarity)
+  SELECT COUNT(*) INTO v_duplicate FROM answers WHERE question_id = p_question_id AND player_id = p_player_id;
+  IF v_duplicate > 0 THEN
+    RETURN NULL; -- Already answered
+  END IF;
+
   -- Insert answer
   INSERT INTO answers (
     question_id,
@@ -226,11 +240,12 @@ BEGIN
   )
   RETURNING id INTO v_answer_id;
 
-  -- Update player score if correct
+  -- If correct, end question and update score atomically
   IF p_is_correct THEN
+    UPDATE questions SET ended_at = NOW() WHERE id = p_question_id AND ended_at IS NULL;
     UPDATE game_players
-    SET score = score + p_score_earned
-    WHERE game_id = p_game_id AND player_id = p_player_id;
+      SET score = score + p_score_earned
+      WHERE game_id = p_game_id AND player_id = p_player_id;
   END IF;
 
   RETURN v_answer_id;
