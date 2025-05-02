@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getAnswersWithPlayerForQuestion } from "@/lib/supabase/supabase-answers";
 import type { AnswerWithPlayer, Question } from "@/types/supabase";
 import { User } from "@supabase/supabase-js";
 import { Check, Clock, X } from "lucide-react";
@@ -27,7 +26,6 @@ export function QuestionDisplay({
   timeIsUp,
   user,
 }: QuestionDisplayProps) {
-  const [hasAnswered, setHasAnswered] = useState(false);
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [activeTab, setActiveTab] = useState<string>("question");
 
@@ -40,19 +38,33 @@ export function QuestionDisplay({
   // Reset answer state on new turn
   const revealCorrect = Boolean(winner) || timeIsUp;
 
+  // Get the current user's answer
+  const userAnswer = useMemo(() => {
+    return allAnswers.find((a) => a.player_id === user?.id);
+  }, [allAnswers, user?.id]);
+
+  // Compute hasAnswered from actual answers instead of local state
+  const hasAnswered = Boolean(userAnswer);
+
   // Helper: get answer state for each option
   const getOptionState = (index: number) => {
     // If time is up or there is a winner, show correct answer
     if (revealCorrect && index === question.correct_answer) return "correct";
-    // If this option was selected by any player and is wrong, mark as wrong
+    // If this option has any wrong answers, mark as wrong
     if (allAnswers.some((a) => a.selected_option === index && !a.is_correct))
       return "wrong";
+    // If this option has any correct answers and we can reveal correct answers, mark as correct
+    if (
+      revealCorrect &&
+      allAnswers.some((a) => a.selected_option === index && a.is_correct)
+    )
+      return "correct";
     return "default";
   };
 
-  // Reset hasAnswered when question changes (new turn)
+  // Reset time elapsed when question changes (new turn)
   useEffect(() => {
-    setHasAnswered(false);
+    setTimeElapsed(0);
   }, [question.id]);
 
   useEffect(() => {
@@ -70,25 +82,13 @@ export function QuestionDisplay({
       }, 1000);
     }
 
-    // Check if user has already answered
-    const checkUserAnswer = async () => {
-      if (!user) return;
-      const answers = await getAnswersWithPlayerForQuestion(question.id);
-      if (answers && answers.some((a) => a.player_id === user.id)) {
-        setHasAnswered(true);
-      }
-    };
-
-    checkUserAnswer();
-
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [question.id, question.started_at, user]);
+  }, [question.id, question.started_at]);
 
   const handleSelectOption = (index: number) => {
     if (hasAnswered || winner) return;
-    setHasAnswered(true);
     onSubmitAnswer(index);
   };
 
