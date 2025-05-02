@@ -35,7 +35,30 @@ DevQuizBattle is a multiplayer, turn-based coding quiz game powered by AI. The f
      - Four possible answers (one correct).
      - An explanation of the correct answer (shown after completion).
 
-5. **Scoring System**
+5. **Question Presentation and Answer Submission**
+
+- Players are presented with a question and four possible answers.
+- A timer starts as soon as the question is displayed.
+- All players can submit their answers at any time during the timer.
+- Ensure there are no race conditions in the Supabase database when multiple players submit answers simultaneously.
+
+**Answer Validation:**
+
+- Upon answer submission, immediately check if the answer is correct or incorrect.
+- Once a player submits an answer, disable further submissions for that player for the current question.
+- Display the answer status (correct/incorrect) to all players in real time.
+
+**Incorrect Answer Handling:**
+
+- If a player submits an incorrect answer, they cannot answer the same question again.
+- Other players may continue submitting answers until someone answers correctly or the timer expires.
+
+**Game Completion:**
+
+- When a player submits the correct answer, or if the timer runs out with no correct answers, mark the question as completed.
+- Pass the turn to the next player.
+
+6. **Scoring System**
 
    - The first player to answer correctly receives 1 base point.
    - Time-based bonus points:
@@ -47,7 +70,7 @@ DevQuizBattle is a multiplayer, turn-based coding quiz game powered by AI. The f
    - Correct answers are highlighted in green; incorrect in red.
    - No penalty for wrong answers.
 
-6. **Real-time Updates**
+7. **Real-time Updates**
    - All game state changes are broadcast instantly to all players using Supabase Realtime.
    - Players see who is answering, current scores, and elapsed time.
    - The leaderboard updates live as scores change.

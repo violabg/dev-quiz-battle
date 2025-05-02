@@ -15,6 +15,7 @@ interface QuestionDisplayProps {
   winner?: { playerId: string; user_name: string; score: number } | null;
   allAnswers: AnswerWithPlayer[];
   timeIsUp?: boolean;
+  timeLimit?: number;
   user: User;
 }
 
@@ -24,9 +25,11 @@ export function QuestionDisplay({
   winner,
   allAnswers,
   timeIsUp,
+  timeLimit,
   user,
 }: QuestionDisplayProps) {
   const [timeElapsed, setTimeElapsed] = useState(0);
+  const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("question");
 
   // Parse options from JSON
@@ -87,9 +90,18 @@ export function QuestionDisplay({
     };
   }, [question.id, question.started_at]);
 
-  const handleSelectOption = (index: number) => {
-    if (hasAnswered || winner) return;
-    onSubmitAnswer(index);
+  const handleSelectOption = async (index: number) => {
+    if (hasAnswered || winner || isSubmittingAnswer) return;
+
+    try {
+      setIsSubmittingAnswer(true);
+      await onSubmitAnswer(index);
+      // Don't reset isSubmittingAnswer here - wait for the answer to appear in allAnswers
+    } catch (error) {
+      // Only reset on error so player can try again
+      setIsSubmittingAnswer(false);
+      console.error("Error submitting answer:", error);
+    }
   };
 
   const formatTime = (seconds: number) => {
@@ -98,12 +110,20 @@ export function QuestionDisplay({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const getTimeBonusLabel = (ms: number) => {
-    const s = ms / 1000;
-    if (s < 15) return "+3 bonus";
-    if (s < 30) return "+2 bonus";
-    if (s < 60) return "+1 bonus";
-    if (s < 120) return "+0.5 bonus";
+  const getTimeBonusLabel = (responseTimeMs: number) => {
+    if (!timeLimit) return "";
+    const timeLimitMs = timeLimit * 1000; // Convert seconds to milliseconds
+
+    if (responseTimeMs < timeLimitMs * 0.05) return "+9 bonus";
+    if (responseTimeMs < timeLimitMs * 0.1) return "+8 bonus";
+    if (responseTimeMs < timeLimitMs * 0.15) return "+7 bonus";
+    if (responseTimeMs < timeLimitMs * 0.2) return "+6 bonus";
+    if (responseTimeMs < timeLimitMs * 0.3) return "+5 bonus";
+    if (responseTimeMs < timeLimitMs * 0.4) return "+4 bonus";
+    if (responseTimeMs < timeLimitMs * 0.55) return "+3 bonus";
+    if (responseTimeMs < timeLimitMs * 0.7) return "+2 bonus";
+    if (responseTimeMs < timeLimitMs * 0.85) return "+1 bonus";
+    if (responseTimeMs < timeLimitMs) return "+0.5 bonus";
     return "";
   };
 
@@ -323,12 +343,13 @@ export function QuestionDisplay({
                 </div>
               </div>
             ))}
-          </div>
+          </div>{" "}
           <div className="mt-6 text-muted-foreground text-xs">
             <div className="mb-1 font-bold">Legenda bonus tempo:</div>
             <div>
-              &lt; 15s: +3 | 15–30s: +2 | 30–60s: +1 | 60–120s: +0.5 | &gt;120s:
-              +0
+              &lt; 5%: +9 | &lt; 10%: +8 | &lt; 15%: +7 | &lt; 20%: +6 | &lt;
+              30%: +5 | &lt; 40%: +4 | &lt; 55%: +3 | &lt; 70%: +2 | &lt; 85%:
+              +1 | &lt; 100%: +0.5
             </div>
           </div>
         </TabsContent>

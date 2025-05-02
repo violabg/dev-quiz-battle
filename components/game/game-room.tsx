@@ -422,6 +422,7 @@ export function GameRoom({
               winner={winner}
               allAnswers={allAnswers}
               timeIsUp={!!currentQuestion.ended_at}
+              timeLimit={game.time_limit}
               user={user}
             />
           ) : (
