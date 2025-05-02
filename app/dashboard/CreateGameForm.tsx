@@ -57,7 +57,6 @@ export const CreateGameForm = ({ user }: { user: User }) => {
       await addPlayerToGame(data.id, user.id, 1);
       router.push(`/game/${data.code}`);
     } catch (error: unknown) {
-      console.log("🚀 ~ handleCreateGame ~ error:", error);
       toast.error("Error", {
         description: error instanceof Error ? error.message : String(error),
       });

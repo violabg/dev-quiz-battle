@@ -10,7 +10,6 @@ export const PlayersStanding = ({ players }: PlayersStandingProps) => {
   const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
   // Get top 3 players
   const winners = sortedPlayers.slice(0, 3);
-  console.log("🚀 ~ PlayersStanding ~ winners:", winners);
 
   return (
     <>
