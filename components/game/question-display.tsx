@@ -252,9 +252,13 @@ export function QuestionDisplay({
                     : state === "wrong"
                     ? "ring-2 ring-red-500"
                     : ""
+                } ${
+                  (!!winner || timeIsUp) && !hasAnswered
+                    ? "pointer-events-none cursor-default"
+                    : ""
                 }`}
                 onClick={() => handleSelectOption(index)}
-                disabled={hasAnswered || !!winner || timeIsUp}
+                disabled={(!winner || !timeIsUp) && hasAnswered}
               >
                 <div className="flex justify-between items-center w-full">
                   <div className="flex items-center">
