@@ -80,7 +80,6 @@ export function SignUpForm({
     const supabase = createClient();
     setIsLoading(true);
     try {
-      console.log("window.location.origin :>> ", window.location.origin);
       const { error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
