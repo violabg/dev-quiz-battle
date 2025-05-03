@@ -34,7 +34,10 @@ export function GameLobby({
 
   let lobbyMessage = "";
   if (game.status === "waiting") {
-    lobbyMessage = "In attesa che i giocatori si uniscano...";
+    lobbyMessage =
+      game.players.length < game.max_players
+        ? `In attesa che tutti i giocatori si uniscano (${game.players.length}/${game.max_players})...`
+        : "Tutti i giocatori sono presenti. In attesa dell'host per iniziare...";
   } else if (game.status === "active") {
     lobbyMessage =
       "In attesa che venga generata la domanda da " +
@@ -72,6 +75,14 @@ export function GameLobby({
             <span>
               Giocatori ({game.players.length}/{game.max_players})
             </span>
+            {game.players.length === game.max_players && (
+              <Badge
+                variant="default"
+                className="bg-gradient-to-r from-[oklch(85%_0.2_160)] to-[oklch(85%_0.3_120)] ml-2 text-[oklch(25%_0.05_240)]"
+              >
+                Tutti presenti
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="gap-4 grid md:grid-cols-2">
@@ -103,14 +114,18 @@ export function GameLobby({
           <Button
             size="lg"
             onClick={onStartGame}
-            disabled={game.players.length < 2}
+            disabled={
+              game.players.length < 2 || game.players.length < game.max_players
+            }
             className="px-8"
           >
             {game.players.length < 2
               ? "Servono almeno 2 giocatori per iniziare"
+              : game.players.length < game.max_players
+              ? `Attendi che tutti i giocatori si uniscano (${game.players.length}/${game.max_players})`
               : "Inizia la partita"}
           </Button>
-          {game.players.length < 2 && (
+          {game.players.length < game.max_players && (
             <p className="text-muted-foreground text-sm">
               Condividi il codice partita{" "}
               <span className="font-mono font-bold">{game.code}</span> con gli
