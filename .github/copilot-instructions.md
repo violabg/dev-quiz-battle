@@ -13,7 +13,7 @@
 
 ## Styling
 
-- All colors must be specified in OKLCH format (e.g., `oklch(0.7 0.1 200)`).
+- All colors must be specified in OKLCH format in css files (e.g., `oklch(0.7 0.1 200)`).
 - Use Tailwind CSS utility classes wherever possible.
 - Do not use deprecated or removed Tailwind features from earlier versions.
 
@@ -31,6 +31,6 @@
 
 - Use a modern look with border and text gradients.
 - Support both light and dark themes.
-- All colors must use OKLCH format.
+- All colors must use OKLCH format for css props (--var).
 - Use Tailwind CSS v4 utility classes and shadcn/ui components for styling.
 - Ensure responsive, accessible, and visually engaging design.
