@@ -212,12 +212,14 @@ BEGIN
   -- Check if question already ended
   SELECT ended_at INTO v_ended_at FROM questions WHERE id = p_question_id FOR UPDATE;
   IF v_ended_at IS NOT NULL THEN
+    RAISE EXCEPTION 'Question has already been answered' USING ERRCODE = 'P0001';
     RETURN NULL; -- Question already ended, do not accept answer
   END IF;
 
   -- Check for duplicate answer (should be prevented by unique constraint, but explicit for clarity)
   SELECT COUNT(*) INTO v_duplicate FROM answers WHERE question_id = p_question_id AND player_id = p_player_id;
   IF v_duplicate > 0 THEN
+    RAISE EXCEPTION 'Player has already submitted an answer' USING ERRCODE = 'P0002';
     RETURN NULL; -- Already answered
   END IF;
 

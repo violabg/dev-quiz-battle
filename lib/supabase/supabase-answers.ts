@@ -82,7 +82,7 @@ export const submitAnswer = async (params: {
   scoreEarned: number;
 }) => {
   const supabase = createClient();
-  const { error } = await supabase.rpc("submit_answer", {
+  const { data, error } = await supabase.rpc("submit_answer", {
     p_question_id: params.questionId,
     p_player_id: params.playerId,
     p_game_id: params.gameId,
@@ -91,5 +91,8 @@ export const submitAnswer = async (params: {
     p_response_time_ms: params.responseTimeMs,
     p_score_earned: params.scoreEarned,
   });
-  return { error };
+
+  // Only return an error if there's actually an error
+  // The function will return the UUID of the newly created answer or raise an exception
+  return { data, error };
 };

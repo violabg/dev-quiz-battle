@@ -265,8 +265,23 @@ export function GameRoom({
       });
 
       if (transactionError) {
+        // Add specific error message for duplicate answers
+        // Check if it's a PostgrestError with code property or a standard Error
+        if (
+          (typeof transactionError === "object" &&
+            "code" in transactionError &&
+            transactionError.code === "23505") || // Postgres unique violation
+          transactionError.message?.includes("unique") ||
+          transactionError.message?.includes("duplicate")
+        ) {
+          throw new Error(
+            "This question has already been answered by another player"
+          );
+        }
         throw transactionError;
       }
+
+      // Nothing to do here if there's no error - we've submitted successfully
 
       // If correct, end question for everyone
       if (isCorrect && !currentQuestion.ended_at) {
@@ -274,10 +289,32 @@ export function GameRoom({
           ended_at: new Date(now).toISOString(),
         });
       }
-    } catch {
-      toast.error("Errore", {
-        description: "Impossibile inviare la risposta",
-      });
+    } catch (error) {
+      // Log the error for debugging
+      console.error("Error submitting answer:", error);
+
+      // Check for specific race condition error
+      if (
+        error instanceof Error &&
+        (error.message.includes("already answered") ||
+          error.message.includes("already been answered") ||
+          error.message.includes("already submitted"))
+      ) {
+        toast.error("Qualcuno ha già risposto!", {
+          description: "Un altro giocatore ha risposto prima di te",
+        });
+      } else if (
+        error instanceof Error &&
+        error.message.includes("Question has already")
+      ) {
+        toast.error("Questa domanda è già conclusa", {
+          description: "Si sta passando alla prossima domanda",
+        });
+      } else {
+        toast.error("Errore", {
+          description: "Impossibile inviare la risposta",
+        });
+      }
     }
   };
 

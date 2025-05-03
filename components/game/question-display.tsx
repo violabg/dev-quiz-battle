@@ -55,8 +55,8 @@ export function QuestionDisplay({
       setSubmittingOptionIndex(null);
 
       // Show a success toast when the answer is successfully submitted
-      toast.success("Answer submitted!", {
-        description: "Waiting for other players...",
+      toast.success("Risposta inviata!", {
+        description: "In attesa degli altri giocatori...",
       });
     }
   }, [userAnswer, isSubmittingAnswer]);
@@ -125,14 +125,19 @@ export function QuestionDisplay({
       const errorMessage = String(error);
       if (
         errorMessage.includes("already answered") ||
-        errorMessage.includes("already submitted")
+        errorMessage.includes("already submitted") ||
+        errorMessage.includes("already been answered")
       ) {
-        toast.error("Someone already answered this question!", {
-          description: "Another player submitted their answer just before you",
+        toast.error("Qualcuno ha già risposto!", {
+          description: "Un altro giocatore ha risposto prima di te",
+        });
+      } else if (errorMessage.includes("Question has already")) {
+        toast.error("Questa domanda è già conclusa", {
+          description: "Si sta passando alla prossima domanda",
         });
       } else {
-        toast.error("Failed to submit answer", {
-          description: "Please try again",
+        toast.error("Errore", {
+          description: "Impossibile inviare la risposta",
         });
       }
     }
