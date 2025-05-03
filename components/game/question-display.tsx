@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { AnswerWithPlayer, Question } from "@/types/supabase";
 import { User } from "@supabase/supabase-js";
-import { Check, Clock, X } from "lucide-react";
+import { Check, Clock, Loader2, X } from "lucide-react";
 import { Highlight, themes } from "prism-react-renderer";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 interface QuestionDisplayProps {
   question: Question & { ended_at?: string; started_at?: string };
@@ -29,6 +30,9 @@ export function QuestionDisplay({
 }: QuestionDisplayProps) {
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
+  const [submittingOptionIndex, setSubmittingOptionIndex] = useState<
+    number | null
+  >(null);
 
   // Parse options from JSON
   const options = question.options as { text: string }[];
@@ -43,6 +47,19 @@ export function QuestionDisplay({
   const userAnswer = useMemo(() => {
     return allAnswers.find((a) => a.player_id === user?.id);
   }, [allAnswers, user?.id]);
+
+  // Reset submission state when the user's answer appears in allAnswers
+  useEffect(() => {
+    if (userAnswer && isSubmittingAnswer) {
+      setIsSubmittingAnswer(false);
+      setSubmittingOptionIndex(null);
+
+      // Show a success toast when the answer is successfully submitted
+      toast.success("Answer submitted!", {
+        description: "Waiting for other players...",
+      });
+    }
+  }, [userAnswer, isSubmittingAnswer]);
 
   // Compute hasAnswered from actual answers instead of local state
   const hasAnswered = Boolean(userAnswer);
@@ -63,9 +80,11 @@ export function QuestionDisplay({
     return "default";
   };
 
-  // Reset time elapsed when question changes (new turn)
+  // Reset states when question changes (new turn)
   useEffect(() => {
     setTimeElapsed(0);
+    setIsSubmittingAnswer(false);
+    setSubmittingOptionIndex(null);
   }, [question.id]);
 
   useEffect(() => {
@@ -93,12 +112,29 @@ export function QuestionDisplay({
 
     try {
       setIsSubmittingAnswer(true);
+      setSubmittingOptionIndex(index);
       await onSubmitAnswer(index);
       // Don't reset isSubmittingAnswer here - wait for the answer to appear in allAnswers
     } catch (error) {
       // Only reset on error so player can try again
       setIsSubmittingAnswer(false);
+      setSubmittingOptionIndex(null);
       console.error("Error submitting answer:", error);
+
+      // Check for specific error message when another player has already answered
+      const errorMessage = String(error);
+      if (
+        errorMessage.includes("already answered") ||
+        errorMessage.includes("already submitted")
+      ) {
+        toast.error("Someone already answered this question!", {
+          description: "Another player submitted their answer just before you",
+        });
+      } else {
+        toast.error("Failed to submit answer", {
+          description: "Please try again",
+        });
+      }
     }
   };
 
@@ -258,10 +294,15 @@ export function QuestionDisplay({
                     : ""
                 }`}
                 onClick={() => handleSelectOption(index)}
-                disabled={(!winner || !timeIsUp) && hasAnswered}
+                disabled={
+                  ((!winner || !timeIsUp) && hasAnswered) || isSubmittingAnswer
+                }
               >
                 <div className="flex justify-between items-center w-full">
                   <div className="flex items-center">
+                    {isSubmittingAnswer && submittingOptionIndex === index && (
+                      <Loader2 className="mr-2 w-5 h-5 text-primary animate-spin" />
+                    )}
                     {state === "correct" && (
                       <Check className="mr-2 w-5 h-5 text-green-500" />
                     )}
