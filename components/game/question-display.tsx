@@ -248,7 +248,7 @@ export function QuestionDisplay({
                 }
                 className={`w-full justify-start text-left h-auto py-3 px-4 whitespace-normal break-words ${
                   state === "correct"
-                    ? "ring-2 ring-green-500"
+                    ? "ring-2 ring-green-500 bg-[oklch(0.92_0.15_150/0.2)]"
                     : state === "wrong"
                     ? "ring-2 ring-red-500"
                     : ""
@@ -264,7 +264,15 @@ export function QuestionDisplay({
                     {state === "wrong" && (
                       <X className="mr-2 w-5 h-5 text-red-500" />
                     )}
-                    <span>{option.text}</span>
+                    <span
+                      className={
+                        state === "correct"
+                          ? "text-black dark:text-white"
+                          : undefined
+                      }
+                    >
+                      {option.text}
+                    </span>
                   </div>
 
                   <div className="flex flex-wrap items-end gap-2 ml-4">
@@ -290,14 +298,19 @@ export function QuestionDisplay({
                             key={a.player.id}
                             className="flex flex-col items-end"
                           >
-                            <span className="bg-[oklch(0.95_0.05_150)] shadow mt-1 px-2 py-1 border border-[oklch(0.4_0.2_140)] rounded font-bold text-[oklch(0.35_0.18_140)] text-xs uppercase tracking-wide">
-                              {a.player.user_name} +{a.score_earned.toFixed(1)}
-                              {winner &&
-                                a.player_id === winner.playerId &&
-                                " ⭐"}
+                            <span className="flex items-center gap-1.5 bg-[oklch(0.45_0.2_140)] shadow mt-1 px-3 py-1.5 border border-[oklch(0.55_0.25_140)] rounded-md font-bold text-[oklch(0.98_0.005_140)] text-xs uppercase tracking-wide">
+                              {a.player.user_name}
+                              <span className="bg-[oklch(0.98_0.005_140)] px-1.5 py-0.5 rounded-sm text-[oklch(0.45_0.2_140)]">
+                                +{a.score_earned.toFixed(1)}
+                              </span>
+                              {winner && a.player_id === winner.playerId && (
+                                <span className="ml-0.5 text-[oklch(1_0.1_60)]">
+                                  ⭐
+                                </span>
+                              )}
                             </span>
                             {a.is_correct && (
-                              <span className="pr-1 text-[oklch(0.35_0.18_140)] text-xs">
+                              <span className="mt-1 ml-auto px-2 py-1 rounded text-black dark:text-white text-xs">
                                 {getTimeBonusLabel(a.response_time_ms)} (
                                 {(a.response_time_ms / 1000).toFixed(1)}s)
                               </span>
