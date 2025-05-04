@@ -1,28 +1,58 @@
-after more testing i still have problems of answers sync beween players, the player that answering have disabled answers but no visual feedback of right or wrong answer, no feedback for other players as well. it is not always working
+**Real-Time Quiz Game: Question & Answer Flow Implementation**
 
-5. **Question Presentation and Answer Submission**
+Implement a synchronized quiz game flow with the following requirements:
 
-- Players are presented with a question and four possible answers.
-- A timer starts as soon as the question is displayed.
-- All players can submit their answers at any time during the timer.
-- Ensure there are no race conditions in the Supabase database when multiple players submit answers simultaneously.
+**Database Schema & Real-time Subscriptions**
 
-**Answer Validation:**
+- Create game_sessions table with current_state, active_player, current_question
+- Create player_answers table with timestamped submissions
+- Establish Supabase real-time subscriptions on both tables
+- Use database triggers to maintain state consistency
 
-- Upon answer submission, immediately check if the answer is correct or incorrect.
-- Once a player submits an answer, disable further submissions for that player for the current question.
-- Display the answer status (correct/incorrect) to all players in real time.
+**Question Round Flow**
 
-**Incorrect Answer Handling:**
+1. Active player selects a question:
 
-- If a player submits an incorrect answer, they cannot answer the same question again.
-- Other players may continue submitting answers until someone answers correctly or the timer expires.
+   - Lock question selection for other players
+   - Broadcast selected question to all players
+   - Initialize 30-second timer
 
-**turn Completion:**
+2. Answer submission handling:
 
-- When a player submits the correct answer, or if the timer runs out with no correct answers, mark the question as completed.
-- Pass the turn to the next player.
+   - Store answers in player_answers table with TIMESTAMP
+   - Implement optimistic locking for concurrent submissions
+   - Use database constraints to prevent multiple submissions per player
 
-after all players had a turn, the game ends, by been marked as completed and the player with the most points wins.
+3. Visual feedback requirements:
 
-make sure states ara handled correctly,across all players, avoid local states as much as possible, use the supabase realtime to sync the game state across all players.
+   - Show "Submitted" status for player who answered
+   - Display "Correct" or "Incorrect" immediately after validation
+   - Broadcast result to all players via real-time subscription
+   - Highlight correct answer in green, incorrect in red
+   - Display who answered what to all players
+
+4. State transitions:
+
+   - Question Active → Answer Submitted → Result Shown → Next Player
+   - Update game_session.current_state atomically
+   - Broadcast state changes via Supabase real-time
+
+5. Round completion:
+
+   - Auto-advance when correct answer submitted
+   - Auto-advance when timer expires
+   - Update scores and active player atomically
+   - Reset answer buttons and visual states for next round
+
+6. Game completion:
+   - Trigger after all players have had one turn
+   - Calculate final scores from player_answers table
+   - Update game_session.status to 'completed'
+   - Display winner and final scoreboard to all players
+
+Technical constraints:
+
+- Use Supabase row-level security for data integrity
+- Implement exponential backoff for real-time reconnection
+- Add database indexes on frequently queried columns
+- Set appropriate CASCADE rules for related tables

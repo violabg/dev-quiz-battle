@@ -13,7 +13,7 @@
 
 ## Styling
 
-- All colors must be specified in OKLCH format in css files (e.g., `oklch(0.7 0.1 200)`).
+- All colors must be specified in OKLCH format in css files (e.g., `oklch(0.7 0.1 200)`), but you can use Tailwind defauts colors in the code, lihe `bg-blue-500`, `text-red`.
 - Use Tailwind CSS utility classes wherever possible.
 - Do not use deprecated or removed Tailwind features from earlier versions.
 
