@@ -149,6 +149,14 @@ export function QuestionDisplay({
         toast.error("Domanda non valida", {
           description: "La domanda non ha una risposta corretta definita",
         });
+      } else if (errorMessage.includes("[GNOTF]")) {
+        toast.error("Errore di gioco", {
+          description: "Partita o giocatore non trovato",
+        });
+      } else if (errorMessage.includes("[QERR]")) {
+        toast.error("Errore di sistema", {
+          description: "Si è verificato un errore interno",
+        });
       } else {
         toast.error("Errore", {
           description: "Impossibile inviare la risposta",
