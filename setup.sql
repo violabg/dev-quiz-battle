@@ -193,37 +193,135 @@ END;
 $$;
 
 -- Create function to submit answer and update score atomically
+
+-- Improved submit_answer function for atomic, race-free, server-side validation and scoring
+-- This version fixes both:
+-- 1. The "null value in column 'is_correct'" error
+-- 2. The issue where turns aren't closed when non-creator players answer correctly
 CREATE OR REPLACE FUNCTION submit_answer(
   p_question_id UUID,
   p_player_id UUID,
   p_game_id UUID,
   p_selected_option INTEGER,
-  p_is_correct BOOLEAN,
   p_response_time_ms INTEGER,
-  p_score_earned DECIMAL
+  p_time_limit_ms INTEGER
 )
-RETURNS UUID
+RETURNS TABLE(
+  answer_id UUID, 
+  was_winning_answer BOOLEAN, 
+  score_earned DECIMAL,
+  debug JSONB
+) 
+LANGUAGE plpgsql
+SECURITY INVOKER 
+SET search_path = 'public'
 AS $$
 DECLARE
   v_answer_id UUID;
   v_ended_at TIMESTAMP;
-  v_duplicate INT;
+  v_correct_answer INTEGER;
+  v_is_correct BOOLEAN := FALSE;
+  v_score_earned DECIMAL := 0;
+  v_was_winning_answer BOOLEAN := FALSE;
+  v_update_id UUID;
+  v_count INTEGER;
+  v_debug JSONB := '{}'::JSONB;
 BEGIN
-  -- Check if question already ended
-  SELECT ended_at INTO v_ended_at FROM questions WHERE id = p_question_id FOR UPDATE;
+  -- 1. First check if the question exists
+  SELECT COUNT(*) INTO v_count FROM questions WHERE id = p_question_id;
+  
+  IF v_count = 0 THEN
+    RAISE LOG 'Question % not found', p_question_id;
+    RAISE EXCEPTION 'Question not found' USING ERRCODE = 'P0003';
+  END IF;
+
+  -- 2. Get the question data with a FOR SHARE lock (less restrictive than FOR UPDATE)
+  -- Get correct_answer and ended_at with separate queries for reliability
+  SELECT ended_at INTO v_ended_at 
+  FROM questions 
+  WHERE id = p_question_id
+  FOR SHARE;
+  
+  -- Get the critical correct_answer with its own query
+  SELECT correct_answer INTO v_correct_answer 
+  FROM questions 
+  WHERE id = p_question_id
+  FOR SHARE;
+  
+  -- 3. Check if question has already ended
   IF v_ended_at IS NOT NULL THEN
-    RAISE EXCEPTION 'Question has already been answered' USING ERRCODE = 'P0001';
-    RETURN NULL; -- Question already ended, do not accept answer
+    RAISE LOG 'Question % has already ended at %', p_question_id, v_ended_at;
+    RAISE EXCEPTION 'Question has already ended' USING ERRCODE = 'P0001';
   END IF;
-
-  -- Check for duplicate answer (should be prevented by unique constraint, but explicit for clarity)
-  SELECT COUNT(*) INTO v_duplicate FROM answers WHERE question_id = p_question_id AND player_id = p_player_id;
-  IF v_duplicate > 0 THEN
+  
+  -- 4. Check if player has already answered
+  SELECT COUNT(*) INTO v_count 
+  FROM answers 
+  WHERE question_id = p_question_id AND player_id = p_player_id;
+  
+  IF v_count > 0 THEN
+    RAISE LOG 'Player % has already answered question %', p_player_id, p_question_id;
     RAISE EXCEPTION 'Player has already submitted an answer' USING ERRCODE = 'P0002';
-    RETURN NULL; -- Already answered
   END IF;
-
-  -- Insert answer
+  
+  -- 5. Make absolutely sure we have a correct_answer value
+  IF v_correct_answer IS NULL THEN
+    -- Try to fetch it again with a stronger approach
+    BEGIN
+      SELECT correct_answer INTO STRICT v_correct_answer
+      FROM questions
+      WHERE id = p_question_id;
+      
+      -- Still null? This is a critical error
+      IF v_correct_answer IS NULL THEN
+        RAISE LOG 'Critical error: Question % has NULL correct_answer even after retry', p_question_id;
+        RAISE EXCEPTION 'Question has no correct answer defined' USING ERRCODE = 'P0005';
+      END IF;
+    EXCEPTION WHEN OTHERS THEN
+      RAISE LOG 'Error retrieving correct_answer: %', SQLERRM;
+      RAISE EXCEPTION 'Could not determine correct answer' USING ERRCODE = 'P0005';
+    END;
+  END IF;
+  
+  -- 6. Determine if answer is correct with multiple comparison methods to avoid NULL issues
+  BEGIN
+    -- Try direct comparison first
+    v_is_correct := (p_selected_option = v_correct_answer);
+    
+    -- If NULL result (type mismatch), try integer casting
+    IF v_is_correct IS NULL THEN
+      v_is_correct := (p_selected_option::INTEGER = v_correct_answer::INTEGER);
+    END IF;
+    
+    -- If still NULL, try text comparison
+    IF v_is_correct IS NULL THEN
+      v_is_correct := (p_selected_option::TEXT = v_correct_answer::TEXT);
+    END IF;
+    
+    -- Final fallback - if still NULL, default to FALSE
+    IF v_is_correct IS NULL THEN
+      v_is_correct := FALSE;
+    END IF;
+    
+    RAISE LOG 'Answer comparison: selected=%, correct=%, is_correct=%', 
+              p_selected_option, v_correct_answer, v_is_correct;
+              
+    -- Add to debug info
+    v_debug := jsonb_build_object(
+      'selected_option', p_selected_option, 
+      'correct_answer', v_correct_answer,
+      'is_correct', v_is_correct
+    );
+  END;
+  
+  -- 7. Calculate score if correct
+  IF v_is_correct THEN
+    v_score_earned := calculate_score(p_response_time_ms, p_time_limit_ms);
+    RAISE LOG 'Score calculated: %', v_score_earned;
+    v_debug := v_debug || jsonb_build_object('score_earned', v_score_earned);
+  END IF;
+  
+  -- 8. Insert the answer
   INSERT INTO answers (
     question_id,
     player_id,
@@ -236,23 +334,66 @@ BEGIN
     p_question_id,
     p_player_id,
     p_selected_option,
-    p_is_correct,
+    v_is_correct,
     p_response_time_ms,
-    p_score_earned
+    v_score_earned
   )
   RETURNING id INTO v_answer_id;
-
-  -- If correct, end question and update score atomically
-  IF p_is_correct THEN
-    UPDATE questions SET ended_at = NOW() WHERE id = p_question_id AND ended_at IS NULL;
+  
+  -- 9. If correct answer, end the question and update score
+  -- IMPORTANT: Any correct answer will end the question, regardless of who created it
+  IF v_is_correct THEN
+    -- For any correct answer, set was_winning_answer to TRUE
+    -- This ensures frontend always treats correct answers as "winning" answers
+    v_was_winning_answer := TRUE;
+    
+    -- Try to end the question (this only works for the first correct answer)
+    UPDATE questions
+    SET ended_at = NOW()
+    WHERE id = p_question_id AND ended_at IS NULL
+    RETURNING id INTO v_update_id;
+    
+    RAISE LOG 'Question end attempt: question_id=%, player_id=%, result=%', 
+              p_question_id, p_player_id, v_update_id IS NOT NULL;
+    
+    -- Update player score for ANY correct answer
     UPDATE game_players
-      SET score = score + p_score_earned
-      WHERE game_id = p_game_id AND player_id = p_player_id;
+    SET score = score + v_score_earned
+    WHERE game_id = p_game_id AND player_id = p_player_id;
+    
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+    RAISE LOG 'Player % score updated by % points (rows: %)', 
+              p_player_id, v_score_earned, v_count;
+    
+    -- Add detailed info to debug
+    IF v_update_id IS NOT NULL THEN
+      -- This was the first correct answer (the one that actually ended the question)
+      RAISE LOG 'Question % ended successfully by player %', p_question_id, p_player_id;
+      
+      v_debug := v_debug || jsonb_build_object(
+        'was_winning_answer', v_was_winning_answer,
+        'score_updated', true,
+        'question_ended', true,
+        'first_correct_answer', true
+      );
+    ELSE
+      -- This was a correct answer, but not the first one
+      RAISE LOG 'Question % was already ended when player % answered', 
+                p_question_id, p_player_id;
+                
+      v_debug := v_debug || jsonb_build_object(
+        'was_winning_answer', v_was_winning_answer,
+        'score_updated', true,
+        'question_already_ended', true,
+        'first_correct_answer', false
+      );
+    END IF;
   END IF;
-
-  RETURN v_answer_id;
+  
+  -- 10. Return results with debug info
+  RETURN QUERY SELECT v_answer_id, v_was_winning_answer, v_score_earned, v_debug;
 END;
-$$ LANGUAGE plpgsql SECURITY INVOKER SET search_path = 'public';
+$$;
 
 -- Leaderboard function: sum scores per player, join profile, paginated
 CREATE OR REPLACE FUNCTION get_leaderboard_players(

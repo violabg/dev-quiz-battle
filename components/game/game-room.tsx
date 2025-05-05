@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { TurnResultCard } from "@/components/game/turn-result-card";
 import { generateQuestion } from "@/lib/groq";
 import {
-  calculateScore,
   getAnswersWithPlayerForQuestion,
   submitAnswer,
   subscribeToAnswers,
@@ -194,19 +193,38 @@ export function GameRoom({
       const now = Date.now();
       const allPlayersAnswered =
         allAnswers.length === game.players.length && allAnswers.length > 0;
-      if (now - questionStartTime >= TIME_LIMIT || allPlayersAnswered) {
+
+      // Check for any correct answers - this should end the question too
+      const hasCorrectAnswer = allAnswers.some((a) => a.is_correct);
+
+      if (
+        now - questionStartTime >= TIME_LIMIT ||
+        allPlayersAnswered ||
+        hasCorrectAnswer
+      ) {
+        console.log("Ending question because:", {
+          timeUp: now - questionStartTime >= TIME_LIMIT,
+          allAnswered: allPlayersAnswered,
+          hasCorrectAnswer,
+        });
+
         // End question: update ended_at in DB if not already set
         if (!currentQuestion.ended_at) {
           await updateQuestion(currentQuestion.id, {
             ended_at: new Date().toISOString(),
           });
+
+          // If a correct answer was given, make sure we show next turn
+          if (hasCorrectAnswer) {
+            setShowNextTurn(true);
+          }
         }
         clearInterval(interval);
       }
     }, 1000);
     return () => clearInterval(interval);
   }, [
-    allAnswers.length,
+    allAnswers,
     currentQuestion,
     game.players.length,
     game.time_limit,
@@ -215,20 +233,36 @@ export function GameRoom({
   ]);
 
   // Show next turn button if there is a winner OR if time is up and no winner
+  // OR if there's a correct answer (even without a recognized 'winner')
   useEffect(() => {
     if (!currentQuestion || !currentQuestion.ended_at) return;
-    // Show next turn if there is a winner or if time is up and no winner
-    if (winner || (!winner && allAnswers.length === game.players.length)) {
-      setShowNextTurn(true);
-    } else if (!winner && allAnswers.length < game.players.length) {
-      // If time is up but not all players answered, still allow next turn
+
+    // Show next turn if:
+    // 1. There is a recognized winner
+    // 2. Question has ended and all players answered
+    // 3. Question has ended and time is up
+    // 4. There is any correct answer (even if wasn't winning)
+    const hasAnyCorrectAnswer = allAnswers.some((a) => a.is_correct);
+
+    // Log the decision factors for debugging
+    console.log("Next turn decision factors:", {
+      hasWinner: !!winner,
+      questionHasEnded: !!currentQuestion.ended_at,
+      answersCount: allAnswers.length,
+      totalPlayers: game.players.length,
+      hasAnyCorrectAnswer,
+    });
+
+    // Always show next turn button if the question has ended,
+    // regardless of the specific scenario
+    if (currentQuestion.ended_at || winner || hasAnyCorrectAnswer) {
       setShowNextTurn(true);
     }
   }, [
     currentQuestion,
     currentQuestion?.ended_at,
     winner,
-    allAnswers.length,
+    allAnswers,
     game.players.length,
   ]);
 
@@ -243,51 +277,69 @@ export function GameRoom({
     try {
       const now = Date.now();
       const responseTime = now - questionStartTime;
-      const isCorrect = selectedOption === currentQuestion.correct_answer;
+      const timeLimitMs =
+        typeof game.time_limit === "number" ? game.time_limit * 1000 : 120000;
 
-      // Calculate score based on response time and game time limit
-      const { data: scoreData } = await calculateScore({
-        response_time_ms: responseTime,
-        time_limit_ms:
-          typeof game.time_limit === "number" ? game.time_limit * 1000 : 120000,
-      });
-      const scoreEarned = isCorrect ? scoreData ?? 0 : 0;
-
-      // Save answer to database in a transaction to ensure data consistency
-      const { error: transactionError } = await submitAnswer({
+      // Use new submitAnswer: all logic is server-side
+      const { data, error: transactionError } = await submitAnswer({
         questionId: currentQuestion.id,
         playerId: user.id,
         gameId: game.id,
         selectedOption,
-        isCorrect,
         responseTimeMs: responseTime,
-        scoreEarned,
+        timeLimitMs,
       });
 
       if (transactionError) {
-        // Add specific error message for duplicate answers
-        // Check if it's a PostgrestError with code property or a standard Error
+        // Add specific error message for duplicate answers or race
         if (
           (typeof transactionError === "object" &&
             "code" in transactionError &&
-            transactionError.code === "23505") || // Postgres unique violation
-          transactionError.message?.includes("unique") ||
-          transactionError.message?.includes("duplicate")
+            (transactionError.code === "P0001" ||
+              transactionError.code === "P0002")) ||
+          transactionError.message?.includes("already answered") ||
+          transactionError.message?.includes("already been answered") ||
+          transactionError.message?.includes("already submitted")
         ) {
-          throw new Error(
-            "This question has already been answered by another player"
-          );
+          // P0001: question ended, P0002: already answered/race
+          if (
+            typeof transactionError === "object" &&
+            "code" in transactionError &&
+            transactionError.code === "P0001"
+          ) {
+            throw new Error("Question has already ended");
+          } else {
+            throw new Error(
+              "Player has already submitted an answer or a race condition occurred"
+            );
+          }
         }
         throw transactionError;
       }
 
-      // Nothing to do here if there's no error - we've submitted successfully
+      // Check if the answer was correct based on the response
+      if (data && Array.isArray(data) && data[0]) {
+        const answerResult = data[0];
 
-      // If correct, end question for everyone
-      if (isCorrect && !currentQuestion.ended_at) {
-        await updateQuestion(currentQuestion.id, {
-          ended_at: new Date(now).toISOString(),
-        });
+        // If score_earned is > 0, the answer was correct
+        if (answerResult.score_earned > 0) {
+          // Ensure the UI knows this is a correct answer immediately
+          // Don't wait for the subscription to fetch this
+          console.log(
+            "Correct answer submitted with score:",
+            answerResult.score_earned
+          );
+
+          // Force update question ended_at if needed (this ensures UI updates)
+          if (!currentQuestion.ended_at) {
+            await updateQuestion(currentQuestion.id, {
+              ended_at: new Date().toISOString(),
+            });
+          }
+
+          // Force show the next turn button
+          setShowNextTurn(true);
+        }
       }
     } catch (error) {
       // Log the error for debugging
@@ -298,7 +350,8 @@ export function GameRoom({
         error instanceof Error &&
         (error.message.includes("already answered") ||
           error.message.includes("already been answered") ||
-          error.message.includes("already submitted"))
+          error.message.includes("already submitted") ||
+          error.message.includes("race condition occurred"))
       ) {
         toast.error("Qualcuno ha già risposto!", {
           description: "Un altro giocatore ha risposto prima di te",
@@ -411,20 +464,37 @@ export function GameRoom({
     if (!currentQuestion?.ended_at) return;
 
     const determineWinner = () => {
-      // Find the first correct answer (by answered_at)
-      const correct = allAnswers
-        .filter((a) => a.is_correct)
-        .sort(
-          (a, b) =>
-            new Date(a.answered_at).getTime() -
-            new Date(b.answered_at).getTime()
-        )[0];
+      // Find all correct answers
+      const correctAnswers = allAnswers.filter((a) => a.is_correct);
 
-      if (correct) {
+      // No correct answers
+      if (correctAnswers.length === 0) {
+        setWinner(null);
+        return;
+      }
+
+      // Sort by answered_at to get the first correct answer
+      const firstCorrect = correctAnswers.sort(
+        (a, b) =>
+          new Date(a.answered_at).getTime() - new Date(b.answered_at).getTime()
+      )[0];
+
+      // Set the winner to the first player who answered correctly
+      // regardless of the was_winning_answer flag from the backend
+      if (firstCorrect) {
+        console.log("Recognizing winner:", {
+          playerId: firstCorrect.player_id,
+          userName: firstCorrect.player.user_name,
+          score: firstCorrect.score_earned,
+          answeredAt: firstCorrect.answered_at,
+        });
+
+        // Always set as winner the first player who answered correctly,
+        // even if there was a race condition in the database
         setWinner({
-          playerId: correct.player_id,
-          user_name: correct.player.user_name,
-          score: correct.score_earned,
+          playerId: firstCorrect.player_id,
+          user_name: firstCorrect.player.user_name,
+          score: firstCorrect.score_earned,
         });
       } else {
         setWinner(null);
@@ -432,7 +502,7 @@ export function GameRoom({
     };
 
     // Small delay to ensure we have the latest answers
-    const timeoutId = setTimeout(determineWinner, 100);
+    const timeoutId = setTimeout(determineWinner, 300);
     return () => clearTimeout(timeoutId);
   }, [currentQuestion?.ended_at, allAnswers]);
 

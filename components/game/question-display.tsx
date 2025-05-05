@@ -66,17 +66,27 @@ export function QuestionDisplay({
 
   // Helper: get answer state for each option
   const getOptionState = (index: number) => {
-    // If time is up or there is a winner, show correct answer
-    if (revealCorrect && index === question.correct_answer) return "correct";
+    // If there are any correct answers, mark the correct answer
+    const hasCorrectAnswers = allAnswers.some((a) => a.is_correct);
+
+    // If time is up or there is a winner, or any correct answers, show correct answer
+    if (
+      (revealCorrect || hasCorrectAnswers) &&
+      index === question.correct_answer
+    )
+      return "correct";
+
     // If this option has any wrong answers, mark as wrong
     if (allAnswers.some((a) => a.selected_option === index && !a.is_correct))
       return "wrong";
+
     // If this option has any correct answers and we can reveal correct answers, mark as correct
     if (
-      revealCorrect &&
+      (revealCorrect || hasCorrectAnswers) &&
       allAnswers.some((a) => a.selected_option === index && a.is_correct)
     )
       return "correct";
+
     return "default";
   };
 
