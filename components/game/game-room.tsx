@@ -1,13 +1,10 @@
 "use client";
 
+import { CurrentTurnCard } from "@/components/game/current-turn-card";
 import { QuestionDisplay } from "@/components/game/question-display";
 import { QuestionSelection } from "@/components/game/question-selection";
-// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-// import { Badge } from "@/components/ui/badge";
-import { CurrentTurnCard } from "@/components/game/current-turn-card";
-import { Button } from "@/components/ui/button";
-// import { Card, CardContent } from "@/components/ui/card";
 import { TurnResultCard } from "@/components/game/turn-result-card";
+import { Button } from "@/components/ui/button";
 import { generateQuestion } from "@/lib/groq";
 import {
   getAnswersWithPlayerForQuestion,
@@ -34,7 +31,7 @@ import type {
   Question,
 } from "@/types/supabase";
 import { User } from "@supabase/supabase-js";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import Scoreboard from "./game-scoreboard";
 
@@ -49,7 +46,7 @@ export function GameRoom({
   user,
   onLeaveGame,
 }: Omit<GameRoomProps, "isHost">) {
-  // --- Place these at the very top to avoid 'used before declaration' errors ---
+  // --- State declarations ---
   const [allAnswers, setAllAnswers] = useState<AnswerWithPlayer[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -65,6 +62,26 @@ export function GameRoom({
     score: number;
   } | null>(null);
   const [showNextTurn, setShowNextTurn] = useState(false);
+
+  // --- Memoized values ---
+  const currentPlayer = useMemo(
+    () => game.players[currentPlayerIndex],
+    [game.players, currentPlayerIndex]
+  );
+  const isCurrentPlayersTurn = useMemo(
+    () => currentPlayer?.player_id === user?.id,
+    [currentPlayer?.player_id, user?.id]
+  );
+  const nextPlayerIndex = useMemo(
+    () => (currentPlayerIndex + 1) % game.players.length,
+    [currentPlayerIndex, game.players.length]
+  );
+  const isNextPlayersTurn = useMemo(
+    () => game.players[nextPlayerIndex]?.player_id === user?.id,
+    [game.players, nextPlayerIndex, user?.id]
+  );
+  const isRoundComplete = game.status === "completed";
+
   // Helper to reset question-related state
   const resetQuestionState = useCallback(() => {
     setCurrentQuestion(null);
@@ -73,52 +90,36 @@ export function GameRoom({
     setAllAnswers([]);
   }, [setCurrentQuestion, setWinner, setShowNextTurn, setAllAnswers]);
 
-  // Determine if it's the current user's turn
-  const currentPlayer = game.players[currentPlayerIndex];
-  const isCurrentPlayersTurn = currentPlayer?.player_id === user?.id;
-  const nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
-  const isNextPlayersTurn =
-    game.players[nextPlayerIndex]?.player_id === user?.id;
-
-  useEffect(() => {
+  const checkGameCompletion = useCallback(async () => {
     if (!currentQuestion?.ended_at) return;
-    // --- DB check for game completion: after each question ends, check if all players have completed a turn (unique creators)
-    const checkIfAllTurnsCompleted = async () => {
-      const questions = await getQuestionsForGame(game.id);
-      // Only consider questions that are completed
-      const completedQuestions = questions.filter((q) => q.ended_at);
-      // Get unique player IDs who have created a completed question
-      const uniqueCreators = new Set(
-        completedQuestions.map((q) => q.created_by_player_id)
-      );
-      if (
-        uniqueCreators.size >= game.players.length &&
-        game.status !== "completed"
-      ) {
-        await updateGameStatus(game.id, "completed");
-      }
-    };
 
-    checkIfAllTurnsCompleted();
+    const questions = await getQuestionsForGame(game.id);
+    const completedQuestions = questions.filter((q) => q.ended_at);
+    const uniqueCreators = new Set(
+      completedQuestions.map((q) => q.created_by_player_id)
+    );
+
+    if (
+      uniqueCreators.size >= game.players.length &&
+      game.status !== "completed"
+    ) {
+      await updateGameStatus(game.id, "completed");
+    }
   }, [currentQuestion?.ended_at, game.id, game.players.length, game.status]);
 
-  // Prevent further turns if game is completed
-  const isRoundComplete = game.status === "completed";
-
   useEffect(() => {
-    if (!game) return;
-    // Handle turn changes
-    if (
-      game.current_turn !== undefined &&
-      currentPlayerIndex !== game.current_turn
-    ) {
-      if (currentPlayerIndex !== game.current_turn) {
-        setCurrentPlayerIndex(game.current_turn);
-      }
-      // Reset question-related state for all clients when turn changes
+    checkGameCompletion();
+  }, [checkGameCompletion]);
+
+  // Handle turn changes with optimized conditions
+  useEffect(() => {
+    if (!game?.current_turn) return;
+
+    if (currentPlayerIndex !== game.current_turn) {
+      setCurrentPlayerIndex(game.current_turn);
       resetQuestionState();
     }
-  }, [currentPlayerIndex, game, resetQuestionState]);
+  }, [game?.current_turn, currentPlayerIndex, resetQuestionState]);
 
   // Fetch latest question on mount or when game.id changes
   useEffect(() => {
@@ -135,144 +136,149 @@ export function GameRoom({
     })();
   }, [game.id]);
 
-  // Subscribe to questions and answers
-  useEffect(() => {
-    if (!game.id) return;
-
-    const questionSubscription = subscribeToQuestions(async (payload) => {
+  // Question subscription with memoized handler
+  const handleQuestionUpdate = useCallback(
+    async (payload: { new: Question | null }) => {
       if (payload.new && payload.new.game_id === game.id) {
-        setCurrentQuestion(payload.new as Question);
+        setCurrentQuestion(payload.new);
         setQuestionStartTime(
           payload.new.started_at
             ? new Date(payload.new.started_at).getTime()
             : Date.now()
         );
       }
-    });
+    },
+    [game.id]
+  );
 
-    return () => {
-      unsubscribeFromQuestions(questionSubscription);
-    };
-  }, [game.id]);
-
-  // Handle answers subscription separately
   useEffect(() => {
-    if (!currentQuestion) {
+    if (!game.id) return;
+
+    const questionSubscription = subscribeToQuestions(handleQuestionUpdate);
+    return () => unsubscribeFromQuestions(questionSubscription);
+  }, [game.id, handleQuestionUpdate]);
+
+  // Answer subscription with memoized handler and data fetching
+  const handleAnswerUpdate = useCallback(async (questionId: string) => {
+    const answers = await getAnswersWithPlayerForQuestion(questionId);
+    setAllAnswers(answers);
+  }, []);
+
+  useEffect(() => {
+    if (!currentQuestion?.id) {
       setAllAnswers([]);
       return;
     }
 
     const answerSubscription = subscribeToAnswers(async (payload) => {
       if (payload.new && payload.new.question_id === currentQuestion.id) {
-        const answers = await getAnswersWithPlayerForQuestion(
-          currentQuestion.id
-        );
-        setAllAnswers(answers);
+        await handleAnswerUpdate(currentQuestion.id);
       }
     });
 
-    // Fetch initial answers
-    (async () => {
-      const answers = await getAnswersWithPlayerForQuestion(currentQuestion.id);
-      setAllAnswers(answers);
-    })();
+    // Initial answers fetch
+    handleAnswerUpdate(currentQuestion.id);
 
-    return () => {
-      unsubscribeFromAnswers(answerSubscription);
-    };
-  }, [currentQuestion]); // Changed dependencies to only include what's needed
+    return () => unsubscribeFromAnswers(answerSubscription);
+  }, [currentQuestion?.id, handleAnswerUpdate]);
 
-  // Timer: check if time is up, all answered, or winner, and end question if needed
+  // Timer effect with optimized checks
   useEffect(() => {
-    if (!currentQuestion || !questionStartTime || winner) return;
-    const TIME_LIMIT =
+    if (
+      !currentQuestion?.id ||
+      !questionStartTime ||
+      winner ||
+      currentQuestion.ended_at
+    )
+      return;
+
+    const timeLimit =
       (typeof game.time_limit === "number" && !isNaN(game.time_limit)
         ? game.time_limit
         : 120) * 1000;
-    const interval = setInterval(async () => {
+
+    const timer = setInterval(async () => {
       const now = Date.now();
+      const timeIsUp = now - questionStartTime >= timeLimit;
       const allPlayersAnswered =
         allAnswers.length === game.players.length && allAnswers.length > 0;
-
-      // Check for any correct answers - this should end the question too
       const hasCorrectAnswer = allAnswers.some((a) => a.is_correct);
 
-      if (
-        now - questionStartTime >= TIME_LIMIT ||
-        allPlayersAnswered ||
-        hasCorrectAnswer
-      ) {
-        console.log("Ending question because:", {
-          timeUp: now - questionStartTime >= TIME_LIMIT,
-          allAnswered: allPlayersAnswered,
-          hasCorrectAnswer,
-        });
+      if (timeIsUp || allPlayersAnswered || hasCorrectAnswer) {
+        clearInterval(timer);
 
-        // End question: update ended_at in DB if not already set
         if (!currentQuestion.ended_at) {
           await updateQuestion(currentQuestion.id, {
             ended_at: new Date().toISOString(),
           });
 
-          // If a correct answer was given, make sure we show next turn
           if (hasCorrectAnswer) {
             setShowNextTurn(true);
           }
         }
-        clearInterval(interval);
       }
     }, 1000);
-    return () => clearInterval(interval);
+
+    return () => clearInterval(timer);
   }, [
-    allAnswers,
     currentQuestion,
-    game.players.length,
-    game.time_limit,
     questionStartTime,
     winner,
-  ]);
-
-  // Show next turn button if there is a winner OR if time is up and no winner
-  // OR if there's a correct answer (even without a recognized 'winner')
-  useEffect(() => {
-    if (!currentQuestion || !currentQuestion.ended_at) return;
-
-    // Show next turn if:
-    // 1. There is a recognized winner
-    // 2. Question has ended and all players answered
-    // 3. Question has ended and time is up
-    // 4. There is any correct answer (even if wasn't winning)
-    const hasAnyCorrectAnswer = allAnswers.some((a) => a.is_correct);
-
-    // Log the decision factors for debugging
-    console.log("Next turn decision factors:", {
-      hasWinner: !!winner,
-      questionHasEnded: !!currentQuestion.ended_at,
-      answersCount: allAnswers.length,
-      totalPlayers: game.players.length,
-      hasAnyCorrectAnswer,
-      correctAnswers: allAnswers.filter(a => a.is_correct).length,
-    });
-
-    // ALWAYS show next turn button if ANY of these conditions are true:
-    // 1. Question has ended (ended_at is set)
-    // 2. There's a recognized winner
-    // 3. There's any correct answer
-    if (currentQuestion.ended_at || winner || hasAnyCorrectAnswer) {
-      console.log("Showing next turn button because:", {
-        questionEnded: !!currentQuestion.ended_at,
-        hasWinner: !!winner,
-        hasCorrectAnswer: hasAnyCorrectAnswer
-      });
-      setShowNextTurn(true);
-    }
-  }, [
-    currentQuestion,
-    currentQuestion?.ended_at,
-    winner,
-    allAnswers,
+    game.time_limit,
     game.players.length,
+    allAnswers,
   ]);
+
+  // Show next turn button for winning answers
+  useEffect(() => {
+    if (!currentQuestion?.ended_at) return;
+    const hasAnyCorrectAnswer = allAnswers.some((a) => a.is_correct);
+    const shouldShowNextTurn =
+      currentQuestion.ended_at || !!winner || hasAnyCorrectAnswer;
+
+    // Fix TypeScript error by ensuring boolean type
+    setShowNextTurn((prev) => (shouldShowNextTurn ? true : prev));
+  }, [currentQuestion?.ended_at, winner, allAnswers]);
+
+  // Winner determination effect with memoized winner calculation
+  useEffect(() => {
+    if (!currentQuestion?.ended_at) return;
+
+    const calculateWinner = () => {
+      const correctAnswers = allAnswers.filter((a) => a.is_correct);
+      if (correctAnswers.length === 0) {
+        setWinner((prev) => (prev === null ? null : null));
+        return;
+      }
+
+      const [firstCorrect] = correctAnswers.sort(
+        (a, b) =>
+          new Date(a.answered_at).getTime() - new Date(b.answered_at).getTime()
+      );
+
+      if (firstCorrect) {
+        const newWinner = {
+          playerId: firstCorrect.player_id,
+          user_name: firstCorrect.player.user_name,
+          score: firstCorrect.score_earned,
+        };
+
+        setWinner((prev) => {
+          if (!prev) return newWinner;
+          return prev.playerId === newWinner.playerId &&
+            prev.score === newWinner.score
+            ? prev
+            : newWinner;
+        });
+
+        // Only set next turn if it's not already set
+        setShowNextTurn((prev) => (prev ? prev : true));
+      }
+    };
+
+    const timeoutId = setTimeout(calculateWinner, 300);
+    return () => clearTimeout(timeoutId);
+  }, [currentQuestion?.ended_at, allAnswers]);
 
   // --- ANSWER LOGIC ---
   // Only show correct answer (green) if someone answered correctly or time is up
@@ -280,185 +286,166 @@ export function GameRoom({
   // Reset answer state on new turn
 
   // When an answer is submitted, check if it's correct and if so, set winner and end question
-  const handleSubmitAnswer = async (selectedOption: number): Promise<void> => {
-    if (!user || !currentQuestion || !questionStartTime) return;
-    try {
-      const now = Date.now();
-      const responseTime = now - questionStartTime;
-      const timeLimitMs =
-        typeof game.time_limit === "number" ? game.time_limit * 1000 : 120000;
+  const handleSubmitAnswer = useCallback(
+    async (selectedOption: number): Promise<void> => {
+      if (!user || !currentQuestion?.id || !questionStartTime) return;
 
-      // Use new submitAnswer: all logic is server-side
-      const { data, error: transactionError } = await submitAnswer({
-        questionId: currentQuestion.id,
-        playerId: user.id,
-        gameId: game.id,
-        selectedOption,
-        responseTimeMs: responseTime,
-        timeLimitMs,
-      });
+      try {
+        const now = Date.now();
+        const responseTime = now - questionStartTime;
+        const timeLimitMs =
+          typeof game.time_limit === "number" ? game.time_limit * 1000 : 120000;
 
-      if (transactionError) {
-        // Add specific error message for duplicate answers or race
-        if (
-          (typeof transactionError === "object" &&
-            "code" in transactionError &&
-            (transactionError.code === "P0001" ||
-              transactionError.code === "P0002")) ||
-          transactionError.message?.includes("already answered") ||
-          transactionError.message?.includes("already been answered") ||
-          transactionError.message?.includes("already submitted")
-        ) {
-          // P0001: question ended, P0002: already answered/race
-          if (
-            typeof transactionError === "object" &&
-            "code" in transactionError &&
-            transactionError.code === "P0001"
-          ) {
+        const { data, error: transactionError } = await submitAnswer({
+          questionId: currentQuestion.id,
+          playerId: user.id,
+          gameId: game.id,
+          selectedOption,
+          responseTimeMs: responseTime,
+          timeLimitMs,
+        });
+
+        if (transactionError) {
+          const errorMessage = String(transactionError.message || "");
+
+          if (errorMessage.includes("[QEND]")) {
             throw new Error("Question has already ended");
-          } else {
-            throw new Error(
-              "Player has already submitted an answer or a race condition occurred"
-            );
+          } else if (errorMessage.includes("[ADUP]")) {
+            throw new Error("Player has already submitted an answer");
+          } else if (errorMessage.includes("[QNOTF]")) {
+            throw new Error("Question not found");
+          } else if (errorMessage.includes("[QINV]")) {
+            throw new Error("Invalid question");
+          }
+          throw transactionError;
+        }
+
+        if (data?.[0]) {
+          const answerResult = data[0];
+          if (answerResult.score_earned > 0) {
+            if (answerResult.was_winning_answer && !currentQuestion.ended_at) {
+              setWinner({
+                playerId: user.id,
+                user_name: user.user_metadata?.user_name || user.email || "Tu",
+                score: answerResult.score_earned,
+              });
+            }
+
+            if (!currentQuestion.ended_at) {
+              await updateQuestion(currentQuestion.id, {
+                ended_at: new Date().toISOString(),
+              });
+            }
+
+            setShowNextTurn(true);
           }
         }
-        throw transactionError;
-      }
-
-      // Check if the answer was correct based on the response
-      if (data && Array.isArray(data) && data[0]) {
-        const answerResult = data[0];
-
-        // If score_earned is > 0, the answer was correct
-        if (answerResult.score_earned > 0) {
-          // Ensure the UI knows this is a correct answer immediately
-          console.log(
-            "Correct answer submitted with score:",
-            answerResult.score_earned,
-            "was_winning_answer:",
-            answerResult.was_winning_answer
-          );
-
-          // Force update question ended_at if needed (this ensures UI updates for everyone)
-          if (!currentQuestion.ended_at) {
-            await updateQuestion(currentQuestion.id, {
-              ended_at: new Date().toISOString(),
+      } catch (error) {
+        if (error instanceof Error) {
+          if (error.message.includes("already")) {
+            toast.error("Qualcuno ha già risposto!", {
+              description: "Un altro giocatore ha risposto prima di te",
+            });
+          } else if (error.message.includes("Question has already")) {
+            toast.error("Questa domanda è già conclusa", {
+              description: "Si sta passando alla prossima domanda",
+            });
+          } else {
+            toast.error("Errore", {
+              description: "Impossibile inviare la risposta",
             });
           }
-
-          // IMPORTANT: Always show next turn button for any correct answer,
-          // regardless of who submitted it or whether it was the first
-          setShowNextTurn(true);
         }
       }
-    } catch (error) {
-      // Log the error for debugging
-      console.error("Error submitting answer:", error);
-
-      // Check for specific race condition error
-      if (
-        error instanceof Error &&
-        (error.message.includes("already answered") ||
-          error.message.includes("already been answered") ||
-          error.message.includes("already submitted") ||
-          error.message.includes("race condition occurred"))
-      ) {
-        toast.error("Qualcuno ha già risposto!", {
-          description: "Un altro giocatore ha risposto prima di te",
-        });
-      } else if (
-        error instanceof Error &&
-        error.message.includes("Question has already")
-      ) {
-        toast.error("Questa domanda è già conclusa", {
-          description: "Si sta passando alla prossima domanda",
-        });
-      } else {
-        toast.error("Errore", {
-          description: "Impossibile inviare la risposta",
-        });
-      }
-    }
-  };
+    },
+    [user, currentQuestion, questionStartTime, game.id, game.time_limit]
+  );
 
   // Patch: fallback to local state if game.current_turn is not present
   // Wait for DB update before changing local state
-  const handleNextTurn = async (): Promise<void> => {
-    if (isRoundComplete) return; // Prevent next turn if game is over
+  const handleNextTurn = useCallback(async (): Promise<void> => {
+    if (isRoundComplete) return;
+
     try {
       const nextIndex = currentPlayerIndex + 1;
-      const isAllPlayersTurned = nextIndex >= game.players.length;
-      if (isAllPlayersTurned) {
+      if (nextIndex >= game.players.length) {
         // Game will be marked as completed by the effect above
         return;
-      } else {
-        // Update current_turn in the database for all clients
-        const { error } = await updateGameTurn(game.id, nextIndex);
-        if (error) throw error;
       }
-      // Local state will be updated by the subscription
+
+      const { error } = await updateGameTurn(game.id, nextIndex);
+      if (error) throw error;
+
       resetQuestionState();
     } catch {
       toast.error("Errore", {
         description: "Impossibile passare al turno successivo",
       });
     }
-  };
+  }, [
+    isRoundComplete,
+    currentPlayerIndex,
+    game.id,
+    game.players.length,
+    resetQuestionState,
+  ]);
 
-  // New: handle form submit from QuestionSelection
-  const handleQuestionFormSubmit = (values: {
-    language: GameLanguage;
-    difficulty: GameDifficulty;
-  }) => {
-    setLanguage(values.language);
-    setDifficulty(values.difficulty);
-    // Call question creation with the selected values
-    handleCreateQuestion(values.language, values.difficulty);
-  };
+  const handleCreateQuestion = useCallback(
+    async (
+      selectedLanguage?: GameLanguage,
+      selectedDifficulty?: GameDifficulty
+    ): Promise<void> => {
+      if (!user || !isCurrentPlayersTurn) return;
 
-  // Overload handleCreateQuestion to accept values
-  const handleCreateQuestion = async (
-    selectedLanguage?: GameLanguage,
-    selectedDifficulty?: GameDifficulty
-  ): Promise<void> => {
-    if (!user || !isCurrentPlayersTurn) return;
-    setIsLoading(true);
-    try {
-      const lang = selectedLanguage ?? language;
-      const diff = selectedDifficulty ?? difficulty;
-      // Generate question using Groq
-      const questionData = await generateQuestion({
-        language: lang,
-        difficulty: diff,
-      });
-      const startedAt = new Date().toISOString();
-      // Save question to database (add started_at for timer sync)
-      const data = await insertQuestion({
-        game_id: game.id,
-        created_by_player_id: user.id,
-        language: lang,
-        difficulty: diff,
-        question_text: questionData.questionText,
-        code_sample: questionData.codeSample,
-        options: questionData.options,
-        correct_answer: questionData.correctAnswer,
-        explanation: questionData.explanation,
-        started_at: startedAt,
-      });
-      setCurrentQuestion(data as Question);
-      setQuestionStartTime(new Date(startedAt).getTime());
-      // Aggiorna lo stato della partita a 'active' se non già attivo
-      if (game.status !== "active") {
-        await updateGameStatus(game.id, "active");
+      setIsLoading(true);
+      try {
+        const lang = selectedLanguage ?? language;
+        const diff = selectedDifficulty ?? difficulty;
+
+        const questionData = await generateQuestion({
+          language: lang,
+          difficulty: diff,
+        });
+
+        const startedAt = new Date().toISOString();
+        const data = await insertQuestion({
+          game_id: game.id,
+          created_by_player_id: user.id,
+          language: lang,
+          difficulty: diff,
+          question_text: questionData.questionText,
+          code_sample: questionData.codeSample,
+          options: questionData.options,
+          correct_answer: questionData.correctAnswer,
+          explanation: questionData.explanation,
+          started_at: startedAt,
+        });
+
+        setCurrentQuestion(data as Question);
+        setQuestionStartTime(new Date(startedAt).getTime());
+
+        if (game.status !== "active") {
+          await updateGameStatus(game.id, "active");
+        }
+      } catch {
+        toast.error("Errore", {
+          description: "Impossibile creare la domanda",
+        });
+      } finally {
+        setIsLoading(false);
       }
-    } catch {
-      toast.error("Errore", {
-        description: "Impossibile creare la domanda",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [user, isCurrentPlayersTurn, language, difficulty, game.id, game.status]
+  );
+
+  const handleQuestionFormSubmit = useCallback(
+    (values: { language: GameLanguage; difficulty: GameDifficulty }) => {
+      setLanguage(values.language);
+      setDifficulty(values.difficulty);
+      handleCreateQuestion(values.language, values.difficulty);
+    },
+    [handleCreateQuestion]
+  );
 
   // --- Ensure timer stops for everyone when turn is over ---
   useEffect(() => {
@@ -467,56 +454,6 @@ export function GameRoom({
     }
     // Only run when currentQuestion changes
   }, [currentQuestion]);
-
-  // --- Winner sync: determine winner from allAnswers when question is over ---
-  useEffect(() => {
-    // Only run this effect when the question ends or we get new answers
-    if (!currentQuestion?.ended_at) return;
-
-    const determineWinner = () => {
-      // Find all correct answers
-      const correctAnswers = allAnswers.filter((a) => a.is_correct);
-
-      // No correct answers
-      if (correctAnswers.length === 0) {
-        setWinner(null);
-        return;
-      }
-
-      // Sort by answered_at to get the first correct answer
-      const firstCorrect = correctAnswers.sort(
-        (a, b) =>
-          new Date(a.answered_at).getTime() - new Date(b.answered_at).getTime()
-      )[0];
-
-      // Set the winner to the first player who answered correctly
-      if (firstCorrect) {
-        console.log("Recognizing winner:", {
-          playerId: firstCorrect.player_id,
-          userName: firstCorrect.player.user_name,
-          score: firstCorrect.score_earned,
-          answeredAt: firstCorrect.answered_at,
-          wasWinningAnswer: "should be TRUE for all correct answers now",
-        });
-
-        // Always set as winner the first player who answered correctly
-        setWinner({
-          playerId: firstCorrect.player_id,
-          user_name: firstCorrect.player.user_name,
-          score: firstCorrect.score_earned,
-        });
-        
-        // Make sure we always show the next turn button for any correct answer
-        setShowNextTurn(true);
-      } else {
-        setWinner(null);
-      }
-    };
-
-    // Small delay to ensure we have the latest answers
-    const timeoutId = setTimeout(determineWinner, 300);
-    return () => clearTimeout(timeoutId);
-  }, [currentQuestion?.ended_at, allAnswers]);
 
   return (
     <div className="space-y-8">

@@ -133,17 +133,21 @@ export function QuestionDisplay({
 
       // Check for specific error message when another player has already answered
       const errorMessage = String(error);
-      if (
-        errorMessage.includes("already answered") ||
-        errorMessage.includes("already submitted") ||
-        errorMessage.includes("already been answered")
-      ) {
-        toast.error("Qualcuno ha già risposto!", {
-          description: "Un altro giocatore ha risposto prima di te",
+      if (errorMessage.includes("[ADUP]")) {
+        toast.error("Risposta già inviata!", {
+          description: "Hai già fornito una risposta a questa domanda",
         });
-      } else if (errorMessage.includes("Question has already")) {
-        toast.error("Questa domanda è già conclusa", {
+      } else if (errorMessage.includes("[QEND]")) {
+        toast.error("Domanda conclusa", {
           description: "Si sta passando alla prossima domanda",
+        });
+      } else if (errorMessage.includes("[QNOTF]")) {
+        toast.error("Domanda non trovata", {
+          description: "La domanda non è più disponibile",
+        });
+      } else if (errorMessage.includes("[QINV]")) {
+        toast.error("Domanda non valida", {
+          description: "La domanda non ha una risposta corretta definita",
         });
       } else {
         toast.error("Errore", {

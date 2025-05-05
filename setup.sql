@@ -193,11 +193,6 @@ END;
 $$;
 
 -- Create function to submit answer and update score atomically
-
--- Improved submit_answer function for atomic, race-free, server-side validation and scoring
--- This version fixes both:
--- 1. The "null value in column 'is_correct'" error
--- 2. The issue where turns aren't closed when non-creator players answer correctly
 CREATE OR REPLACE FUNCTION submit_answer(
   p_question_id UUID,
   p_player_id UUID,
@@ -209,8 +204,7 @@ CREATE OR REPLACE FUNCTION submit_answer(
 RETURNS TABLE(
   answer_id UUID, 
   was_winning_answer BOOLEAN, 
-  score_earned DECIMAL,
-  debug JSONB
+  score_earned DECIMAL
 ) 
 LANGUAGE plpgsql
 SECURITY INVOKER 
@@ -225,14 +219,13 @@ DECLARE
   v_was_winning_answer BOOLEAN := FALSE;
   v_update_id UUID;
   v_count INTEGER;
-  v_debug JSONB := '{}'::JSONB;
 BEGIN
   -- 1. First check if the question exists
   SELECT COUNT(*) INTO v_count FROM questions WHERE id = p_question_id;
   
   IF v_count = 0 THEN
     RAISE LOG 'Question % not found', p_question_id;
-    RAISE EXCEPTION 'Question not found' USING ERRCODE = 'P0003';
+    RAISE EXCEPTION '[QNOTF] Question not found' USING ERRCODE = 'P0003';
   END IF;
 
   -- 2. Get the question data with a FOR SHARE lock (less restrictive than FOR UPDATE)
@@ -251,7 +244,7 @@ BEGIN
   -- 3. Check if question has already ended
   IF v_ended_at IS NOT NULL THEN
     RAISE LOG 'Question % has already ended at %', p_question_id, v_ended_at;
-    RAISE EXCEPTION 'Question has already ended' USING ERRCODE = 'P0001';
+    RAISE EXCEPTION '[QEND] Question has already ended' USING ERRCODE = 'P0001';
   END IF;
   
   -- 4. Check if player has already answered
@@ -261,7 +254,7 @@ BEGIN
   
   IF v_count > 0 THEN
     RAISE LOG 'Player % has already answered question %', p_player_id, p_question_id;
-    RAISE EXCEPTION 'Player has already submitted an answer' USING ERRCODE = 'P0002';
+    RAISE EXCEPTION '[ADUP] Player has already submitted an answer' USING ERRCODE = 'P0002';
   END IF;
   
   -- 5. Make absolutely sure we have a correct_answer value
@@ -275,11 +268,11 @@ BEGIN
       -- Still null? This is a critical error
       IF v_correct_answer IS NULL THEN
         RAISE LOG 'Critical error: Question % has NULL correct_answer even after retry', p_question_id;
-        RAISE EXCEPTION 'Question has no correct answer defined' USING ERRCODE = 'P0005';
+        RAISE EXCEPTION '[QINV] Question has no correct answer defined' USING ERRCODE = 'P0005';
       END IF;
     EXCEPTION WHEN OTHERS THEN
       RAISE LOG 'Error retrieving correct_answer: %', SQLERRM;
-      RAISE EXCEPTION 'Could not determine correct answer' USING ERRCODE = 'P0005';
+      RAISE EXCEPTION '[QINV] Could not determine correct answer' USING ERRCODE = 'P0005';
     END;
   END IF;
   
@@ -306,19 +299,13 @@ BEGIN
     RAISE LOG 'Answer comparison: selected=%, correct=%, is_correct=%', 
               p_selected_option, v_correct_answer, v_is_correct;
               
-    -- Add to debug info
-    v_debug := jsonb_build_object(
-      'selected_option', p_selected_option, 
-      'correct_answer', v_correct_answer,
-      'is_correct', v_is_correct
-    );
+
   END;
   
   -- 7. Calculate score if correct
   IF v_is_correct THEN
     v_score_earned := calculate_score(p_response_time_ms, p_time_limit_ms);
     RAISE LOG 'Score calculated: %', v_score_earned;
-    v_debug := v_debug || jsonb_build_object('score_earned', v_score_earned);
   END IF;
   
   -- 8. Insert the answer
@@ -369,29 +356,17 @@ BEGIN
     IF v_update_id IS NOT NULL THEN
       -- This was the first correct answer (the one that actually ended the question)
       RAISE LOG 'Question % ended successfully by player %', p_question_id, p_player_id;
-      
-      v_debug := v_debug || jsonb_build_object(
-        'was_winning_answer', v_was_winning_answer,
-        'score_updated', true,
-        'question_ended', true,
-        'first_correct_answer', true
-      );
+
     ELSE
       -- This was a correct answer, but not the first one
       RAISE LOG 'Question % was already ended when player % answered', 
                 p_question_id, p_player_id;
-                
-      v_debug := v_debug || jsonb_build_object(
-        'was_winning_answer', v_was_winning_answer,
-        'score_updated', true,
-        'question_already_ended', true,
-        'first_correct_answer', false
-      );
+     
     END IF;
   END IF;
   
   -- 10. Return results with debug info
-  RETURN QUERY SELECT v_answer_id, v_was_winning_answer, v_score_earned, v_debug;
+  RETURN QUERY SELECT v_answer_id, v_was_winning_answer, v_score_earned;
 END;
 $$;
 

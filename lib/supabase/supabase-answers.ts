@@ -83,13 +83,6 @@ export const submitAnswer = async (params: {
 }) => {
   const supabase = createClient();
 
-  console.log("Submitting answer with params:", {
-    questionId: params.questionId,
-    playerId: params.playerId,
-    selectedOption: params.selectedOption,
-    responseTimeMs: params.responseTimeMs,
-  });
-
   const { data, error } = await supabase.rpc("submit_answer", {
     p_question_id: params.questionId,
     p_player_id: params.playerId,
@@ -98,30 +91,6 @@ export const submitAnswer = async (params: {
     p_response_time_ms: params.responseTimeMs,
     p_time_limit_ms: params.timeLimitMs,
   });
-
-  // Log debug info if available
-  if (data && Array.isArray(data) && data[0]) {
-    console.log("Submit answer response data:", data[0]);
-
-    // Log was_winning_answer field in particular
-    if (data[0].was_winning_answer !== undefined) {
-      console.log(`Was winning answer: ${data[0].was_winning_answer}`);
-    }
-
-    if (data[0].debug) {
-      console.log("Submit answer debug info:", data[0].debug);
-    }
-  }
-
-  // Log error details if present
-  if (error) {
-    console.error("Submit answer error:", {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
-    });
-  }
 
   return { data, error };
 };
