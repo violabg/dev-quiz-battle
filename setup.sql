@@ -229,14 +229,12 @@ BEGIN
   END IF;
 
   -- 2. Get the question data with a FOR SHARE lock (less restrictive than FOR UPDATE)
-  -- Get correct_answer and ended_at with separate queries for reliability
-  SELECT ended_at INTO v_ended_at 
-  FROM questions 
-  WHERE id = p_question_id
-  FOR SHARE;
-  
-  -- Get the critical correct_answer with its own query
-  SELECT correct_answer INTO v_correct_answer 
+  SELECT 
+    ended_at, 
+    correct_answer 
+  INTO 
+    v_ended_at, 
+    v_correct_answer
   FROM questions 
   WHERE id = p_question_id
   FOR SHARE;
@@ -297,9 +295,7 @@ BEGIN
     END IF;
     
     RAISE LOG 'Answer comparison: selected=%, correct=%, is_correct=%', 
-              p_selected_option, v_correct_answer, v_is_correct;
-              
-
+              p_selected_option, v_correct_answer, v_is_correct;    
   END;
   
   -- 7. Calculate score if correct
