@@ -183,6 +183,21 @@ export interface Database {
       };
     };
     Functions: {
+      get_leaderboard_players_by_language: {
+        Args: {
+          language_filter: string;
+          offset_value: number;
+          limit_value: number;
+        };
+        Returns: Array<{
+          player_id: string;
+          total_score: number;
+          name: string;
+          full_name: string;
+          user_name: string;
+          avatar_url: string | null;
+        }>;
+      };
       calculate_score: {
         Args: {
           response_time_ms: number;
@@ -198,15 +213,17 @@ export interface Database {
         Args: {
           offset_value: number;
           limit_value: number;
+          language_filter?: string | null;
         };
-        Returns: {
+        Returns: Array<{
           player_id: string;
           total_score: number;
           name: string;
           full_name: string;
           user_name: string;
           avatar_url: string | null;
-        }[];
+          total_items: number;
+        }>;
       };
       get_user_profile_with_score: {
         Args: {
@@ -241,6 +258,7 @@ export type GenerateUniqueGameCodeReturn =
 export type GetLeaderboardPlayersArgs = {
   offset_value: number;
   limit_value: number;
+  language_filter?: string | null;
 };
 export type GetLeaderboardPlayersReturn = {
   player_id: string;
@@ -249,6 +267,7 @@ export type GetLeaderboardPlayersReturn = {
   full_name: string;
   user_name: string;
   avatar_url: string | null;
+  total_items: number;
 };
 
 export type CountUniquePlayersArgs = Record<string, never>;
@@ -311,4 +330,18 @@ export type AnswerWithPlayer = {
   score_earned: number;
   answered_at: string;
   player: { id: string; user_name: string; avatar_url?: string | null };
+};
+
+export type GetLeaderboardPlayersByLanguageArgs = {
+  language_filter: string;
+  offset_value: number;
+  limit_value: number;
+};
+export type GetLeaderboardPlayersByLanguageReturn = {
+  player_id: string;
+  total_score: number;
+  name: string;
+  full_name: string;
+  user_name: string;
+  avatar_url: string | null;
 };

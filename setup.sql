@@ -95,6 +95,14 @@ CREATE TABLE IF NOT EXISTS answers (
   UNIQUE(question_id, player_id)
 );
 
+-- Table for per-language player scores
+CREATE TABLE IF NOT EXISTS player_language_scores (
+  player_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  language TEXT NOT NULL,
+  total_score DECIMAL(10,2) NOT NULL DEFAULT 0,
+  PRIMARY KEY (player_id, language)
+);
+
 -- Enable Realtime for all tables
 alter publication supabase_realtime add table public.profiles;
 alter publication supabase_realtime add table public.games;
@@ -329,25 +337,38 @@ BEGIN
     -- For any correct answer, set was_winning_answer to TRUE
     -- This ensures frontend always treats correct answers as "winning" answers
     v_was_winning_answer := TRUE;
-    
+
     -- Try to end the question (this only works for the first correct answer)
     UPDATE questions
     SET ended_at = NOW()
     WHERE id = p_question_id AND ended_at IS NULL
     RETURNING id INTO v_update_id;
-    
+
     RAISE LOG 'Question end attempt: question_id=%, player_id=%, result=%', 
               p_question_id, p_player_id, v_update_id IS NOT NULL;
-    
+
     -- Update player score for ANY correct answer
     UPDATE game_players
     SET score = score + v_score_earned
     WHERE game_id = p_game_id AND player_id = p_player_id;
-    
+
     GET DIAGNOSTICS v_count = ROW_COUNT;
     RAISE LOG 'Player % score updated by % points (rows: %)', 
               p_player_id, v_score_earned, v_count;
-    
+
+    -- Update player_language_scores for the language of the question
+    DECLARE v_language TEXT;
+    BEGIN
+      SELECT language INTO v_language FROM questions WHERE id = p_question_id;
+      IF v_language IS NOT NULL THEN
+        INSERT INTO player_language_scores (player_id, language, total_score)
+        VALUES (p_player_id, v_language, v_score_earned)
+        ON CONFLICT (player_id, language)
+        DO UPDATE SET total_score = player_language_scores.total_score + EXCLUDED.total_score;
+        RAISE LOG 'Updated player_language_scores for player %, language %, score %', p_player_id, v_language, v_score_earned;
+      END IF;
+    END;
+
     IF v_update_id IS NOT NULL THEN
       -- This was the first correct answer (the one that actually ended the question)
       RAISE LOG 'Question % ended successfully by player %', p_question_id, p_player_id;
@@ -356,7 +377,6 @@ BEGIN
       -- This was a correct answer, but not the first one
       RAISE LOG 'Question % was already ended when player % answered', 
                 p_question_id, p_player_id;
-     
     END IF;
   END IF;
   
@@ -365,10 +385,14 @@ BEGIN
 END;
 $$;
 
--- Leaderboard function: sum scores per player, join profile, paginated
+
+-- Unified leaderboard function: by language if language_filter is set, otherwise overall
+
+-- Unified leaderboard function: returns paginated players and total count
 CREATE OR REPLACE FUNCTION get_leaderboard_players(
   offset_value integer,
-  limit_value integer
+  limit_value integer,
+  language_filter text DEFAULT NULL
 )
 RETURNS TABLE (
   player_id uuid,
@@ -376,22 +400,51 @@ RETURNS TABLE (
   name text,
   full_name text,
   user_name text,
-  avatar_url text
+  avatar_url text,
+  total_items bigint
 ) AS $$
 BEGIN
-  RETURN QUERY
-    SELECT
-      gp.player_id,
-      SUM(gp.score) AS total_score,
-      p.name,
-      p.full_name,
-      p.user_name,
-      p.avatar_url
-    FROM game_players gp
-    JOIN profiles p ON gp.player_id = p.id
-    GROUP BY gp.player_id, p.name, p.full_name, p.user_name, p.avatar_url
-    ORDER BY total_score DESC
-    LIMIT limit_value OFFSET offset_value;  -- Corrected order of LIMIT and OFFSET
+  IF language_filter IS NOT NULL AND length(trim(language_filter)) > 0 THEN
+    RETURN QUERY
+      WITH filtered AS (
+        SELECT
+          pls.player_id,
+          pls.total_score,
+          p.name,
+          p.full_name,
+          p.user_name,
+          p.avatar_url
+        FROM player_language_scores pls
+        JOIN profiles p ON pls.player_id = p.id
+        WHERE pls.language = language_filter
+      ), counted AS (
+        SELECT *, count(*) OVER() AS total_items
+        FROM filtered
+        ORDER BY total_score DESC
+        LIMIT limit_value OFFSET offset_value
+      )
+      SELECT * FROM counted;
+  ELSE
+    RETURN QUERY
+      WITH filtered AS (
+        SELECT
+          gp.player_id,
+          SUM(gp.score) AS total_score,
+          p.name,
+          p.full_name,
+          p.user_name,
+          p.avatar_url
+        FROM game_players gp
+        JOIN profiles p ON gp.player_id = p.id
+        GROUP BY gp.player_id, p.name, p.full_name, p.user_name, p.avatar_url
+      ), counted AS (
+        SELECT *, count(*) OVER() AS total_items
+        FROM filtered
+        ORDER BY total_score DESC
+        LIMIT limit_value OFFSET offset_value
+      )
+      SELECT * FROM counted;
+  END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY INVOKER SET search_path = 'public';
 

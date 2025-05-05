@@ -57,7 +57,7 @@ const questionSelectionSchema = z.object({
 });
 type QuestionSelectionForm = z.infer<typeof questionSelectionSchema>;
 
-const LANGUAGE_OPTIONS = [
+export const LANGUAGE_OPTIONS = [
   { value: "javascript", label: "JavaScript" },
   { value: "typescript", label: "TypeScript" },
   { value: "html", label: "HTML" },

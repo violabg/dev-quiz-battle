@@ -1,5 +1,4 @@
 import type {
-  GetLeaderboardPlayersArgs,
   GetLeaderboardPlayersReturn,
   Player,
   Profile,
@@ -46,13 +45,15 @@ export async function getPlayerInGame(game_id: string, player_id: string) {
 export async function getLeaderboardPlayers(
   supabase: SupabaseClient,
   offset: number,
-  limit: number
+  limit: number,
+  languageFilter?: string
 ) {
-  // Use Supabase RPC to get leaderboard players (summed score, unique per player, paginated)
+  // Use Supabase RPC to get leaderboard players (overall or by language)
   const { data, error } = await supabase.rpc("get_leaderboard_players", {
     offset_value: offset,
     limit_value: limit,
-  } as GetLeaderboardPlayersArgs);
+    language_filter: languageFilter ?? null,
+  });
   if (error) throw error;
   return (data || []) as GetLeaderboardPlayersReturn[];
 }

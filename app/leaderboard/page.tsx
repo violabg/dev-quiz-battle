@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getLeaderboardPlayers } from "@/lib/supabase/supabase-game-players";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
+import LeaderboardLanguageFilter from "./LeaderboardLanguageFilter";
 
 const PAGE_SIZE = 10;
 
@@ -35,12 +36,19 @@ interface LeaderboardPlayerForStanding {
   joined_at: string;
 }
 
-async function getPlayers(supabase: SupabaseClient, page: number) {
+async function getPlayers(
+  supabase: SupabaseClient,
+  page: number,
+  languageFilter?: string
+) {
   const offset = (page - 1) * PAGE_SIZE;
   const limit = PAGE_SIZE;
-  // Use helper from supabase-game-players
-  const data = await getLeaderboardPlayers(supabase, offset, limit);
-  // Map to expected structure for PlayersStanding
+  const data = await getLeaderboardPlayers(
+    supabase,
+    offset,
+    limit,
+    languageFilter
+  );
   const players: LeaderboardPlayerForStanding[] = data.map((p) => ({
     id: p.player_id,
     score: Number(p.total_score),
@@ -59,43 +67,58 @@ async function getPlayers(supabase: SupabaseClient, page: number) {
     is_active: true,
     joined_at: "",
   }));
+  // Use total_items from the first row if available, otherwise fallback to 0
+  const count = data.length > 0 ? Number(data[0].total_items) : 0;
   return {
     players,
-    count: data.length || 0,
+    count,
   };
 }
 
-export default async function LeaderboardPage(props: {
-  searchParams: { page?: string };
-}) {
+const LeaderboardPage = async (props: {
+  searchParams: { page?: string; language?: string };
+}) => {
   const searchParams = await props.searchParams;
   const supabase = await createClient();
   const page = Math.max(1, Number(searchParams?.page) || 1);
-  const { players, count } = await getPlayers(supabase, page);
+  const languageFilter = searchParams?.language || undefined;
+  const { players, count } = await getPlayers(supabase, page, languageFilter);
   const totalPages = Math.ceil(count / PAGE_SIZE);
 
   if (page > totalPages && totalPages > 0)
-    redirect(`/leaderboard?page=${totalPages}`);
+    redirect(
+      `/leaderboard?page=${totalPages}${
+        languageFilter ? `&language=${languageFilter}` : ""
+      }`
+    );
 
   return (
     <main className="mx-auto px-4 py-10 max-w-2x container">
       <h1 className="mb-8 font-bold text-gradient text-3xl text-center">
         Leaderboard
       </h1>
+      <div className="flex justify-center mb-6">
+        {/* Client component for language filter */}
+        <LeaderboardLanguageFilter language={languageFilter || ""} />
+      </div>
       <PlayersStanding players={players} />
       {totalPages > 1 && (
         <Pagination className="mt-8">
           <PaginationContent>
             <PaginationItem>
               <PaginationPrevious
-                href={`/leaderboard?page=${page - 1}`}
+                href={`/leaderboard?page=${page - 1}${
+                  languageFilter ? `&language=${languageFilter}` : ""
+                }`}
                 aria-disabled={page === 1}
               />
             </PaginationItem>
             {Array.from({ length: totalPages }).map((_, i) => (
               <PaginationItem key={i}>
                 <PaginationLink
-                  href={`/leaderboard?page=${i + 1}`}
+                  href={`/leaderboard?page=${i + 1}${
+                    languageFilter ? `&language=${languageFilter}` : ""
+                  }`}
                   isActive={page === i + 1}
                 >
                   {i + 1}
@@ -104,7 +127,9 @@ export default async function LeaderboardPage(props: {
             ))}
             <PaginationItem>
               <PaginationNext
-                href={`/leaderboard?page=${page + 1}`}
+                href={`/leaderboard?page=${page + 1}${
+                  languageFilter ? `&language=${languageFilter}` : ""
+                }`}
                 aria-disabled={page === totalPages}
               />
             </PaginationItem>
@@ -113,4 +138,6 @@ export default async function LeaderboardPage(props: {
       )}
     </main>
   );
-}
+};
+
+export default LeaderboardPage;
