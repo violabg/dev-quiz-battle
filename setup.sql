@@ -352,7 +352,6 @@ BEGIN
     RAISE LOG 'Player % score updated by % points (rows: %)', 
               p_player_id, v_score_earned, v_count;
     
-    -- Add detailed info to debug
     IF v_update_id IS NOT NULL THEN
       -- This was the first correct answer (the one that actually ended the question)
       RAISE LOG 'Question % ended successfully by player %', p_question_id, p_player_id;
@@ -365,7 +364,7 @@ BEGIN
     END IF;
   END IF;
   
-  -- 10. Return results with debug info
+  -- 10. Return results
   RETURN QUERY SELECT v_answer_id, v_was_winning_answer, v_score_earned;
 END;
 $$;
