@@ -251,11 +251,19 @@ export function GameRoom({
       answersCount: allAnswers.length,
       totalPlayers: game.players.length,
       hasAnyCorrectAnswer,
+      correctAnswers: allAnswers.filter(a => a.is_correct).length,
     });
 
-    // Always show next turn button if the question has ended,
-    // regardless of the specific scenario
+    // ALWAYS show next turn button if ANY of these conditions are true:
+    // 1. Question has ended (ended_at is set)
+    // 2. There's a recognized winner
+    // 3. There's any correct answer
     if (currentQuestion.ended_at || winner || hasAnyCorrectAnswer) {
+      console.log("Showing next turn button because:", {
+        questionEnded: !!currentQuestion.ended_at,
+        hasWinner: !!winner,
+        hasCorrectAnswer: hasAnyCorrectAnswer
+      });
       setShowNextTurn(true);
     }
   }, [
@@ -324,20 +332,22 @@ export function GameRoom({
         // If score_earned is > 0, the answer was correct
         if (answerResult.score_earned > 0) {
           // Ensure the UI knows this is a correct answer immediately
-          // Don't wait for the subscription to fetch this
           console.log(
             "Correct answer submitted with score:",
-            answerResult.score_earned
+            answerResult.score_earned,
+            "was_winning_answer:",
+            answerResult.was_winning_answer
           );
 
-          // Force update question ended_at if needed (this ensures UI updates)
+          // Force update question ended_at if needed (this ensures UI updates for everyone)
           if (!currentQuestion.ended_at) {
             await updateQuestion(currentQuestion.id, {
               ended_at: new Date().toISOString(),
             });
           }
 
-          // Force show the next turn button
+          // IMPORTANT: Always show next turn button for any correct answer,
+          // regardless of who submitted it or whether it was the first
           setShowNextTurn(true);
         }
       }
@@ -480,22 +490,24 @@ export function GameRoom({
       )[0];
 
       // Set the winner to the first player who answered correctly
-      // regardless of the was_winning_answer flag from the backend
       if (firstCorrect) {
         console.log("Recognizing winner:", {
           playerId: firstCorrect.player_id,
           userName: firstCorrect.player.user_name,
           score: firstCorrect.score_earned,
           answeredAt: firstCorrect.answered_at,
+          wasWinningAnswer: "should be TRUE for all correct answers now",
         });
 
-        // Always set as winner the first player who answered correctly,
-        // even if there was a race condition in the database
+        // Always set as winner the first player who answered correctly
         setWinner({
           playerId: firstCorrect.player_id,
           user_name: firstCorrect.player.user_name,
           score: firstCorrect.score_earned,
         });
+        
+        // Make sure we always show the next turn button for any correct answer
+        setShowNextTurn(true);
       } else {
         setWinner(null);
       }
