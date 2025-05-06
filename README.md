@@ -1,31 +1,63 @@
-# Supabase Refactor: DevQuizBattle
+# DevQuizBattle Documentation
+
+Welcome to **DevQuizBattle**! This project is an AI-powered multiplayer coding quiz game built with Next.js, React, TypeScript, Tailwind CSS v4, and Supabase. This documentation provides an overview, setup instructions, and links to detailed guides for each part of the codebase.
+
+---
+
+## Table of Contents
+
+- [DevQuizBattle Documentation](#devquizbattle-documentation)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Project Structure](#project-structure)
+  - [Getting Started](#getting-started)
+  - [Environment Variables](#environment-variables)
+  - [Scripts](#scripts)
+  - [Key Technologies](#key-technologies)
+  - [Documentation Index](#documentation-index)
+  - [Contributing](#contributing)
+  - [License](#license)
+
+---
 
 ## Overview
 
-This project uses Supabase for all backend/database interactions, including authentication, real-time updates, and CRUD operations for game data. All Supabase-related logic is organized in the `lib/` directory, with one file per database table or major concern. The project is built with Next.js (v15), React (v19), TypeScript (v5), and Tailwind CSS v4, and uses shadcn/ui and Radix UI for modern, accessible UI components.
+DevQuizBattle is a real-time, multiplayer coding quiz game. It leverages Supabase for authentication, real-time updates, and database operations. The UI is built with modern, accessible components using shadcn/ui and Radix UI, styled with Tailwind CSS v4 and OKLCH color spaces for theme support.
 
 ## Project Structure
 
-- `app/` — Next.js app directory (routing, pages, layouts)
-- `components/` — UI and game components (including shadcn/ui and Radix UI wrappers)
-- `lib/` — Supabase logic, helpers, and hooks (one file per table/concern)
-- `types/` — Shared TypeScript types (notably `supabase.ts`)
-- `public/` — Static assets
-- `setup.sql` — Database schema and Postgres functions
-- `scripts/` — Utilities (e.g., seed data)
+```
+app/                # Next.js app directory (routing, pages, layouts)
+components/         # Reusable UI and feature components
+lib/                # Supabase logic, hooks, and utilities
+public/             # Static assets
+hooks/              # Custom React hooks
+styles/             # Global and utility CSS (see app/globals.css)
+types/              # TypeScript types
+README.md           # Project overview and quickstart
+/docs/              # Additional documentation (see below)
+```
 
-## Main Dependencies
+## Getting Started
 
-- Next.js 15, React 19, TypeScript 5
-- Tailwind CSS v4 (OKLCH color, gradients, modern features)
-- Supabase (auth, realtime, Postgres)
-- @ai-sdk/groq, @ai-sdk/react, ai (AI question generation)
-- react-hook-form, zod (forms & validation)
-- Radix UI, shadcn/ui, lucide-react, sonner, class-variance-authority, clsx, tailwind-merge, tw-animate-css
+1. **Clone the repository:**
+   ```sh
+   git clone <repo-url>
+   cd dev-quiz-battle
+   ```
+2. **Install dependencies:**
+   ```sh
+   npm install
+   ```
+3. **Set up environment variables:**
+   - Copy `.env.example` to `.env.local` and fill in your Supabase credentials.
+4. **Run the development server:**
+   ```sh
+   npm run dev
+   ```
+5. **Open [http://localhost:3000](http://localhost:3000) in your browser.**
 
 ## Environment Variables
-
-Create a `.env` file in the project root with the following keys. **Do not share your real secrets.** Example values are masked:
 
 ```env
 POSTGRES_URL="postgres://postgres:***@host:6543/postgres?..."
@@ -43,59 +75,38 @@ POSTGRES_HOST="db.your-project.supabase.co"
 GROQ_API_KEY="gsk_***"
 ```
 
-## Supabase Functionalities
+## Scripts
 
-### 1. Supabase Client Initialization & Context
+- `npm run dev` — Start the Next.js development server
+- `npm run build` — Build the app for production
+- `npm run start` — Start the production server
+- `npm run lint` — Run ESLint
 
-- `lib/supabase-provider.tsx`: Provides a React context for the Supabase client and user session, handling authentication state and exposing `supabase`, `user`, and `loading` via `useSupabase()`.
+## Key Technologies
 
-### 2. Server-Side Supabase Client
+- **Next.js v15** — App router, SSR, API routes
+- **React v19** — Functional components, hooks
+- **TypeScript v5** — Type safety
+- **Tailwind CSS v4** — Utility-first styling, OKLCH color support
+- **Supabase** — Auth, real-time, database
+- **shadcn/ui & Radix UI** — Accessible, modern UI components
+- **Zod** — Schema validation
+- **react-hook-form** — Form management
 
-- `lib/supabase-server.ts`: Exports `createServerSupabase()` for server-side Supabase access using cookies.
+## Documentation Index
 
-### 3. Profiles Table
+- [Architecture Overview](./docs/architecture.md)
+- [Supabase Integration](./docs/supabase.md)
+- [UI Components](./docs/components.md)
+- [Styling & Theming](./docs/styling.md)
+- [Game Logic](./docs/game-logic.md)
+- [API Reference](./docs/api.md)
+- [Contributing Guide](./docs/contributing.md)
 
-- Handles user profile management (user_name, avatar, etc.).
-- CRUD operations for profiles (insert, select, check existence).
+## Contributing
 
-### 4. Games Table
+See [Contributing Guide](./docs/contributing.md) for how to get started.
 
-- Game creation (host, status, max players, etc.).
-- Fetching and updating game state.
+## License
 
-### 5. Game Players Table
-
-- Adding players to games.
-- Fetching all players for a game, including their profiles.
-- Managing turn order and player activity.
-
-### 6. Questions Table
-
-- Inserting and fetching coding questions (language, difficulty, code sample, options, etc.).
-- Real-time subscription to question changes (insert, update, delete).
-
-### 7. Answers Table
-
-- Inserting and fetching answers for questions.
-- Scoring and response time tracking.
-
-### 8. Supabase Realtime
-
-- Real-time subscriptions for:
-  - `game_players` (player join/leave, updates).
-  - `questions` (new questions, updates, deletions).
-  - Other tables for live game state and leaderboard updates.
-
-### 9. Database Functions
-
-- `calculate_score` — Calculates score based on response time and time limit.
-- `generate_unique_game_code` — Generates a unique game room code.
-- `get_leaderboard_players` — Returns leaderboard player data (id, score, user_name, avatar).
-- `get_user_profile_with_score` — Returns a user's profile and total score.
-
-### 10. State Rules
-
-- Only the host can start the game.
-- Players must join before the game starts.
-- Game state and player list are kept in sync via real-time events.
-- Scores and leaderboard update live.
+MIT
