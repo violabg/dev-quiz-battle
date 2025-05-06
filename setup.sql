@@ -466,6 +466,7 @@ alter table public.games enable row level security;
 alter table public.game_players enable row level security;
 alter table public.questions enable row level security;
 alter table public.answers enable row level security;
+alter table public.player_language_scores enable row level security;
 
 -- RLS policies for table: profiles
 -- Explanation: Allow all users (authenticated and anonymous) to select profiles. Permissive policy for public profile data.
@@ -615,3 +616,31 @@ ON answers
 FOR DELETE
 TO authenticated
 USING ((select auth.uid()) = player_id);
+
+-- RLS policies for table: player_language_scores
+CREATE POLICY "Allow authenticated and anonymous users to select player_language_scores"
+ON player_language_scores
+FOR SELECT
+TO authenticated, anon
+USING (true);
+
+-- Explanation: Allow authenticated and anonymous users to insert row.
+CREATE POLICY "Allow authenticated and anonymous users to insert row"
+ON player_language_scores
+FOR INSERT
+TO authenticated, anon
+WITH CHECK (true);
+
+-- Explanation: Allow authenticated and anonymous users to update row.
+CREATE POLICY "Allow authenticated and anonymous users to update row"
+ON player_language_scores
+FOR UPDATE
+TO authenticated, anon
+WITH CHECK (true);
+
+-- Explanation: Allow authenticated and anonymous users to delete row.
+CREATE POLICY "Allow authenticated and anonymous users to delete row"
+ON player_language_scores
+FOR DELETE
+TO authenticated, anon
+USING (true);
