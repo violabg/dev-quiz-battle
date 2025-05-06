@@ -8,9 +8,9 @@ This document explains how DevQuizBattle integrates with Supabase for authentica
 
 ## Supabase Features Used
 
-- **Authentication**: User sign-up, login, password reset, and session management.
-- **Database**: Stores users, games, players, questions, answers, and scores.
-- **Real-Time**: Subscriptions for game state, player list, and answers.
+- **Authentication**: User sign-up, login, password reset, and session management via Supabase Auth. Profiles are extended in the `profiles` table, which is automatically populated on user creation.
+- **Database**: Stores users, games, players, questions, answers, and per-language scores. All tables use row-level security (RLS) with detailed policies for privacy and game integrity.
+- **Real-Time**: Subscriptions for game state, player list, questions, and answers using Supabase Realtime. All main tables are enabled for realtime updates.
 
 ## Directory Structure
 
@@ -60,56 +60,71 @@ const channel = subscribeToAnswers((payload) => {
 
 ### 3. Profiles Table
 
-- Handles user profile management (user_name, avatar, etc.).
-- CRUD operations for profiles (insert, select, check existence).
+- Table: `profiles` (extends Supabase Auth users)
+  - Columns: `id`, `name`, `full_name`, `user_name`, `avatar_url`, `created_at`, `updated_at`
+  - Automatically created via trigger on new auth user (see `handle_new_user` function)
+  - RLS: Only users can insert/update/delete their own profile; all users can select
 
 ### 4. Games Table
 
-- Game creation (host, status, max players, etc.).
-- Fetching and updating game state.
+- Table: `games`
+  - Columns: `id`, `code`, `host_id`, `status`, `max_players`, `current_turn`, `created_at`, `updated_at`, `time_limit`
+  - Game code is generated automatically via trigger and `generate_unique_game_code()`
+  - RLS: Only host can insert/delete; all users can select; updates are open for realtime/game state
 
 ### 5. Game Players Table
 
-- Adding players to games.
-- Fetching all players for a game, including their profiles.
-- Managing turn order and player activity.
+- Table: `game_players`
+  - Columns: `id`, `game_id`, `player_id`, `score`, `turn_order`, `is_active`, `joined_at`
+  - Each player can join a game once; scores are updated as the game progresses
+  - RLS: Only the player can insert/update/delete their own row; all users can select
 
 ### 6. Questions Table
 
-- Inserting and fetching coding questions (language, difficulty, code sample, options, etc.).
-- Real-time subscription to question changes (insert, update, delete).
+- Table: `questions`
+  - Columns: `id`, `game_id`, `created_by_player_id`, `language`, `difficulty`, `question_text`, `code_sample`, `options`, `correct_answer`, `explanation`, `started_at`, `ended_at`, `created_at`
+  - Supports multiple languages and difficulty levels; options are stored as JSONB
+  - RLS: Only the author can insert/update/delete; all users can select
 
 ### 7. Answers Table
 
-- Inserting and fetching answers for questions.
-- Scoring and response time tracking.
+- Table: `answers`
+  - Columns: `id`, `question_id`, `player_id`, `selected_option`, `is_correct`, `response_time_ms`, `score_earned`, `answered_at`
+  - Each player can answer each question once; correctness and score are tracked
+  - RLS: Only the player can insert/update/delete their own answer; all users can select
 
 ### 8. Supabase Realtime
 
-- Real-time subscriptions for:
-  - `game_players` (player join/leave, updates).
-  - `questions` (new questions, updates, deletions).
-  - Other tables for live game state and leaderboard updates.
+- All main tables (`profiles`, `games`, `game_players`, `questions`, `answers`) are enabled for realtime updates via `supabase_realtime` publication.
+- Used for live game state, player list, questions, answers, and leaderboard.
 
-### 9. Database Functions
+### 9. Database Functions & Triggers
 
-- `calculate_score` — Calculates score based on response time and time limit.
-- `generate_unique_game_code` — Generates a unique game room code.
-- `get_leaderboard_players` — Returns leaderboard player data (id, score, user_name, avatar).
-- `get_user_profile_with_score` — Returns a user's profile and total score.
+- `handle_new_user()` — Trigger: inserts a row into `profiles` when a new auth user is created
+- `generate_unique_game_code()` — Generates a unique 6-character game code
+- `set_game_code()` — Trigger: sets a unique code before inserting a new game
+- `calculate_score(response_time_ms, time_limit_ms)` — Returns a score based on response speed (bonus for faster answers)
+- `submit_answer(...)` — Inserts an answer, checks correctness, ends question if correct, updates scores atomically
+- `get_leaderboard_players(offset, limit, language_filter)` — Returns paginated leaderboard, filtered by language if provided
+- `get_user_profile_with_score(user_id)` — Returns a user's profile and total score
 
-### 10. State Rules
+### 10. Row-Level Security (RLS) Policies
 
-- Only the host can start the game.
-- Players must join before the game starts.
-- Game state and player list are kept in sync via real-time events.
-- Scores and leaderboard update live.
+- All tables have RLS enabled for security and privacy
+- Policies:
+  - `profiles`: Only users can insert/update/delete their own profile; all can select
+  - `games`: Only host can insert/delete; all can select; updates are open
+  - `game_players`: Only player can insert/update/delete their own row; all can select
+  - `questions`: Only author can insert/update/delete; all can select
+  - `answers`: Only player can insert/update/delete their own answer; all can select
+  - `player_language_scores`: All can select/insert/update/delete (for leaderboard)
 
 ---
 
-See also:
+#### See also:
 
 - [Architecture Overview](./architecture.md)
+  [← Back to README](../README.md)
 - [Game Logic](./game-logic.md)
 
 [← Back to README](../README.md)
