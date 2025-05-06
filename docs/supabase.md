@@ -123,8 +123,14 @@ const channel = subscribeToAnswers((payload) => {
 
 #### See also:
 
+- [Function: handle_new_user](./functions_handle_new_user.md)
+- [Function: generate_unique_game_code](./functions_generate_unique_game_code.md)
+- [Function: set_game_code](./functions_set_game_code.md)
+- [Function: calculate_score](./functions_calculate_score.md)
+- [Function: submit_answer](./functions_submit_answer.md)
+- [Function: get_leaderboard_players](./functions_get_leaderboard_players.md)
+- [Function: get_user_profile_with_score](./functions_get_user_profile_with_score.md)
 - [Architecture Overview](./architecture.md)
-  [← Back to README](../README.md)
 - [Game Logic](./game-logic.md)
 
 [← Back to README](../README.md)

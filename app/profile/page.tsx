@@ -14,6 +14,7 @@ async function ProfileLoader({ userId }: { userId: string }) {
         profile={{
           id: profileData.profile_id,
           user_name: profileData.user_name,
+          full_name: profileData.full_name,
           avatar_url: profileData.avatar_url,
           total_score: profileData.total_score,
         }}

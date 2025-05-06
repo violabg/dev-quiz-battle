@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 
 interface ProfileData {
   id: string;
+  full_name: string;
   user_name: string;
   avatar_url?: string | null;
   total_score: number;
@@ -23,6 +24,9 @@ export function ProfileContent({ profile }: { profile: ProfileData }) {
         </Avatar>
         <h2 className="mb-2 font-bold text-gradient text-2xl">
           {profile.user_name}
+        </h2>
+        <h2 className="mb-2 font-bold text-gradient text-2xl">
+          {profile.full_name}
         </h2>
         <div className="flex flex-col items-center gap-2">
           <span className="font-semibold text-lg">Punteggio totale</span>
