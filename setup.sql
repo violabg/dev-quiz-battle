@@ -103,6 +103,11 @@ CREATE TABLE IF NOT EXISTS player_language_scores (
   PRIMARY KEY (player_id, language)
 );
 
+-- Indexing for performance
+CREATE INDEX IF NOT EXISTS idx_answers_question_id ON answers (question_id);
+CREATE INDEX IF NOT EXISTS idx_answers_player_id ON answers (player_id);
+CREATE INDEX IF NOT EXISTS idx_questions_game_id ON questions (game_id);
+
 -- Enable Realtime for all tables
 alter publication supabase_realtime add table public.profiles;
 alter publication supabase_realtime add table public.games;
@@ -476,23 +481,23 @@ FOR SELECT
 TO authenticated, anon
 USING (true);
 
--- Explanation: Allow only authenticated users to insert their own profile. (Supabase creates profile on signup)
-CREATE POLICY "Allow authenticated users to insert their own profile"
+-- Explanation: Allow only authenticated users to insert profile. (Supabase creates profile on signup)
+CREATE POLICY "Allow authenticated users to insert profile"
 ON profiles
 FOR INSERT
 TO authenticated
 WITH CHECK ((select auth.uid()) = id);
 
--- Explanation: Allow only authenticated users to update their own profile.
-CREATE POLICY "Allow authenticated users to update their own profile"
+-- Explanation: Allow only authenticated users to update profile.
+CREATE POLICY "Allow authenticated users to update profile"
 ON profiles
 FOR UPDATE
 TO authenticated
 USING ((select auth.uid()) = id)
 WITH CHECK ((select auth.uid()) = id);
 
--- Explanation: Allow only authenticated users to delete their own profile.
-CREATE POLICY "Allow authenticated users to delete their own profile"
+-- Explanation: Allow only authenticated users to delete profile.
+CREATE POLICY "Allow authenticated users to delete profile"
 ON profiles
 FOR DELETE
 TO authenticated
@@ -513,15 +518,15 @@ FOR INSERT
 TO authenticated
 WITH CHECK ((select auth.uid()) = host_id);
 
--- Explanation: Allow only the host to update their own games.
+-- Explanation: Allow only the host to update games.
 CREATE POLICY "Allow authenticated and anonymous to update the games"
 ON games
 FOR UPDATE
 TO authenticated, anon
 USING (true);
 
--- Explanation: Allow only the host to delete their own games.
-CREATE POLICY "Allow host to delete their own games"
+-- Explanation: Allow only the host to delete games.
+CREATE POLICY "Allow host to delete games"
 ON games
 FOR DELETE
 TO authenticated
@@ -540,22 +545,22 @@ CREATE POLICY "Allow authenticated users to insert themselves as game_players"
 ON game_players
 FOR INSERT
 TO authenticated
-WITH CHECK ((select auth.uid()) = player_id);
+WITH CHECK (true);
 
--- Explanation: Allow authenticated users to update their own game_player row.
-CREATE POLICY "Allow authenticated users to update their own game_player row"
+-- Explanation: Allow authenticated users to update game_player row.
+CREATE POLICY "Allow authenticated users to update game_player row"
 ON game_players
 FOR UPDATE
 TO authenticated
-USING ((select auth.uid()) = player_id)
-WITH CHECK ((select auth.uid()) = player_id);
+USING (true)
+WITH CHECK (true);
 
--- Explanation: Allow authenticated users to delete their own game_player row.
-CREATE POLICY "Allow authenticated users to delete their own game_player row"
+-- Explanation: Allow authenticated users to delete game_player row.
+CREATE POLICY "Allow authenticated users to delete game_player row"
 ON game_players
 FOR DELETE
 TO authenticated
-USING ((select auth.uid()) = player_id);
+USING (true);
 
 -- RLS policies for table: questions
 -- Explanation: Allow all users to select questions (public game data).
@@ -572,16 +577,16 @@ FOR INSERT
 TO authenticated
 WITH CHECK ((select auth.uid()) = created_by_player_id);
 
--- Explanation: Allow only the author to update their own questions.
-CREATE POLICY "Allow author to update their own questions"
+-- Explanation: Allow only the author to update questions.
+CREATE POLICY "Allow author to update questions"
 ON questions
 FOR UPDATE
 TO authenticated
 USING ((select auth.uid()) = created_by_player_id)
 WITH CHECK ((select auth.uid()) = created_by_player_id);
 
--- Explanation: Allow only the author to delete their own questions.
-CREATE POLICY "Allow author to delete their own questions"
+-- Explanation: Allow only the author to delete questions.
+CREATE POLICY "Allow author to delete questions"
 ON questions
 FOR DELETE
 TO authenticated
@@ -595,27 +600,27 @@ FOR SELECT
 TO authenticated, anon
 USING (true);
 
--- Explanation: Allow authenticated users to insert their own answers.
-CREATE POLICY "Allow authenticated users to insert their own answers"
+-- Explanation: Allow authenticated users to insert answers.
+CREATE POLICY "Allow authenticated users to insert answers"
 ON answers
 FOR INSERT
 TO authenticated
-WITH CHECK ((select auth.uid()) = player_id);
+WITH CHECK (true);
 
--- Explanation: Allow authenticated users to update their own answers.
-CREATE POLICY "Allow authenticated users to update their own answers"
+-- Explanation: Allow authenticated users to update answers.
+CREATE POLICY "Allow authenticated users to update answers"
 ON answers
 FOR UPDATE
 TO authenticated
-USING ((select auth.uid()) = player_id)
-WITH CHECK ((select auth.uid()) = player_id);
+USING (true)
+WITH CHECK (true);
 
--- Explanation: Allow authenticated users to delete their own answers.
-CREATE POLICY "Allow authenticated users to delete their own answers"
+-- Explanation: Allow authenticated users to delete answers.
+CREATE POLICY "Allow authenticated users to delete answers"
 ON answers
 FOR DELETE
 TO authenticated
-USING ((select auth.uid()) = player_id);
+USING (true);
 
 -- RLS policies for table: player_language_scores
 CREATE POLICY "Allow authenticated and anonymous users to select player_language_scores"
@@ -636,6 +641,7 @@ CREATE POLICY "Allow authenticated and anonymous users to update row"
 ON player_language_scores
 FOR UPDATE
 TO authenticated, anon
+USING (true)
 WITH CHECK (true);
 
 -- Explanation: Allow authenticated and anonymous users to delete row.
