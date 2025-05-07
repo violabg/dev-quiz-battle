@@ -46,7 +46,7 @@ Once a currentQuestion is set, it's shown to all players.
 Includes the question text, code samples (if any), and multiple-choice options.
 A timer runs based on game.time_limit.
 Answering Questions:
-All players (including the one who created the question, though they might be implicitly excluded from scoring on their own question - this isn't explicitly clear) can submit an answer.
+All players (including the one who created the question) can submit an answer.
 handleSubmitAnswer is called:
 It records the selected_option, response_time_ms.
 It calls a Supabase function/transaction (submitAnswer) which likely:
@@ -66,7 +66,7 @@ Displayed after a question ends.
 Shows the question's winner (if any).
 A "Next Turn" button appears (showNextTurn state).
 Advancing Turns (handleNextTurn from useGameTurns):
-When "Next Turn" is clicked (likely by the current player or host):
+When "Next Turn" is clicked (likely by the current player):
 The game.current_turn is updated in the database.
 Question-related states (currentQuestion, winner, allAnswers, etc.) are reset via resetQuestionState.
 The cycle repeats with the new currentPlayer selecting/creating a question.
