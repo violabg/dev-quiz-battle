@@ -241,7 +241,7 @@ export function GameRoom({
     const calculateWinner = () => {
       const correctAnswers = allAnswers.filter((a) => a.is_correct);
       if (correctAnswers.length === 0) {
-        setWinner((prev) => (prev === null ? null : null));
+        setWinner(null); // Simplified
         return;
       }
 
@@ -264,9 +264,6 @@ export function GameRoom({
             ? prev
             : newWinner;
         });
-
-        // Only set next turn if it's not already set
-        setShowNextTurn((prev) => (prev ? prev : true));
       }
     };
 
