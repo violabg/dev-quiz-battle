@@ -7,25 +7,24 @@ import { TurnResultCard } from "@/components/game/turn-result-card";
 import { Button } from "@/components/ui/button";
 import { useCurrentQuestion } from "@/lib/hooks/useCurrentQuestion";
 import { useGameAnswers } from "@/lib/hooks/useGameAnswers";
+import { useGameTurns } from "@/lib/hooks/useGameTurns";
 import {
-  getAnswersWithPlayerForQuestion, // Used in handleSubmitAnswer
+  getAnswersWithPlayerForQuestion,
   submitAnswer,
 } from "@/lib/supabase/supabase-answers";
+import { updateGameStatus } from "@/lib/supabase/supabase-games";
 import {
-  updateGameStatus,
-  updateGameTurn,
-} from "@/lib/supabase/supabase-games";
-import {
-  getQuestionsForGame, // Used in checkGameCompletion
-  updateQuestion, // Used in handleSubmitAnswer
+  getQuestionsForGame,
+  updateQuestion,
 } from "@/lib/supabase/supabase-questions";
 import type {
   GameDifficulty,
   GameLanguage,
   GameWithPlayers,
+  Question,
 } from "@/types/supabase";
 import { User } from "@supabase/supabase-js";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import Scoreboard from "./game-scoreboard";
 
@@ -44,7 +43,7 @@ export function GameRoom({
   const [isLoadingSelection, setIsLoadingSelection] = useState(false);
   const [language, setLanguage] = useState<GameLanguage>("javascript");
   const [difficulty, setDifficulty] = useState<GameDifficulty>("medium");
-  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
+  // const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0); // --- Removed
   const [winner, setWinner] = useState<{
     playerId: string;
     user_name: string;
@@ -55,16 +54,15 @@ export function GameRoom({
     string | null | undefined
   >(null);
 
-  // --- Memoized values for hook dependencies ---
-  const isCurrentPlayerTurnForHook = useMemo(
-    () => game.players[currentPlayerIndex]?.player_id === user?.id,
-    [game.players, currentPlayerIndex, user?.id]
-  );
-
   // --- Custom Hooks Initialization ---
   const { allAnswers, setAllAnswers: setAllAnswersHook } = useGameAnswers({
     currentQuestionId: internalCurrentQuestionId,
   });
+
+  // Calculate initial values for useCurrentQuestion before useGameTurns is initialized
+  const initialPlayerIndex = game.current_turn ?? 0;
+  const initialIsCurrentPlayersTurn =
+    game.players[initialPlayerIndex]?.player_id === user?.id;
 
   const {
     currentQuestion,
@@ -72,38 +70,14 @@ export function GameRoom({
     questionStartTime,
     setQuestionStartTime: setQuestionStartTimeHook,
     isLoadingCreateQuestion,
-    handleCreateQuestion, // This is the create question function from the hook
+    handleCreateQuestion,
   } = useCurrentQuestion({
     game,
     user,
-    allAnswers, // Pass allAnswers from useGameAnswers
+    allAnswers,
     winner,
-    isCurrentPlayersTurn: isCurrentPlayerTurnForHook,
+    isCurrentPlayersTurn: initialIsCurrentPlayersTurn, // Use initial value
   });
-
-  // Effect to sync currentQuestion.id from useCurrentQuestion to internalCurrentQuestionId for useGameAnswers
-  useEffect(() => {
-    setInternalCurrentQuestionId(currentQuestion?.id);
-  }, [currentQuestion?.id]);
-
-  // --- Memoized values derived from props, state, and hooks ---
-  const currentPlayer = useMemo(
-    () => game.players[currentPlayerIndex],
-    [game.players, currentPlayerIndex]
-  );
-  const isCurrentPlayersTurn = useMemo(
-    () => currentPlayer?.player_id === user?.id,
-    [currentPlayer?.player_id, user?.id]
-  );
-  const nextPlayerIndex = useMemo(
-    () => (currentPlayerIndex + 1) % game.players.length,
-    [currentPlayerIndex, game.players.length]
-  );
-  const isNextPlayersTurn = useMemo(
-    () => game.players[nextPlayerIndex]?.player_id === user?.id,
-    [game.players, nextPlayerIndex, user?.id]
-  );
-  const isRoundComplete = game.status === "completed";
 
   // Helper to reset question-related state
   const resetQuestionState = useCallback(() => {
@@ -112,14 +86,25 @@ export function GameRoom({
     setShowNextTurn(false);
     setAllAnswersHook([]);
     setQuestionStartTimeHook(null);
-    setInternalCurrentQuestionId(null); // Also reset the internal ID
-  }, [
-    setCurrentQuestionHook,
-    setWinner,
-    setShowNextTurn,
-    setAllAnswersHook,
-    setQuestionStartTimeHook,
-  ]);
+    setInternalCurrentQuestionId(null);
+  }, [setCurrentQuestionHook, setAllAnswersHook, setQuestionStartTimeHook]);
+
+  const isRoundComplete = game.status === "completed";
+
+  const {
+    currentPlayer,
+    isCurrentPlayersTurn,
+    isNextPlayersTurn,
+    handleNextTurn,
+  } = useGameTurns({ game, user, isRoundComplete, resetQuestionState });
+
+  // Effect to sync currentQuestion.id from useCurrentQuestion to internalCurrentQuestionId for useGameAnswers
+  useEffect(() => {
+    setInternalCurrentQuestionId(currentQuestion?.id);
+  }, [currentQuestion?.id]);
+
+  // --- Memoized values derived from props, state, and hooks ---
+  // --- All memoized values related to turns are now handled by useGameTurns ---
 
   useEffect(() => {
     const checkGameCompletion = async () => {
@@ -140,17 +125,6 @@ export function GameRoom({
     };
     checkGameCompletion();
   }, [currentQuestion?.ended_at, game.id, game.players.length, game.status]);
-
-  // Handle turn changes
-  useEffect(() => {
-    // Ensure game.current_turn is a valid number before using it
-    if (typeof game?.current_turn !== "number") return;
-
-    if (currentPlayerIndex !== game.current_turn) {
-      setCurrentPlayerIndex(game.current_turn);
-      resetQuestionState();
-    }
-  }, [game?.current_turn, currentPlayerIndex, resetQuestionState]);
 
   // Show next turn button logic
   useEffect(() => {
@@ -241,12 +215,13 @@ export function GameRoom({
                 score: answerResult.score_earned,
               });
               await updateQuestion(currentQuestion.id, {
-                // DB update
                 ended_at: new Date().toISOString(),
               });
-              setCurrentQuestionHook((q) =>
-                q ? { ...q, ended_at: new Date().toISOString() } : null
-              ); // Local state update
+              setCurrentQuestionHook(
+                (
+                  q: Question | null // Explicitly type q
+                ) => (q ? { ...q, ended_at: new Date().toISOString() } : null)
+              );
             }
             setShowNextTurn(true);
           }
@@ -284,33 +259,19 @@ export function GameRoom({
     ]
   );
 
-  const handleNextTurn = useCallback(async (): Promise<void> => {
-    if (isRoundComplete) return;
-    try {
-      const nextTurnIndex = (currentPlayerIndex + 1) % game.players.length;
-      const { error } = await updateGameTurn(game.id, nextTurnIndex);
-      if (error) throw error;
-      // The useEffect watching game.current_turn will handle resetting state.
-    } catch {
-      toast.error("Errore", {
-        description: "Impossibile passare al turno successivo",
-      });
-    }
-  }, [isRoundComplete, currentPlayerIndex, game.id, game.players.length]);
-
   const handleQuestionCreationRequest = useCallback(
     async (
       selectedLanguage?: GameLanguage,
       selectedDifficulty?: GameDifficulty
     ): Promise<void> => {
-      if (!user || !isCurrentPlayersTurn) return;
+      if (!user || !isCurrentPlayersTurn) return; // Use isCurrentPlayersTurn from useGameTurns
 
       setIsLoadingSelection(true);
       try {
         const lang = selectedLanguage ?? language;
         const diff = selectedDifficulty ?? difficulty;
 
-        const newQuestion = await handleCreateQuestion(lang, diff); // from useCurrentQuestion hook
+        const newQuestion = await handleCreateQuestion(lang, diff);
 
         if (newQuestion) {
           if (game.status !== "active") {
@@ -318,7 +279,6 @@ export function GameRoom({
           }
         }
       } catch {
-        // Removed _err as it was unused
         toast.error("Errore", {
           description:
             "Impossibile completare la richiesta di creazione domanda.",
@@ -329,12 +289,12 @@ export function GameRoom({
     },
     [
       user,
-      isCurrentPlayersTurn,
+      isCurrentPlayersTurn, // Use isCurrentPlayersTurn from useGameTurns
       language,
       difficulty,
       game.id,
       game.status,
-      handleCreateQuestion, // from useCurrentQuestion hook
+      handleCreateQuestion,
     ]
   );
 
@@ -375,8 +335,8 @@ export function GameRoom({
             />
           ) : (
             <QuestionSelection
-              isCurrentPlayersTurn={isCurrentPlayersTurn}
-              currentPlayerUsername={currentPlayer?.profile.user_name}
+              isCurrentPlayersTurn={isCurrentPlayersTurn} // from useGameTurns
+              currentPlayerUsername={currentPlayer?.profile.user_name} // from useGameTurns
               isLoading={isLoadingCreateQuestion || isLoadingSelection}
               language={language}
               difficulty={difficulty}
@@ -396,17 +356,18 @@ export function GameRoom({
             <TurnResultCard
               winner={winner}
               showNextTurn={showNextTurn}
-              isNextPlayersTurn={isNextPlayersTurn}
+              isNextPlayersTurn={isNextPlayersTurn} // from useGameTurns
               isRoundComplete={isRoundComplete}
-              handleNextTurn={handleNextTurn}
+              handleNextTurn={handleNextTurn} // from useGameTurns
             />
           )}
           <CurrentTurnCard
             currentPlayer={{
+              // from useGameTurns
               ...currentPlayer?.profile,
               player_id: currentPlayer?.player_id,
             }}
-            isCurrentPlayersTurn={isCurrentPlayersTurn}
+            isCurrentPlayersTurn={isCurrentPlayersTurn} // from useGameTurns
           />
         </div>
       </div>
