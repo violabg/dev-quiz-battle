@@ -90,26 +90,25 @@ export function GameRoom({
     setAllAnswers([]);
   }, [setCurrentQuestion, setWinner, setShowNextTurn, setAllAnswers]);
 
-  const checkGameCompletion = useCallback(async () => {
-    if (!currentQuestion?.ended_at) return;
-
-    const questions = await getQuestionsForGame(game.id);
-    const completedQuestions = questions.filter((q) => q.ended_at);
-    const uniqueCreators = new Set(
-      completedQuestions.map((q) => q.created_by_player_id)
-    );
-
-    if (
-      uniqueCreators.size >= game.players.length &&
-      game.status !== "completed"
-    ) {
-      await updateGameStatus(game.id, "completed");
-    }
-  }, [currentQuestion?.ended_at, game.id, game.players.length, game.status]);
-
   useEffect(() => {
+    const checkGameCompletion = async () => {
+      if (!currentQuestion?.ended_at) return;
+
+      const questions = await getQuestionsForGame(game.id);
+      const completedQuestions = questions.filter((q) => q.ended_at);
+      const uniqueCreators = new Set(
+        completedQuestions.map((q) => q.created_by_player_id)
+      );
+
+      if (
+        uniqueCreators.size >= game.players.length &&
+        game.status !== "completed"
+      ) {
+        await updateGameStatus(game.id, "completed");
+      }
+    };
     checkGameCompletion();
-  }, [checkGameCompletion]);
+  }, [currentQuestion?.ended_at, game.id, game.players.length, game.status]);
 
   // Handle turn changes with optimized conditions
   useEffect(() => {
@@ -136,9 +135,10 @@ export function GameRoom({
     })();
   }, [game.id]);
 
-  // Question subscription with memoized handler
-  const handleQuestionUpdate = useCallback(
-    async (payload: { new: Question | null }) => {
+  useEffect(() => {
+    if (!game.id) return;
+    // Question subscription with memoized handler
+    const handleQuestionUpdate = async (payload: { new: Question | null }) => {
       if (payload.new && payload.new.game_id === game.id) {
         setCurrentQuestion(payload.new);
         setQuestionStartTime(
@@ -147,28 +147,22 @@ export function GameRoom({
             : Date.now()
         );
       }
-    },
-    [game.id]
-  );
-
-  useEffect(() => {
-    if (!game.id) return;
+    };
 
     const questionSubscription = subscribeToQuestions(handleQuestionUpdate);
     return () => unsubscribeFromQuestions(questionSubscription);
-  }, [game.id, handleQuestionUpdate]);
-
-  // Answer subscription with memoized handler and data fetching
-  const handleAnswerUpdate = useCallback(async (questionId: string) => {
-    const answers = await getAnswersWithPlayerForQuestion(questionId);
-    setAllAnswers(answers);
-  }, []);
+  }, [game.id]);
 
   useEffect(() => {
     if (!currentQuestion?.id) {
       setAllAnswers([]);
       return;
     }
+    // Answer subscription with memoized handler and data fetching
+    const handleAnswerUpdate = async (questionId: string) => {
+      const answers = await getAnswersWithPlayerForQuestion(questionId);
+      setAllAnswers(answers);
+    };
 
     const answerSubscription = subscribeToAnswers(async (payload) => {
       if (payload.new && payload.new.question_id === currentQuestion.id) {
@@ -180,7 +174,7 @@ export function GameRoom({
     handleAnswerUpdate(currentQuestion.id);
 
     return () => unsubscribeFromAnswers(answerSubscription);
-  }, [currentQuestion?.id, handleAnswerUpdate]);
+  }, [currentQuestion?.id]);
 
   // Timer effect with optimized checks
   useEffect(() => {
@@ -449,11 +443,11 @@ export function GameRoom({
 
   // --- Ensure timer stops for everyone when turn is over ---
   useEffect(() => {
-    if (currentQuestion && currentQuestion.ended_at) {
+    if (currentQuestion?.ended_at) {
       setQuestionStartTime(null); // Stop timer for all
     }
     // Only run when currentQuestion changes
-  }, [currentQuestion]);
+  }, [currentQuestion?.ended_at]);
 
   return (
     <div className="space-y-8">
