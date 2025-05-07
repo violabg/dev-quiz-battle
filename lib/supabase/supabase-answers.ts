@@ -5,8 +5,9 @@ import type {
 } from "@/types/supabase";
 import { createClient } from "./client";
 
+const supabase = createClient();
+
 export async function insertAnswer(answer: Partial<Answer>) {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("answers")
     .insert(answer)
@@ -17,7 +18,6 @@ export async function insertAnswer(answer: Partial<Answer>) {
 }
 
 export async function getAnswersForQuestion(question_id: string) {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("answers")
     .select("*")
@@ -27,7 +27,6 @@ export async function getAnswersForQuestion(question_id: string) {
 }
 
 export async function getAnswersWithPlayerForQuestion(question_id: string) {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("answers")
     .select(`*, player:player_id(id, user_name, avatar_url)`)
@@ -43,7 +42,6 @@ export function subscribeToAnswers(
     old: Answer | null;
   }) => void
 ) {
-  const supabase = createClient();
   return supabase
     .channel("answers-updates")
     .on(
@@ -67,7 +65,6 @@ export function unsubscribeFromAnswers(channel: { unsubscribe: () => void }) {
 export const calculateScore = async (
   args: CalculateScoreArgs
 ): Promise<{ data: CalculateScoreReturn | null; error: unknown }> => {
-  const supabase = createClient();
   const { data, error } = await supabase.rpc("calculate_score", args);
   return { data, error };
 };
@@ -81,8 +78,6 @@ export const submitAnswer = async (params: {
   responseTimeMs: number;
   timeLimitMs: number;
 }) => {
-  const supabase = createClient();
-
   const { data, error } = await supabase.rpc("submit_answer", {
     p_question_id: params.questionId,
     p_player_id: params.playerId,

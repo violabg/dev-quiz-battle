@@ -6,12 +6,13 @@ import type {
 import { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./client";
 
+const supabase = createClient();
+
 export async function addPlayerToGame(
   game_id: string,
   player_id: string,
   turn_order: number
 ) {
-  const supabase = createClient();
   const { error } = await supabase
     .from("game_players")
     .insert({ game_id, player_id, turn_order });
@@ -20,7 +21,6 @@ export async function addPlayerToGame(
 }
 
 export async function getPlayersForGame(game_id: string) {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("game_players")
     .select("*, profile:player_id(id, name, full_name, user_name, avatar_url)")
@@ -31,7 +31,6 @@ export async function getPlayersForGame(game_id: string) {
 }
 
 export async function getPlayerInGame(game_id: string, player_id: string) {
-  const supabase = createClient();
   const { data, error } = await supabase
     .from("game_players")
     .select("*")
@@ -65,7 +64,6 @@ export function subscribeToGamePlayers(
     old: Player | null;
   }) => void
 ) {
-  const supabase = createClient();
   return supabase
     .channel("game-players-updates")
     .on(
@@ -89,7 +87,6 @@ export function unsubscribeFromGamePlayers(channel: {
 }
 
 export async function setPlayerInactive(game_id: string, player_id: string) {
-  const supabase = createClient();
   const { error } = await supabase
     .from("game_players")
     .update({ is_active: false })
