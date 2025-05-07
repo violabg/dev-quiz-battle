@@ -267,8 +267,7 @@ export function GameRoom({
       }
     };
 
-    const timeoutId = setTimeout(calculateWinner, 300);
-    return () => clearTimeout(timeoutId);
+    calculateWinner();
   }, [currentQuestion?.ended_at, allAnswers]);
 
   // --- ANSWER LOGIC ---
