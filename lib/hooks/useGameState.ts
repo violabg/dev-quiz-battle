@@ -19,6 +19,8 @@ import { toast } from "sonner";
 import { createClient } from "../supabase/client";
 
 const supabase = createClient();
+type LoadingState = "idle" | "initializing" | "starting";
+
 export function useGameState({
   code,
   user,
@@ -27,7 +29,8 @@ export function useGameState({
   user: User | null;
 }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [loadingState, setLoadingState] =
+    useState<LoadingState>("initializing");
   const [game, setGame] = useState<GameWithPlayers | null>(null);
   const [gameId, setGameId] = useState<string | null>(null);
   const [isHost, setIsHost] = useState(false);
@@ -55,7 +58,7 @@ export function useGameState({
       });
       router.push("/dashboard");
     } finally {
-      setLoading(false);
+      setLoadingState("idle");
     }
   }, [user, code, router]);
 
@@ -100,6 +103,7 @@ export function useGameState({
   const handleStartGame = async () => {
     if (!game || !isHost) return;
     try {
+      setLoadingState("starting");
       await updateGameStatus(game.id, "active");
       setGame((currentGame) => {
         if (!currentGame) return null;
@@ -111,6 +115,8 @@ export function useGameState({
           "Impossibile avviare la partita: " +
           (error instanceof Error ? error.message : String(error)),
       });
+    } finally {
+      setLoadingState("idle");
     }
   };
 
@@ -132,5 +138,5 @@ export function useGameState({
     }
   };
 
-  return { loading, game, isHost, handleStartGame, handleLeaveGame };
+  return { loadingState, game, isHost, handleStartGame, handleLeaveGame };
 }

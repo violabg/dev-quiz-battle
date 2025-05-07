@@ -9,11 +9,11 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export function GameClientPage({ code, user }: { code: string; user: User }) {
-  const { loading, game, isHost, handleStartGame, handleLeaveGame } =
+  const { loadingState, game, isHost, handleStartGame, handleLeaveGame } =
     useGameState({ code, user });
   const router = useRouter();
 
-  if (loading) {
+  if (loadingState === "initializing") {
     return (
       <main className="flex flex-1 justify-center items-center">
         <Loader2 className="w-8 h-8 animate-spin" />
@@ -40,6 +40,7 @@ export function GameClientPage({ code, user }: { code: string; user: User }) {
           isHost={isHost}
           onStartGame={handleStartGame}
           onLeaveGame={handleLeaveGame}
+          loadingState={loadingState}
         />
       ) : (
         <GameRoom game={game} user={user} onLeaveGame={handleLeaveGame} />
