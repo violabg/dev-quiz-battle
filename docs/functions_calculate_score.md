@@ -9,7 +9,7 @@ Calculates a player's score for a question based on how quickly they answered, r
 ## How it works
 
 - This is a **PL/pgSQL function** that takes the player's response time and the allowed time limit.
-- Returns a score: base score (1.0) plus a time bonus (up to 9.0 for very fast answers).
+- Returns a score: base score (1.0) plus a time bonus (ranging from 0.0 to 9.0). The total score can range from 1.0 (if `time_bonus` is 0.0) to 10.0 (if `time_bonus` is 9.0).
 
 ## SQL Code Explained
 
@@ -66,6 +66,7 @@ $$;
 
 - The function divides the time limit into intervals.
 - The faster the answer, the higher the bonus (up to 9.0).
+- If the `response_time_ms` is equal to or exceeds `time_limit_ms` (i.e., `t10`), the `time_bonus` is 0.0, resulting in a score of 1.0.
 - Returns the total score for the answer.
 
 ## Usage

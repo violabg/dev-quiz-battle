@@ -231,8 +231,8 @@ DECLARE
   v_score_earned DECIMAL := 0;
   v_was_winning_answer BOOLEAN := FALSE;
   v_update_id UUID;
-  v_question_exists_count INTEGER; -- Renamed v_count for clarity
-  v_player_answered_count INTEGER; -- Renamed v_count for clarity
+  v_question_exists_count INTEGER; 
+  v_player_answered_count INTEGER; 
   v_rows_affected INTEGER; -- For GET DIAGNOSTICS
 BEGIN
   -- 1. First check if the question exists
