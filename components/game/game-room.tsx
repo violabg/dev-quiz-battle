@@ -259,52 +259,50 @@ export function GameRoom({
     ]
   );
 
-  const handleQuestionCreationRequest = useCallback(
-    async (
-      selectedLanguage?: GameLanguage,
-      selectedDifficulty?: GameDifficulty
-    ): Promise<void> => {
-      if (!user || !isCurrentPlayersTurn) return; // Use isCurrentPlayersTurn from useGameTurns
-
-      setIsLoadingSelection(true);
-      try {
-        const lang = selectedLanguage ?? language;
-        const diff = selectedDifficulty ?? difficulty;
-
-        const newQuestion = await handleCreateQuestion(lang, diff);
-
-        if (newQuestion) {
-          if (game.status !== "active") {
-            await updateGameStatus(game.id, "active");
-          }
-        }
-      } catch {
-        toast.error("Errore", {
-          description:
-            "Impossibile completare la richiesta di creazione domanda.",
-        });
-      } finally {
-        setIsLoadingSelection(false);
-      }
-    },
-    [
-      user,
-      isCurrentPlayersTurn, // Use isCurrentPlayersTurn from useGameTurns
-      language,
-      difficulty,
-      game.id,
-      game.status,
-      handleCreateQuestion,
-    ]
-  );
-
   const handleQuestionFormSubmit = useCallback(
     (values: { language: GameLanguage; difficulty: GameDifficulty }) => {
       setLanguage(values.language);
       setDifficulty(values.difficulty);
+
+      const handleQuestionCreationRequest = async (
+        selectedLanguage?: GameLanguage,
+        selectedDifficulty?: GameDifficulty
+      ): Promise<void> => {
+        if (!user || !isCurrentPlayersTurn) return; // Use isCurrentPlayersTurn from useGameTurns
+
+        setIsLoadingSelection(true);
+        try {
+          const lang = selectedLanguage ?? language;
+          const diff = selectedDifficulty ?? difficulty;
+
+          const newQuestion = await handleCreateQuestion(lang, diff);
+
+          if (newQuestion) {
+            if (game.status !== "active") {
+              await updateGameStatus(game.id, "active");
+            }
+          }
+        } catch {
+          toast.error("Errore", {
+            description:
+              "Impossibile completare la richiesta di creazione domanda.",
+          });
+        } finally {
+          setIsLoadingSelection(false);
+        }
+      };
+
       handleQuestionCreationRequest(values.language, values.difficulty);
     },
-    [handleQuestionCreationRequest]
+    [
+      difficulty,
+      game.id,
+      game.status,
+      handleCreateQuestion,
+      isCurrentPlayersTurn,
+      language,
+      user,
+    ]
   );
 
   return (

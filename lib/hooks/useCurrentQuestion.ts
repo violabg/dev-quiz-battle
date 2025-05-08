@@ -1,8 +1,6 @@
-import { generateQuestion } from "@/lib/groq";
 import { updateGameStatus } from "@/lib/supabase/supabase-games";
 import {
   getQuestionsForGame,
-  insertQuestion,
   subscribeToQuestions,
   unsubscribeFromQuestions,
   updateQuestion,
@@ -163,42 +161,38 @@ export const useCurrentQuestion = ({
 
       setIsLoadingCreateQuestion(true);
       try {
-        const questionData = await generateQuestion({
-          language: selectedLanguage,
-          difficulty: selectedDifficulty,
+        const response = await fetch("/api/questions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            gameId: game.id,
+            language: selectedLanguage,
+            difficulty: selectedDifficulty,
+          }),
         });
 
-        const startedAt = new Date().toISOString();
-        // insertQuestion will trigger the subscription, which updates currentQuestion
-        const newQuestion = await insertQuestion({
-          game_id: game.id,
-          created_by_player_id: user.id,
-          language: selectedLanguage,
-          difficulty: selectedDifficulty,
-          question_text: questionData.questionText,
-          code_sample: questionData.codeSample,
-          options: questionData.options,
-          correct_answer: questionData.correctAnswer,
-          explanation: questionData.explanation,
-          started_at: startedAt,
-        });
+        if (!response.ok) {
+          throw new Error("Failed to create question");
+        }
+
+        const newQuestion = await response.json();
+        const startTime = new Date(newQuestion.started_at).getTime();
 
         // Explicitly set after creation to ensure UI updates quickly
         // though subscription should also catch it.
         setCurrentQuestion(newQuestion as Question);
-        setQuestionStartTime(new Date(startedAt).getTime());
+        setQuestionStartTime(startTime);
         if (onQuestionLoaded && newQuestion) {
-          onQuestionLoaded(
-            newQuestion as Question,
-            new Date(startedAt).getTime()
-          );
+          onQuestionLoaded(newQuestion as Question, startTime);
         }
 
         if (game.status !== "active") {
           await updateGameStatus(game.id, "active");
         }
         return newQuestion as Question;
-      } catch (error) {
+      } catch (_error) {
         toast.error("Errore", {
           description: "Impossibile creare la domanda",
         });

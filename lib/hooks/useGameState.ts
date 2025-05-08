@@ -12,22 +12,25 @@ import {
 } from "@/lib/supabase/supabase-games";
 import { getProfileById } from "@/lib/supabase/supabase-profiles";
 import type { GameWithPlayers } from "@/types/supabase";
-import { SupabaseClient, User } from "@supabase/supabase-js";
+import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { createClient } from "../supabase/client";
+
+const supabase = createClient();
+type LoadingState = "idle" | "initializing" | "starting";
 
 export function useGameState({
   code,
-  supabase,
   user,
 }: {
   code: string;
-  supabase: SupabaseClient;
   user: User | null;
 }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [loadingState, setLoadingState] =
+    useState<LoadingState>("initializing");
   const [game, setGame] = useState<GameWithPlayers | null>(null);
   const [gameId, setGameId] = useState<string | null>(null);
   const [isHost, setIsHost] = useState(false);
@@ -55,9 +58,9 @@ export function useGameState({
       });
       router.push("/dashboard");
     } finally {
-      setLoading(false);
+      setLoadingState("idle");
     }
-  }, [user, supabase, code, router]);
+  }, [user, code, router]);
 
   useEffect(() => {
     if (!user) return;
@@ -100,6 +103,7 @@ export function useGameState({
   const handleStartGame = async () => {
     if (!game || !isHost) return;
     try {
+      setLoadingState("starting");
       await updateGameStatus(game.id, "active");
       setGame((currentGame) => {
         if (!currentGame) return null;
@@ -111,6 +115,8 @@ export function useGameState({
           "Impossibile avviare la partita: " +
           (error instanceof Error ? error.message : String(error)),
       });
+    } finally {
+      setLoadingState("idle");
     }
   };
 
@@ -132,5 +138,5 @@ export function useGameState({
     }
   };
 
-  return { loading, game, isHost, handleStartGame, handleLeaveGame };
+  return { loadingState, game, isHost, handleStartGame, handleLeaveGame };
 }

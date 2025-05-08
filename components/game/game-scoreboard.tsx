@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getInitials } from "@/lib/utils";
 import { GameWithPlayers } from "@/types/supabase";
 import { Home } from "lucide-react";
 import Link from "next/link";
@@ -92,9 +93,7 @@ export default function Scoreboard({
                           src={player.profile.avatar_url || undefined}
                         />
                         <AvatarFallback>
-                          {player.profile.user_name
-                            .substring(0, 2)
-                            .toUpperCase()}
+                          {getInitials(player.profile.name)}
                         </AvatarFallback>
                       </Avatar>
                       <span className="font-medium">

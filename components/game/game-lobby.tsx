@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { GameWithPlayers } from "@/types/supabase";
-import { Copy, Users } from "lucide-react";
+import { Copy, Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
@@ -13,6 +13,7 @@ interface GameLobbyProps {
   isHost: boolean;
   onStartGame: () => void;
   onLeaveGame: () => void;
+  loadingState: "initializing" | "idle" | "starting";
 }
 
 export function GameLobby({
@@ -20,6 +21,7 @@ export function GameLobby({
   isHost,
   onStartGame,
   onLeaveGame,
+  loadingState,
 }: GameLobbyProps) {
   const copyGameCode = () => {
     navigator.clipboard.writeText(game.code);
@@ -115,15 +117,24 @@ export function GameLobby({
             size="lg"
             onClick={onStartGame}
             disabled={
-              game.players.length < 2 || game.players.length < game.max_players
+              game.players.length < 2 ||
+              game.players.length < game.max_players ||
+              loadingState === "starting"
             }
             className="px-8"
           >
-            {game.players.length < 2
-              ? "Servono almeno 2 giocatori per iniziare"
-              : game.players.length < game.max_players
-              ? `Attendi che tutti i giocatori si uniscano (${game.players.length}/${game.max_players})`
-              : "Inizia la partita"}
+            {loadingState === "starting" ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Avvio in corso...
+              </span>
+            ) : game.players.length < 2 ? (
+              "Servono almeno 2 giocatori per iniziare"
+            ) : game.players.length < game.max_players ? (
+              `Attendi che tutti i giocatori si uniscano (${game.players.length}/${game.max_players})`
+            ) : (
+              "Inizia la partita"
+            )}
           </Button>
           {game.players.length < game.max_players && (
             <p className="text-muted-foreground text-sm">

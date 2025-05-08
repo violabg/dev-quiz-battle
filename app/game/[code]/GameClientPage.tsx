@@ -4,18 +4,16 @@ import { GameLobby } from "@/components/game/game-lobby";
 import { GameRoom } from "@/components/game/game-room";
 import { Button } from "@/components/ui/button";
 import { useGameState } from "@/lib/hooks/useGameState";
-import { createClient } from "@/lib/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export function GameClientPage({ code, user }: { code: string; user: User }) {
-  const supabase = createClient();
-  const { loading, game, isHost, handleStartGame, handleLeaveGame } =
-    useGameState({ supabase, code, user });
+  const { loadingState, game, isHost, handleStartGame, handleLeaveGame } =
+    useGameState({ code, user });
   const router = useRouter();
 
-  if (loading) {
+  if (loadingState === "initializing") {
     return (
       <main className="flex flex-1 justify-center items-center">
         <Loader2 className="w-8 h-8 animate-spin" />
@@ -42,6 +40,7 @@ export function GameClientPage({ code, user }: { code: string; user: User }) {
           isHost={isHost}
           onStartGame={handleStartGame}
           onLeaveGame={handleLeaveGame}
+          loadingState={loadingState}
         />
       ) : (
         <GameRoom game={game} user={user} onLeaveGame={handleLeaveGame} />

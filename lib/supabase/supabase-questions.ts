@@ -1,4 +1,5 @@
 import type { Question } from "@/types/supabase";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./client";
 
 const supabase = createClient();
@@ -6,10 +7,25 @@ const supabase = createClient();
 export async function getQuestionsForGame(game_id: string) {
   const { data, error } = await supabase
     .from("questions")
-    .select("*")
+    .select(
+      `
+      id,
+      game_id,
+      created_by_player_id,
+      language,
+      difficulty,
+      question_text,
+      code_sample,
+      started_at,
+      ended_at,
+      options,
+      explanation,
+      created_at
+    `
+    )
     .eq("game_id", game_id);
   if (error) throw error;
-  return data as Question[];
+  return data as Omit<Question, "correct_answer">[];
 }
 
 export async function getQuestionById(question_id: string) {
@@ -22,11 +38,29 @@ export async function getQuestionById(question_id: string) {
   return data as Question;
 }
 
-export async function insertQuestion(question: Partial<Question>) {
-  const { data, error } = await supabase
+export async function insertQuestion(
+  _supabase: SupabaseClient,
+  question: Partial<Question>
+) {
+  const { data, error } = await _supabase
     .from("questions")
     .insert(question)
-    .select()
+    .select(
+      `
+      id,
+      game_id,
+      created_by_player_id,
+      language,
+      difficulty,
+      question_text,
+      code_sample,
+      started_at,
+      ended_at,
+      options,
+      explanation,
+      created_at
+    `
+    )
     .single();
   if (error) throw error;
   return data as Question;

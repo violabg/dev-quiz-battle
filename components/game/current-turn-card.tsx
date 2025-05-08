@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getInitials } from "@/lib/utils";
 import type { GameWithPlayers } from "@/types/supabase";
 
 interface CurrentTurnCardProps {
@@ -23,7 +24,7 @@ export const CurrentTurnCard = ({
         <Avatar>
           <AvatarImage src={currentPlayer?.avatar_url || undefined} />
           <AvatarFallback>
-            {currentPlayer?.full_name?.substring(0, 2).toUpperCase()}
+            {getInitials(currentPlayer?.full_name)}
           </AvatarFallback>
         </Avatar>
         <span className="font-medium">{currentPlayer?.full_name}</span>
