@@ -104,6 +104,6 @@ export async function generateQuestion({
     return questionData as GeneratedQuestion;
   } catch (error) {
     console.error("Errore durante la generazione della domanda:", error);
-    throw new Error("Impossibile generare la domanda");
+    throw new Error(`Impossibile generare la domanda: ${error}`);
   }
 }
