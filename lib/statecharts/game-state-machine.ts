@@ -43,10 +43,14 @@ type GameStateEvent =
       answers?: AnswerWithPlayer[];
     };
 
-export const gameStateMachine = createMachine<GameStateContext, GameStateEvent>(
+export const gameStateMachine = createMachine(
   {
-    /** @xstate-layout N4IgpgJg5mDOIC5RQIYFswGIBKBRAwrgJIBquA+gKoAKAIgIIAquA2gAwC6ioADgPawAlgBdBfAHbcQAD0QBOAOwKAdAFZVAFgVsAjHMX6AHACYANCACeiHWwWHlAZgdsAbIY1sDWnQF8f51AxMfAB5AFlqABlcZnIAcXow1k4pfiFRCSlZBFUFcysEOUMXNUNXVWMbbTKNPwD0MGUAGz4AI1aLAHUUEUFxKEwo+gBNXGxyACkQogA5di4kEDTezMXs92UXHSc2YzldJwVjF3zEQ221XdUdFw0nNwUXOpBAxpb2rp7RfsHIkbHyNF6GR5qkBCtJGtEHZNqoXMcHC4FDolPs5KcEMiVGwNHINPjjhoynInv4Xg1mm0Ot1ej8AMqMejYRjxRLJBa8cEZSGgbIIzYoypufFeDFyYyqRzOFw41QGIpyZ6vSkfGnfAZjbAhbCgxbLblZRD8rZHG7uXEKPEY4wS5Q2lzwiUkx5aWpk5XvDp04QoABO6swus56TEPJkiBcDh0ygUDjuhlRzjYuTFbAcykMmllu0zzgcSopwgArr7xGq+lAAGJ8X0ARSLcG5wTwTAotcouAZRBCcxSeq5ocNhUzyg0lTRlqjhgxlrkdsMhn2rjYxU0+fdhZLZa+FerdYbsCbmu1QaWA9WvPkI7Hek8k5008siER9jkqijqmK52MaYUBYwygAI4Hty9AAMaiAAblg7adow3YzOQ+AtswtCnvqg5QggOgPnOjxwhoFT7LkyYzsmpSfg4cg2E4RSqP+jTAY2obgVBWB0pQABCYRECy9AzHSnRjOh55htkOg-sYyg4m4dH6ARZhPggMpztsxiPC4chxhUrgMUBIEsRBgjQZg-GCQCHHcbxqEiSGF7hthD4lEiig-uo+iKI+BTXFJLmaVoLgKX+G4AUxh6GWxmC4DMtDkLBXY9rZEJDjoHiSkSdzUbkMoOF5ZwScob7qAuMoSoF9EhYxBkSKxxlYMeOp9sGyVYal5EZVROjZWmeU5Jayh6Mc2WWu+CgVfUoXVeIuDiBAkCYDMuAABosowlDYL2HJnnZYnWAoWh2g+NSVIuCa9ecc4OEcQ1acYmaEXpYXcjNc0QFF2Bao1W0YfZ4n7SoJ3HbhZ0zjahV6HoV2RoogV6cWpb0BAkEoOIYEVoGTXbS1l7YWUUljooY4mHGRx5Ep1FSTa+xbLsVGRoYelgL6vo1jgnYxOQDVJQarX-YdC44idRR2Bi5yXGwK6BRJDgSkofhkuIfBzfAiyvGCO1DuiSkALSSh5+sG65emep8tJQOr2MOYu0nGHG8IkjKWy9dRGiFeon7FFc5XG1SFjen66oWzzONaPY7hQz+hjSvoYq2lHy6EfKi5w1u5b9Hu9bMfZP27ZidxSnKGhmndUOx5K8cyons7J5V+lZ+ItXQUHmE4xJqV2rGhGuDauTbKLtjSbl1ESddLqPVNL2QM3v3WJRmy3CuDi5EcUeqKLFyEcVntleoKcI0jKNo-00+54NrtphJzrbM4RKxyUEkSqlgWEbJemvPgfBoDwTRgMIU-9hrLCxpBRmhFJaDQYoRwVzcLkRQMtSQTUaEzFmvoT4pXFOfKMewkTXxxL1KirtxQO3Uv9MaDNa4tBQBACsaCsL6EHvsF0b53AVEUgUQK9hNBaTxvHMh8sfBAA */
+    /** @xstate-layout N4IgpgJg5mDOIC5RQIYFswGIBKBRAwrgJIBquA+gKoAKAIgIIAquA2gAwC6ioADgPawAlgBdBfAHbcQAD0QBOAOwKAdAFZVAFgBsAZi1y2qgExG5RgDQgAnogCMbBQA5lOnYe22dcneo0BfP0tUDEx8AHkAWWoAGVxmcgBxegjWTil+IVEJKVkEVQVLGwQ5Ry01RzZdRx0nBVcFAKD0MGUAGz4AIw6rAHUUEUFxKEwY+gBNXGxyACkwogA5di4kEAyB7JXcxw1lLU8jJU8FVT09QsRHTzU2IxOtR3zbb39AkGCW9q7e-tEhkejxpNyLF6GQlukBOtJJtEE5dqotEYdBUHmw2HINBZrLDbCo2BozHJVIo0QijI03s02p1un0Bn8AMqMejYRiJZKpZa8SFZaGgXJGXS7XFPDQ6WylDTaDTnYq3FxuYnIsW43QU97Ur5037DSbYMLYcErNa8nKIQU6YUKUXiyXS2UmVTKExaTQIsyXVRsRzqqmfboM4QoABOOswRu5mTEfJkiF0tmUdTFpQUcjkWldtllBktDw0+PyxiRmN9GGUwgArsHxNrBlAAGJ8YMARQrcF5oTwTAozcouCZRDCizSxp50bNxQeykxEtux0FGlxstTcmdjgMFWtiIUgtLLUr1drQ0bLbbsA7eoNEdWY42-PkU5njjnxi0i4K2IQemcRPFGc8VSnHuygAI5nry9AAMaiAAblgvb9owg7zOQ+BdswtDXia44wggtgSquCiutaNzeGYlTLoY5TEmYqa2KYezAWB7bRlBsFYAylAAEIREQbL0PMDI9JMWG3jGuT0Tcyj4voJTpgo+JIrKWjoso+zHE8+K2MSTHgax0GCHBmACUJQKcTxfEYaJUZ3rGeESmUWipkoRjrqYrkfkUqj0bsqb6BoO4IjOuksRIbGGVguDzLQ5AIQOQ7WVCE62PmToaNs2jeURqh5rKlxGMoRLqBibA+CR5KvBqzHnvp7GYJehojpGSW4SlVHpVKmbZbln75KuTyCp4+RosiWghTVEi4OIECQJg8y4AAGmyjCUNgw5cjeNniXYCgBc6ErWtpGKZaoeVPC4O6mPhZj0SWlVUtVvJTTNED1dg+qNRt2G2RJu0qEYB34cSnXqMuJiFQNOj5gBDi2MBB7iPQEAwSg4iQXW4ZNZtLX3nhFQFZiiiuhomjWiT2Y+SYBgk8VClsHD91lmAwbBk2OD9nE5ANYlpqtX9+2OIdwMnWd1xoiKpXqBmFWvOIfAzfAKzvBCW0TnIsoALRlGiOu67rYrAf63z0lAKs43Z67ScWYr3J466g5+cgpYV6jA5LJEvE0ZZG4GIY6mbvO4wFzjbDUXp6Bm246Nm8rVIY3ih6qOjw1WNY-HWJ6tqFMbfdtCC7ZarjErYiIGLoxIx06cdKonRHJ4zLSPbVEUBzhuP0c7Bw+JiAUAdoeUONJXj4mm+iXDoFVe43emTdNkCtz9dg5ZaGbQ2RDy3Orn7j9Ors3BKbU3Cn1ZIyjaN1gvecDTspX0RiGIIhvMdlPRAM1IoE-eaowHvPgfBoDwVoYBhDz1HKrXCForQ2gcp1GUjspzV28A4NwXgxoN2UMzVmwZL7JTMDfcUpgCQk3uMYWUXgdiEn0N5ewJF65T2pCgCAF8wHm1yGmIeZdNBGExPTe4ykcpqCIRUKUjh8o+gCH4IAA */
     id: "game",
+    types: {} as {
+      context: GameStateContext;
+      events: GameStateEvent;
+    },
     initial: "lobbyWaiting",
     context: {
       game: null,
@@ -61,19 +65,22 @@ export const gameStateMachine = createMachine<GameStateContext, GameStateEvent>(
         on: {
           PLAYER_JOIN: {
             actions: assign({
-              players: (ctx, evt) => [...ctx.players, evt.player],
+              players: ({ context, event }) => [
+                ...context.players,
+                event.player,
+              ],
             }),
           },
           PLAYER_LEAVE: {
             actions: assign({
-              players: (ctx, evt) =>
-                ctx.players.filter((p) => p.player_id !== evt.playerId),
+              players: ({ context, event }) =>
+                context.players.filter((p) => p.player_id !== event.playerId),
             }),
           },
           START_GAME: "lobbyStarting",
           ERROR: {
             target: "error",
-            actions: assign({ error: (_, evt) => evt.error }),
+            actions: assign({ error: ({ event }) => event.error }),
           },
         },
       },
@@ -82,8 +89,10 @@ export const gameStateMachine = createMachine<GameStateContext, GameStateEvent>(
           target: "turnWaitingForQuestion",
           actions: assign({
             // Optionally update game status here
-            game: (ctx) =>
-              ctx.game ? { ...ctx.game, status: "active" } : null,
+            game: ({ context }) =>
+              context.game
+                ? ({ ...context.game, status: "active" } as GameWithPlayers)
+                : null,
           }),
         },
       },
@@ -92,7 +101,7 @@ export const gameStateMachine = createMachine<GameStateContext, GameStateEvent>(
           CREATE_QUESTION: "questionActive",
           ERROR: {
             target: "error",
-            actions: assign({ error: (_, evt) => evt.error }),
+            actions: assign({ error: ({ event }) => event.error }),
           },
         },
       },
@@ -100,35 +109,35 @@ export const gameStateMachine = createMachine<GameStateContext, GameStateEvent>(
         on: {
           QUESTION_CREATED: {
             actions: assign({
-              currentQuestion: (_, evt) => evt.question,
+              currentQuestion: ({ event }) => event.question,
               answers: () => [],
             }),
           },
           SUBMIT_ANSWER: {
             actions: assign({
-              answers: (ctx, evt) => {
+              answers: ({ context, event }) => {
                 // Prevent duplicate answers from same player
-                const filtered = ctx.answers.filter(
-                  (a) => a.player_id !== evt.answer.player_id
+                const filtered = context.answers.filter(
+                  (a) => a.player_id !== event.answer.player_id
                 );
-                return [...filtered, evt.answer];
+                return [...filtered, event.answer];
               },
             }),
           },
           ANSWER_SUBMITTED: {
             actions: assign({
-              answers: (ctx, evt) => {
-                const filtered = ctx.answers.filter(
-                  (a) => a.player_id !== evt.answer.player_id
+              answers: ({ context, event }) => {
+                const filtered = context.answers.filter(
+                  (a) => a.player_id !== event.answer.player_id
                 );
-                return [...filtered, evt.answer];
+                return [...filtered, event.answer];
               },
             }),
           },
           END_QUESTION: "questionEnded",
           ERROR: {
             target: "error",
-            actions: assign({ error: (_, evt) => evt.error }),
+            actions: assign({ error: ({ event }) => event.error }),
           },
         },
       },
@@ -137,7 +146,7 @@ export const gameStateMachine = createMachine<GameStateContext, GameStateEvent>(
           NEXT_TURN: "turnAdvancing",
           ERROR: {
             target: "error",
-            actions: assign({ error: (_, evt) => evt.error }),
+            actions: assign({ error: ({ event }) => event.error }),
           },
         },
       },
@@ -145,8 +154,8 @@ export const gameStateMachine = createMachine<GameStateContext, GameStateEvent>(
         always: {
           target: "turnWaitingForQuestion",
           actions: assign({
-            currentPlayerIndex: (ctx) =>
-              (ctx.currentPlayerIndex + 1) % ctx.players.length,
+            currentPlayerIndex: ({ context }) =>
+              (context.currentPlayerIndex + 1) % context.players.length,
             currentQuestion: () => null,
             answers: () => [],
           }),
@@ -168,9 +177,9 @@ export const gameStateMachine = createMachine<GameStateContext, GameStateEvent>(
     on: {
       RECEIVE_UPDATE: {
         actions: assign({
-          game: (_, evt) => evt.game,
-          currentQuestion: (_, evt) => evt.question ?? null,
-          answers: (_, evt) => evt.answers ?? [],
+          game: ({ event }) => event.game,
+          currentQuestion: ({ event }) => event.question ?? null,
+          answers: ({ event }) => event.answers ?? [],
         }),
       },
       COMPLETE_GAME: "gameCompleted",
