@@ -26,8 +26,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import PasswordInput from "./ui/password-input";
-import { Separator } from "./ui/separator";
+import PasswordInput from "../ui/password-input";
+import { Separator } from "../ui/separator";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Email non valida" }),

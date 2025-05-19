@@ -19,7 +19,7 @@ import { useAuth } from "@/lib/supabase/supabase-provider";
 import { Loader2, LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CurrentUserAvatar } from "../current-user-avatar";
+import { CurrentUserAvatar } from "../auth/current-user-avatar";
 
 export function Navbar() {
   const pathname = usePathname();

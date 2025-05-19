@@ -24,7 +24,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import PasswordInput from "./ui/password-input";
+import PasswordInput from "../ui/password-input";
 
 const updatePasswordSchema = z.object({
   password: z.string().min(6, { message: "Minimo 6 caratteri" }),

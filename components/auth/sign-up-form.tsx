@@ -26,7 +26,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import PasswordInput from "./ui/password-input";
+import PasswordInput from "../ui/password-input";
 
 const signUpSchema = z
   .object({
