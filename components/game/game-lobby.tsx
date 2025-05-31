@@ -3,26 +3,33 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { GameWithPlayers } from "@/types/supabase";
+import { useGameMachineActorRef } from "@/lib/context/GameMachineProvider";
+import {
+  useCanStartGame,
+  useGameData,
+  useIsHost,
+  useIsLoading,
+} from "@/lib/hooks/useGameSelectors";
 import { Copy, Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
 interface GameLobbyProps {
-  game: GameWithPlayers;
-  isHost: boolean;
   onStartGame: () => void;
   onLeaveGame: () => void;
-  loadingState: "initializing" | "idle" | "starting";
 }
 
-export function GameLobby({
-  game,
-  isHost,
-  onStartGame,
-  onLeaveGame,
-  loadingState,
-}: GameLobbyProps) {
+export function GameLobby({ onStartGame, onLeaveGame }: GameLobbyProps) {
+  const actorRef = useGameMachineActorRef();
+
+  // Use selectors to get state
+  const game = useGameData(actorRef);
+  const isHost = useIsHost(actorRef);
+  const isLoading = useIsLoading(actorRef);
+  const canStartGame = useCanStartGame(actorRef);
+
+  if (!game) return null;
+
   const copyGameCode = () => {
     navigator.clipboard.writeText(game.code);
     toast.success("Codice partita copiato", {
@@ -116,14 +123,10 @@ export function GameLobby({
           <Button
             size="lg"
             onClick={onStartGame}
-            disabled={
-              game.players.length < 2 ||
-              game.players.length < game.max_players ||
-              loadingState === "starting"
-            }
+            disabled={!canStartGame || isLoading}
             className="px-8"
           >
-            {loadingState === "starting" ? (
+            {isLoading ? (
               <span className="flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Avvio in corso...
