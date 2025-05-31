@@ -429,6 +429,11 @@ export const gameMachine = setup({
     setupAnswersSubscription: fromCallback(({ sendBack, input }) => {
       const { questionId } = input as { questionId: string };
 
+      // Validate questionId before setting up subscription
+      if (!questionId || questionId.trim() === "") {
+        return () => {};
+      }
+
       const subscription = subscribeToAnswers(() => {
         // Refetch answers when there's a change
         import("@/lib/supabase/supabase-answers").then(
@@ -677,12 +682,6 @@ export const gameMachine = setup({
 
         activeGame: {
           initial: "determiningTurnPhase",
-          invoke: {
-            src: "setupAnswersSubscription",
-            input: ({ context }) => ({
-              questionId: context.currentQuestion?.id || "",
-            }),
-          },
           states: {
             determiningTurnPhase: {
               always: [
@@ -733,17 +732,35 @@ export const gameMachine = setup({
 
             questionActive: {
               initial: "answering",
-              invoke: {
-                src: "questionTimer",
-                input: ({ context }) => ({
-                  timeLimit: context.game?.time_limit || 120,
-                }),
-              },
+              invoke: [
+                {
+                  src: "questionTimer",
+                  input: ({ context }) => ({
+                    timeLimit: context.game?.time_limit || 120,
+                  }),
+                },
+                {
+                  src: "setupAnswersSubscription",
+                  input: ({ context }) => {
+                    const questionId = context.currentQuestion?.id;
+                    if (!questionId) {
+                      throw new Error(
+                        "No current question available for answers subscription"
+                      );
+                    }
+                    return { questionId };
+                  },
+                },
+              ],
               states: {
                 answering: {
                   on: {
                     SUBMIT_ANSWER: {
-                      guard: ({ context }) => !context.userAnswer,
+                      guard: ({ context }) =>
+                        !context.userAnswer &&
+                        !!context.currentQuestion?.id &&
+                        !!context.user?.id &&
+                        !!context.game?.id,
                       target: "submittingAnswer",
                     },
                   },
@@ -755,10 +772,25 @@ export const gameMachine = setup({
                     input: ({ context, event }) => {
                       if (event.type !== "SUBMIT_ANSWER")
                         throw new Error("Invalid event");
+
+                      const questionId = context.currentQuestion?.id;
+                      const playerId = context.user?.id;
+                      const gameId = context.game?.id;
+
+                      if (!questionId) {
+                        throw new Error("No current question available");
+                      }
+                      if (!playerId) {
+                        throw new Error("User not authenticated");
+                      }
+                      if (!gameId) {
+                        throw new Error("No game available");
+                      }
+
                       return {
-                        questionId: context.currentQuestion?.id || "",
-                        playerId: context.user?.id || "",
-                        gameId: context.game?.id || "",
+                        questionId,
+                        playerId,
+                        gameId,
                         selectedOption: event.selectedOption,
                         responseTimeMs: event.responseTimeMs,
                         timeLimitMs: (context.game?.time_limit || 120) * 1000,
