@@ -20,6 +20,7 @@ export const gameServices = {
   fetchGame: async ({ gameCode, user }: { gameCode: string; user: User }) => {
     try {
       const { data: gameData } = await getGameByCode(supabase, gameCode);
+
       if (!gameData) {
         throw new Error("Game not found");
       }
@@ -27,7 +28,7 @@ export const gameServices = {
       const playersData = await getPlayersForGame(gameData.id);
       const hostData = await getProfileById(gameData.host_id);
 
-      return {
+      const result = {
         game: {
           ...gameData,
           players: playersData,
@@ -35,6 +36,8 @@ export const gameServices = {
         },
         isHost: user.id === gameData.host_id,
       };
+
+      return result;
     } catch (error) {
       throw new Error(
         error instanceof Error ? error.message : "Failed to fetch game"

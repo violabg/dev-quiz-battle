@@ -88,7 +88,9 @@ export const useIsLoading = (actor: GameMachineActor) =>
   useSelector(
     actor,
     (state) =>
-      state.matches("loading") || state.matches("settingUpSubscriptions")
+      state.matches("initializing") ||
+      state.matches("loading") ||
+      state.matches("settingUpSubscriptions")
   );
 
 export const useIsInLobby = (actor: GameMachineActor) =>
@@ -149,8 +151,8 @@ export const useIsGameCompleted = (actor: GameMachineActor) =>
 export const useHasError = (actor: GameMachineActor) =>
   useSelector(actor, (state) => state.matches("error"));
 
-export const useHasLeft = (actor: GameMachineActor) =>
-  useSelector(actor, (state) => state.matches("left"));
+export const useErrorMessage = (actor: GameMachineActor) =>
+  useSelector(actor, (state) => state.context.error);
 
 // Composite selectors for complex UI logic
 export const useIsRoundComplete = (actor: GameMachineActor) =>

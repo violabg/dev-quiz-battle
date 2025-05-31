@@ -81,8 +81,7 @@ export function LoginForm({
       });
 
       if (error) throw error;
-    } catch (error: unknown) {
-      console.log("error :>> ", error);
+    } catch {
       //  setError(error instanceof Error ? error.message : 'An error occurred')
       setIsLoading(false);
     }

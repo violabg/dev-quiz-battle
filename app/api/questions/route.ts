@@ -28,7 +28,6 @@ export async function POST(req: NextRequest) {
       language: language as GameLanguage,
       difficulty: difficulty as GameDifficulty,
     });
-    console.log("🚀 ~ POST ~ correct_answer:", questionData.correctAnswer);
 
     const startedAt = new Date().toISOString();
     const newQuestion = await insertQuestion(supabase, {

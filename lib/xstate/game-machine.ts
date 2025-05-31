@@ -14,7 +14,11 @@ import {
   subscribeToQuestions,
   unsubscribeFromQuestions,
 } from "@/lib/supabase/supabase-questions";
-import type { GameDifficulty, GameLanguage } from "@/types/supabase";
+import type {
+  GameDifficulty,
+  GameLanguage,
+  GameWithPlayers,
+} from "@/types/supabase";
 import type { User } from "@supabase/supabase-js";
 import { assign, fromCallback, fromPromise, setup } from "xstate";
 import { gameServices } from "./game-machine.services";
@@ -45,16 +49,48 @@ export const gameMachine = setup({
     // Game data update actions
     setGameData: assign({
       game: ({ event }) => {
-        if (event.type !== "GAME_LOADED") return null;
-        return event.game;
+        // Handle both direct GAME_LOADED events and actor onDone events
+        if (event.type === "GAME_LOADED") {
+          return event.game;
+        }
+        // Handle onDone from fetchGameData actor - correct pattern for XState v5
+        if (event.type.includes("done.actor") && "output" in event) {
+          const output = (
+            event as { output: { game: GameWithPlayers; isHost: boolean } }
+          ).output;
+          return output.game;
+        }
+        return null;
       },
       isHost: ({ event, context }) => {
-        if (event.type !== "GAME_LOADED" || !context.user) return false;
-        return context.user.id === event.game.host_id;
+        if (!context.user) return false;
+
+        // Handle both direct GAME_LOADED events and actor onDone events
+        if (event.type === "GAME_LOADED") {
+          return context.user.id === event.game.host_id;
+        }
+        // Handle onDone from fetchGameData actor - correct pattern for XState v5
+        if (event.type.includes("done.actor") && "output" in event) {
+          const output = (
+            event as { output: { game: GameWithPlayers; isHost: boolean } }
+          ).output;
+          return output.isHost;
+        }
+        return false;
       },
       currentPlayerIndex: ({ event }) => {
-        if (event.type !== "GAME_LOADED") return 0;
-        return event.game.current_turn ?? 0;
+        // Handle both direct GAME_LOADED events and actor onDone events
+        if (event.type === "GAME_LOADED") {
+          return event.game.current_turn ?? 0;
+        }
+        // Handle onDone from fetchGameData actor - correct pattern for XState v5
+        if (event.type.includes("done.actor") && "output" in event) {
+          const output = (
+            event as { output: { game: GameWithPlayers; isHost: boolean } }
+          ).output;
+          return output.game?.current_turn ?? 0;
+        }
+        return 0;
       },
     }),
 

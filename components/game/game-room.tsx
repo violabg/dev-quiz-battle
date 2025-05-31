@@ -102,184 +102,105 @@ export function GameRoom({ onLeaveGame }: GameRoomProps) {
 
   if (!game || !user) return null;
 
-  // Render game completed state
-  if (isGameCompleted) {
-    return (
-      <div className="space-y-8">
-        <Scoreboard
-          game={game}
-          isRoundComplete={isRoundComplete}
-          onLeaveGame={handleLeaveGame}
-        />
-        <div className="flex flex-col items-center space-y-4">
-          <h1 className="font-bold text-2xl">Partita terminata!</h1>
-          <Button onClick={onLeaveGame}>Torna alla Dashboard</Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Render question selection phase
-  if (isSelectingQuestion) {
-    return (
-      <div className="space-y-8">
-        {currentPlayerForCard && (
-          <CurrentTurnCard
-            currentPlayer={currentPlayerForCard}
-            isCurrentPlayersTurn={isCurrentPlayersTurn}
-          />
-        )}
-
-        {isCurrentPlayersTurn && (
-          <QuestionSelection
-            isCurrentPlayersTurn={isCurrentPlayersTurn}
-            currentPlayerUsername={currentPlayerUsername}
-            isLoading={isLoadingCreateQuestion}
-            language={selectedLanguage}
-            difficulty={selectedDifficulty}
-            onSubmit={({ language, difficulty }) => {
-              handleSelectLanguage(language);
-              handleSelectDifficulty(difficulty);
-              handleCreateQuestion();
-            }}
-          />
-        )}
-
-        <Scoreboard
-          game={game}
-          isRoundComplete={isRoundComplete}
-          onLeaveGame={handleLeaveGame}
-        />
-
-        <div className="flex justify-center">
-          <Button variant="outline" onClick={onLeaveGame}>
-            Abbandona partita
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Render creating question state
-  if (isCreatingQuestion) {
-    return (
-      <div className="space-y-8">
-        {currentPlayerForCard && (
-          <CurrentTurnCard
-            currentPlayer={currentPlayerForCard}
-            isCurrentPlayersTurn={isCurrentPlayersTurn}
-          />
-        )}
-
-        <div className="text-center">
-          <p className="text-lg">Generazione domanda in corso...</p>
-        </div>
-
-        <Scoreboard
-          game={game}
-          isRoundComplete={isRoundComplete}
-          onLeaveGame={handleLeaveGame}
-        />
-
-        <div className="flex justify-center">
-          <Button variant="outline" onClick={onLeaveGame}>
-            Abbandona partita
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Render active question state
-  if (isQuestionActive && currentQuestion) {
-    return (
-      <div className="space-y-8">
-        {currentPlayerForCard && (
-          <CurrentTurnCard
-            currentPlayer={currentPlayerForCard}
-            isCurrentPlayersTurn={isCurrentPlayersTurn}
-          />
-        )}
-
-        <QuestionDisplay
-          question={currentQuestion}
-          onSubmitAnswer={handleSubmitAnswer}
-          winner={winner}
-          allAnswers={allAnswers}
-          timeIsUp={false}
-          timeLimit={game.time_limit}
-          user={user}
-        />
-
-        <Scoreboard
-          game={game}
-          isRoundComplete={isRoundComplete}
-          onLeaveGame={handleLeaveGame}
-        />
-
-        <div className="flex justify-center">
-          <Button variant="outline" onClick={onLeaveGame}>
-            Abbandona partita
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Render results state
-  if (isShowingResults && currentQuestion) {
-    return (
-      <div className="space-y-8">
-        {currentPlayerForCard && (
-          <CurrentTurnCard
-            currentPlayer={currentPlayerForCard}
-            isCurrentPlayersTurn={isCurrentPlayersTurn}
-          />
-        )}
-
-        <TurnResultCard
-          winner={winner}
-          showNextTurn={showNextTurn}
-          isNextPlayersTurn={isNextPlayersTurn}
-          isRoundComplete={isRoundComplete}
-          handleNextTurn={handleNextTurn}
-        />
-
-        <Scoreboard
-          game={game}
-          isRoundComplete={isRoundComplete}
-          onLeaveGame={handleLeaveGame}
-        />
-
-        <div className="flex justify-center">
-          <Button variant="outline" onClick={onLeaveGame}>
-            Abbandona partita
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Default fallback
   return (
     <div className="space-y-8">
-      {currentPlayerForCard && (
-        <CurrentTurnCard
-          currentPlayer={currentPlayerForCard}
-          isCurrentPlayersTurn={isCurrentPlayersTurn}
-        />
-      )}
-
-      <Scoreboard
-        game={game}
-        isRoundComplete={isRoundComplete}
-        onLeaveGame={handleLeaveGame}
-      />
-
-      <div className="flex justify-center">
-        <Button variant="outline" onClick={onLeaveGame}>
-          Abbandona partita
+      <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="font-bold text-3xl">
+            <span className="text-gradient">DevQuizBattle</span>
+          </h1>
+          <p className="text-muted-foreground">Codice partita: {game.code}</p>
+        </div>
+        <Button variant="destructive" onClick={onLeaveGame}>
+          Esci
         </Button>
+      </div>
+
+      <div className="gap-8 grid lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          {/* Game completed state */}
+          {isGameCompleted && (
+            <div className="flex flex-col items-center space-y-4">
+              <h1 className="font-bold text-2xl">Partita terminata!</h1>
+              <Button onClick={onLeaveGame}>Torna alla Dashboard</Button>
+            </div>
+          )}
+
+          {/* Question selection phase */}
+          {isSelectingQuestion && (
+            <QuestionSelection
+              isCurrentPlayersTurn={isCurrentPlayersTurn}
+              currentPlayerUsername={currentPlayerUsername}
+              isLoading={isLoadingCreateQuestion}
+              language={selectedLanguage}
+              difficulty={selectedDifficulty}
+              onSubmit={({ language, difficulty }) => {
+                handleSelectLanguage(language);
+                handleSelectDifficulty(difficulty);
+                handleCreateQuestion();
+              }}
+            />
+          )}
+
+          {/* Creating question state */}
+          {isCreatingQuestion && (
+            <div className="text-center">
+              <p className="text-lg">Generazione domanda in corso...</p>
+            </div>
+          )}
+
+          {/* Active question state */}
+          {isQuestionActive && currentQuestion && (
+            <QuestionDisplay
+              question={currentQuestion}
+              onSubmitAnswer={handleSubmitAnswer}
+              winner={winner}
+              allAnswers={allAnswers}
+              timeIsUp={false}
+              timeLimit={game.time_limit}
+              user={user}
+            />
+          )}
+
+          {/* Results state */}
+          {isShowingResults && currentQuestion && (
+            <TurnResultCard
+              winner={winner}
+              showNextTurn={showNextTurn}
+              isNextPlayersTurn={isNextPlayersTurn}
+              isRoundComplete={isRoundComplete}
+              handleNextTurn={handleNextTurn}
+            />
+          )}
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <Scoreboard
+            game={game}
+            isRoundComplete={isRoundComplete}
+            onLeaveGame={handleLeaveGame}
+          />
+
+          {/* Turn result card in sidebar when showing results or when question ended */}
+          {!isShowingResults &&
+            (winner ||
+              (currentQuestion && currentQuestion.ended_at && !winner)) && (
+              <TurnResultCard
+                winner={winner}
+                showNextTurn={showNextTurn}
+                isNextPlayersTurn={isNextPlayersTurn}
+                isRoundComplete={isRoundComplete}
+                handleNextTurn={handleNextTurn}
+              />
+            )}
+
+          {currentPlayerForCard && (
+            <CurrentTurnCard
+              currentPlayer={currentPlayerForCard}
+              isCurrentPlayersTurn={isCurrentPlayersTurn}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

@@ -228,3 +228,9 @@ export interface HasCorrectAnswerGuard {
 export interface IsTimeUpGuard {
   type: "isTimeUp";
 }
+
+// Fetch Game Result Type
+export type FetchGameResult = {
+  game: GameWithPlayers;
+  isHost: boolean;
+};
