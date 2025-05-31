@@ -18,6 +18,7 @@ import type {
   GameDifficulty,
   GameLanguage,
   GameWithPlayers,
+  Question,
 } from "@/types/supabase";
 import type { User } from "@supabase/supabase-js";
 import { assign, fromCallback, fromPromise, setup } from "xstate";
@@ -133,12 +134,34 @@ export const gameMachine = setup({
 
     setCurrentQuestion: assign({
       currentQuestion: ({ event }) => {
-        if (event.type !== "QUESTION_CREATED") return null;
-        return event.question;
+        // Handle QUESTION_CREATED from subscription
+        if (event.type === "QUESTION_CREATED") {
+          return event.question;
+        }
+        // Handle onDone from createQuestion actor
+        if (event.type.includes("done.actor") && "output" in event) {
+          const output = event.output as {
+            question: Question;
+            startTime: number;
+          };
+          return output.question;
+        }
+        return null;
       },
       questionStartTime: ({ event }) => {
-        if (event.type !== "QUESTION_CREATED") return null;
-        return event.startTime;
+        // Handle QUESTION_CREATED from subscription
+        if (event.type === "QUESTION_CREATED") {
+          return event.startTime;
+        }
+        // Handle onDone from createQuestion actor
+        if (event.type.includes("done.actor") && "output" in event) {
+          const output = event.output as {
+            question: Question;
+            startTime: number;
+          };
+          return output.startTime;
+        }
+        return null;
       },
       isLoadingCreateQuestion: false,
     }),
@@ -367,33 +390,40 @@ export const gameMachine = setup({
         unsubscribeFromGamePlayers(subscription);
       };
     }),
-
     setupQuestionsSubscription: fromCallback(({ sendBack, input }) => {
-      const { gameId } = input as { gameId: string };
+      try {
+        const { gameId } = input as { gameId: string };
 
-      const subscription = subscribeToQuestions((payload) => {
-        if (
-          payload.eventType === "INSERT" &&
-          payload.new &&
-          payload.new.game_id === gameId
-        ) {
-          sendBack({
-            type: "QUESTION_CREATED",
-            question: payload.new,
-            startTime: Date.now(),
-          });
-        } else if (
-          payload.eventType === "UPDATE" &&
-          payload.new &&
-          payload.new.game_id === gameId
-        ) {
-          sendBack({ type: "QUESTION_UPDATED", question: payload.new });
-        }
-      });
+        const subscription = subscribeToQuestions((payload) => {
+          if (
+            payload.eventType === "INSERT" &&
+            payload.new &&
+            payload.new.game_id === gameId
+          ) {
+            const startTime = payload.new.started_at
+              ? new Date(payload.new.started_at).getTime()
+              : Date.now();
 
-      return () => {
-        unsubscribeFromQuestions(subscription);
-      };
+            sendBack({
+              type: "QUESTION_CREATED",
+              question: payload.new,
+              startTime,
+            });
+          } else if (
+            payload.eventType === "UPDATE" &&
+            payload.new &&
+            payload.new.game_id === gameId
+          ) {
+            sendBack({ type: "QUESTION_UPDATED", question: payload.new });
+          }
+        });
+
+        return () => {
+          unsubscribeFromQuestions(subscription);
+        };
+      } catch {
+        return () => {};
+      }
     }),
 
     setupAnswersSubscription: fromCallback(({ sendBack, input }) => {
@@ -563,20 +593,6 @@ export const gameMachine = setup({
     },
 
     settingUpSubscriptions: {
-      invoke: [
-        {
-          src: "setupGameSubscription",
-          input: ({ context }) => ({ gameId: context.game?.id || "" }),
-        },
-        {
-          src: "setupPlayersSubscription",
-          input: ({ context }) => ({ gameId: context.game?.id || "" }),
-        },
-        {
-          src: "setupQuestionsSubscription",
-          input: ({ context }) => ({ gameId: context.game?.id || "" }),
-        },
-      ],
       always: [
         {
           guard: "hasGame",
@@ -591,6 +607,20 @@ export const gameMachine = setup({
 
     gameActive: {
       initial: "determiningPhase",
+      invoke: [
+        {
+          src: "setupGameSubscription",
+          input: ({ context }) => ({ gameId: context.game?.id || "" }),
+        },
+        {
+          src: "setupPlayersSubscription",
+          input: ({ context }) => ({ gameId: context.game?.id || "" }),
+        },
+        {
+          src: "setupQuestionsSubscription",
+          input: ({ context }) => ({ gameId: context.game?.id || "" }),
+        },
+      ],
       states: {
         determiningPhase: {
           always: [
