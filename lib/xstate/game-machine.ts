@@ -255,23 +255,6 @@ export const gameMachine = setup({
       showNextTurn: false,
     }),
 
-    // Debug actions (remove after testing)
-    debugAllPlayersAnswered: ({ context }) => {
-      console.log("🎯 All players answered!", {
-        totalPlayers: context.game?.players?.length,
-        totalAnswers: context.allAnswers?.length,
-        answers: context.allAnswers,
-      });
-    },
-
-    debugPartialAnswers: ({ context }) => {
-      console.log("⏳ Partial answers received", {
-        totalPlayers: context.game?.players?.length,
-        totalAnswers: context.allAnswers?.length,
-        answers: context.allAnswers,
-      });
-    },
-
     // Error handling actions
     setError: assign({
       error: ({ event }) => {
@@ -542,17 +525,6 @@ export const gameMachine = setup({
         hasQuestion &&
         answersCount === playersCount &&
         answersCount > 0;
-
-      console.log("🎯 allPlayersAnswered guard:", {
-        hasGame,
-        hasQuestion,
-        playersCount,
-        answersCount,
-        result,
-        eventType: event.type,
-        eventAnswersCount:
-          event.type === "ANSWERS_UPDATED" ? event.answers?.length : "N/A",
-      });
 
       return result;
     },
@@ -869,11 +841,11 @@ export const gameMachine = setup({
                 ANSWERS_UPDATED: [
                   {
                     guard: "allPlayersAnswered",
-                    actions: ["updateAnswers", "debugAllPlayersAnswered"],
+                    actions: ["updateAnswers"],
                     target: "showingResults",
                   },
                   {
-                    actions: ["updateAnswers", "debugPartialAnswers"],
+                    actions: ["updateAnswers"],
                   },
                 ],
                 SET_WINNER: {
@@ -887,7 +859,7 @@ export const gameMachine = setup({
               entry: "setShowNextTurn",
               on: {
                 NEXT_TURN: {
-                  guard: "isCurrentPlayersTurn",
+                  guard: "isNextPlayersTurn",
                   target: "advancingTurn",
                 },
               },
