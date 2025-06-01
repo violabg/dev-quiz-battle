@@ -100,6 +100,82 @@ export const gameMachine = setup({
         if (event.type !== "GAME_UPDATED" || !context.game) return context.game;
         return { ...context.game, ...event.game };
       },
+      currentPlayerIndex: ({ event, context }) => {
+        if (
+          event.type !== "GAME_UPDATED" ||
+          event.game.current_turn === undefined
+        ) {
+          return context.currentPlayerIndex;
+        }
+        return event.game.current_turn;
+      },
+      // Reset question state when turn changes
+      currentQuestion: ({ event, context }) => {
+        if (
+          event.type !== "GAME_UPDATED" ||
+          event.game.current_turn === undefined ||
+          event.game.current_turn === context.currentPlayerIndex
+        ) {
+          return context.currentQuestion;
+        }
+        // Turn changed, reset question
+        return null;
+      },
+      questionStartTime: ({ event, context }) => {
+        if (
+          event.type !== "GAME_UPDATED" ||
+          event.game.current_turn === undefined ||
+          event.game.current_turn === context.currentPlayerIndex
+        ) {
+          return context.questionStartTime;
+        }
+        // Turn changed, reset question start time
+        return null;
+      },
+      allAnswers: ({ event, context }) => {
+        if (
+          event.type !== "GAME_UPDATED" ||
+          event.game.current_turn === undefined ||
+          event.game.current_turn === context.currentPlayerIndex
+        ) {
+          return context.allAnswers;
+        }
+        // Turn changed, reset answers
+        return [];
+      },
+      userAnswer: ({ event, context }) => {
+        if (
+          event.type !== "GAME_UPDATED" ||
+          event.game.current_turn === undefined ||
+          event.game.current_turn === context.currentPlayerIndex
+        ) {
+          return context.userAnswer;
+        }
+        // Turn changed, reset user answer
+        return null;
+      },
+      winner: ({ event, context }) => {
+        if (
+          event.type !== "GAME_UPDATED" ||
+          event.game.current_turn === undefined ||
+          event.game.current_turn === context.currentPlayerIndex
+        ) {
+          return context.winner;
+        }
+        // Turn changed, reset winner
+        return null;
+      },
+      showNextTurn: ({ event, context }) => {
+        if (
+          event.type !== "GAME_UPDATED" ||
+          event.game.current_turn === undefined ||
+          event.game.current_turn === context.currentPlayerIndex
+        ) {
+          return context.showNextTurn;
+        }
+        // Turn changed, reset show next turn
+        return false;
+      },
     }),
 
     updatePlayers: assign({
@@ -874,7 +950,7 @@ export const gameMachine = setup({
                   totalPlayers: context.game?.players.length || 0,
                 }),
                 onDone: {
-                  actions: ["advanceCurrentPlayerIndex", "resetQuestionState"],
+                  actions: ["resetQuestionState"],
                   target: "determiningTurnPhase",
                 },
                 onError: {
@@ -907,9 +983,22 @@ export const gameMachine = setup({
         LEAVE_GAME: {
           target: "leaving",
         },
-        GAME_UPDATED: {
-          actions: "updateGameData",
-        },
+        GAME_UPDATED: [
+          {
+            guard: ({ context, event }) => {
+              // Check if the turn changed
+              return (
+                event.game.current_turn !== undefined &&
+                event.game.current_turn !== context.currentPlayerIndex
+              );
+            },
+            actions: "updateGameData",
+            target: ".activeGame.determiningTurnPhase",
+          },
+          {
+            actions: "updateGameData",
+          },
+        ],
         PLAYERS_UPDATED: {
           actions: "updatePlayers",
         },
