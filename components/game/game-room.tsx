@@ -164,13 +164,24 @@ export function GameRoom({ onLeaveGame }: GameRoomProps) {
 
           {/* Results state */}
           {isShowingResults && currentQuestion && (
-            <TurnResultCard
-              winner={winner}
-              showNextTurn={showNextTurn}
-              isNextPlayersTurn={isNextPlayersTurn}
-              isRoundComplete={isRoundComplete}
-              handleNextTurn={handleNextTurn}
-            />
+            <>
+              <QuestionDisplay
+                question={currentQuestion}
+                onSubmitAnswer={handleSubmitAnswer}
+                winner={winner}
+                allAnswers={allAnswers}
+                timeIsUp={true}
+                timeLimit={game.time_limit}
+                user={user}
+              />
+              <TurnResultCard
+                winner={winner}
+                showNextTurn={showNextTurn}
+                isNextPlayersTurn={isNextPlayersTurn}
+                isRoundComplete={isRoundComplete}
+                handleNextTurn={handleNextTurn}
+              />
+            </>
           )}
         </div>
 

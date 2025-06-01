@@ -255,6 +255,23 @@ export const gameMachine = setup({
       showNextTurn: false,
     }),
 
+    // Debug actions (remove after testing)
+    debugAllPlayersAnswered: ({ context }) => {
+      console.log("🎯 All players answered!", {
+        totalPlayers: context.game?.players?.length,
+        totalAnswers: context.allAnswers?.length,
+        answers: context.allAnswers,
+      });
+    },
+
+    debugPartialAnswers: ({ context }) => {
+      console.log("⏳ Partial answers received", {
+        totalPlayers: context.game?.players?.length,
+        totalAnswers: context.allAnswers?.length,
+        answers: context.allAnswers,
+      });
+    },
+
     // Error handling actions
     setError: assign({
       error: ({ event }) => {
@@ -510,9 +527,34 @@ export const gameMachine = setup({
       return context.allAnswers.some((answer) => answer.is_correct);
     },
 
-    allPlayersAnswered: ({ context }) => {
-      if (!context.game || !context.currentQuestion) return false;
-      return context.allAnswers.length === context.game.players.length;
+    allPlayersAnswered: ({ context, event }) => {
+      const hasGame = !!context.game;
+      const hasQuestion = !!context.currentQuestion;
+      const playersCount = context.game?.players?.length || 0;
+
+      // Use answers from the event instead of context since updateAnswers hasn't run yet
+      const answersCount =
+        event.type === "ANSWERS_UPDATED"
+          ? event.answers?.length || 0
+          : context.allAnswers?.length || 0;
+      const result =
+        hasGame &&
+        hasQuestion &&
+        answersCount === playersCount &&
+        answersCount > 0;
+
+      console.log("🎯 allPlayersAnswered guard:", {
+        hasGame,
+        hasQuestion,
+        playersCount,
+        answersCount,
+        result,
+        eventType: event.type,
+        eventAnswersCount:
+          event.type === "ANSWERS_UPDATED" ? event.answers?.length : "N/A",
+      });
+
+      return result;
     },
 
     isTimeUp: ({ context }) => {
@@ -670,10 +712,17 @@ export const gameMachine = setup({
             },
           },
           on: {
-            GAME_UPDATED: {
-              actions: "updateGameData",
-              target: ".waiting",
-            },
+            GAME_UPDATED: [
+              {
+                guard: ({ event }) => event.game.status === "active",
+                actions: "updateGameData",
+                target: "#gameMachine.gameActive.activeGame",
+              },
+              {
+                actions: "updateGameData",
+                target: ".waiting",
+              },
+            ],
             PLAYERS_UPDATED: {
               actions: "updatePlayers",
             },
@@ -817,9 +866,16 @@ export const gameMachine = setup({
                 QUESTION_ENDED: {
                   target: "showingResults",
                 },
-                ANSWERS_UPDATED: {
-                  actions: "updateAnswers",
-                },
+                ANSWERS_UPDATED: [
+                  {
+                    guard: "allPlayersAnswered",
+                    actions: ["updateAnswers", "debugAllPlayersAnswered"],
+                    target: "showingResults",
+                  },
+                  {
+                    actions: ["updateAnswers", "debugPartialAnswers"],
+                  },
+                ],
                 SET_WINNER: {
                   actions: "setWinner",
                   target: "showingResults",
