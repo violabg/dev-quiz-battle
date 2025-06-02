@@ -6,6 +6,7 @@ import {
 } from "@/lib/supabase/supabase-game-players";
 import {
   getGameByCode,
+  incrementTurnsCompleted,
   updateGameStatus,
   updateGameTurn,
 } from "@/lib/supabase/supabase-games";
@@ -145,14 +146,28 @@ export const gameServices = {
     gameId,
     currentPlayerIndex,
     totalPlayers,
+    hasCorrectAnswer,
   }: {
     gameId: string;
     currentPlayerIndex: number;
     totalPlayers: number;
+    hasCorrectAnswer: boolean;
   }) => {
     try {
       const nextTurn = (currentPlayerIndex + 1) % totalPlayers;
       await updateGameTurn(gameId, nextTurn);
+
+      // Only increment turns_completed if no one answered correctly (time ran out)
+      // If someone answered correctly, submit_answer already incremented it
+      if (!hasCorrectAnswer) {
+        await incrementTurnsCompleted(gameId);
+      } else {
+        console.log("⏭️ Skipping turns_completed increment:", {
+          hasCorrectAnswer,
+          reason: "someone answered correctly",
+        });
+      }
+
       return { nextTurn };
     } catch (error) {
       throw new Error(

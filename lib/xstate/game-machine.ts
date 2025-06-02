@@ -419,6 +419,7 @@ export const gameMachine = setup({
           gameId: string;
           currentPlayerIndex: number;
           totalPlayers: number;
+          hasCorrectAnswer: boolean;
         };
       }) => {
         return gameServices.advanceTurn(input);
@@ -974,11 +975,18 @@ export const gameMachine = setup({
             advancingTurn: {
               invoke: {
                 src: "advanceTurn",
-                input: ({ context }) => ({
-                  gameId: context.game?.id || "",
-                  currentPlayerIndex: context.currentPlayerIndex,
-                  totalPlayers: context.game?.players.length || 0,
-                }),
+                input: ({ context }) => {
+                  const input = {
+                    gameId: context.game?.id || "",
+                    currentPlayerIndex: context.currentPlayerIndex,
+                    totalPlayers: context.game?.players.length || 0,
+                    hasCorrectAnswer: context.allAnswers.some(
+                      (answer) => answer.is_correct
+                    ),
+                  };
+
+                  return input;
+                },
                 onDone: {
                   actions: ["resetQuestionState"],
                   target: "determiningTurnPhase",

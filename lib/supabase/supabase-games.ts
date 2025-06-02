@@ -58,6 +58,35 @@ export const updateGameStatus = async (
   return { error };
 };
 
+export async function incrementTurnsCompleted(gameId: string) {
+  // First get the current value
+  const { data: currentGame, error: fetchError } = await supabase
+    .from("games")
+    .select("turns_completed")
+    .eq("id", gameId)
+    .single();
+
+  if (fetchError) {
+    console.error("❌ Error fetching current turns_completed:", fetchError);
+    throw fetchError;
+  }
+
+  const newValue = (currentGame.turns_completed || 0) + 1;
+
+  // Then increment it
+  const { error } = await supabase
+    .from("games")
+    .update({
+      turns_completed: newValue,
+    })
+    .eq("id", gameId);
+
+  if (error) {
+    console.error("❌ Error incrementing turns completed:", error);
+    throw error;
+  }
+}
+
 export function subscribeToGame(
   options: {
     gameId?: string;
