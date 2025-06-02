@@ -103,12 +103,14 @@ export function QuestionDisplay({
     if (question.started_at) {
       const start = new Date(question.started_at).getTime();
       timer = setInterval(() => {
-        setTimeElapsed(Math.floor((Date.now() - start) / 1000));
+        const elapsed = Math.floor((Date.now() - start) / 1000);
+        setTimeElapsed(elapsed);
       }, 1000);
     } else {
       const startTime = Date.now();
       timer = setInterval(() => {
-        setTimeElapsed(Math.floor((Date.now() - startTime) / 1000));
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        setTimeElapsed(elapsed);
       }, 1000);
     }
 
@@ -166,9 +168,27 @@ export function QuestionDisplay({
   };
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    if (!timeLimit) {
+      // If no time limit, show elapsed time
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins}:${secs.toString().padStart(2, "0")}`;
+    }
+
+    // Show countdown
+    const remaining = Math.max(0, timeLimit - seconds);
+    const mins = Math.floor(remaining / 60);
+    const secs = remaining % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const getTimeColor = () => {
+    if (!timeLimit) return "";
+    const remaining = Math.max(0, timeLimit - timeElapsed);
+
+    if (remaining <= 10) return "text-red-500";
+    if (remaining <= 20) return "text-yellow-500";
+    return "";
   };
 
   const getTimeBonusLabel = (responseTimeMs: number) => {
@@ -240,7 +260,7 @@ export function QuestionDisplay({
           </div>
           <div className="flex items-center">
             <Clock className="mr-1 w-4 h-4" />
-            <span>{formatTime(timeElapsed)}</span>
+            <span className={getTimeColor()}>{formatTime(timeElapsed)}</span>
           </div>
         </div>
 
