@@ -47,6 +47,7 @@ export interface Database {
           current_turn: number;
           max_players: number;
           time_limit: number;
+          turns_completed: number;
           created_at: string;
           updated_at: string;
         };
@@ -58,6 +59,7 @@ export interface Database {
           current_turn: number;
           max_players?: number;
           time_limit?: number;
+          turns_completed?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -66,9 +68,10 @@ export interface Database {
           code?: string;
           host_id?: string;
           status?: "waiting" | "active" | "completed";
-          current_turn: number;
+          current_turn?: number;
           max_players?: number;
           time_limit?: number;
+          turns_completed?: number;
           created_at?: string;
           updated_at?: string;
         };
