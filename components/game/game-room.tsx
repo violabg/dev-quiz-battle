@@ -16,6 +16,7 @@ import {
   useIsLoadingCreateQuestion,
   useIsNextPlayersTurn,
   useIsRoundComplete,
+  useIsShowingResults,
   useQuestionStartTime,
   useSelectedDifficulty,
   useSelectedLanguage,
@@ -41,6 +42,7 @@ export function GameRoom({ onLeaveGame }: GameRoomProps) {
   const currentPlayer = useCurrentPlayer(actorRef);
   const isCurrentPlayersTurn = useIsCurrentPlayersTurn(actorRef);
   const isNextPlayersTurn = useIsNextPlayersTurn(actorRef);
+  const isShowingResults = useIsShowingResults(actorRef);
   const winner = useWinner(actorRef);
   const isLoadingCreateQuestion = useIsLoadingCreateQuestion(actorRef);
   const selectedLanguage = useSelectedLanguage(actorRef);
@@ -143,8 +145,7 @@ export function GameRoom({ onLeaveGame }: GameRoomProps) {
             onLeaveGame={onLeaveGame}
           />
 
-          {(winner ||
-            (currentQuestion && currentQuestion.ended_at && !winner)) && (
+          {(isShowingResults || winner) && (
             <TurnResultCard
               winner={winner}
               showNextTurn={showNextTurn}

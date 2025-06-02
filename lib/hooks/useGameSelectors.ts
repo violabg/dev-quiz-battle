@@ -79,6 +79,11 @@ export const useIsLoadingSubmitAnswer = (actor: GameMachineActor) =>
 export const useShowNextTurn = (actor: GameMachineActor) =>
   useSelector(actor, (state) => state.context.showNextTurn);
 
+export const useIsShowingResults = (actor: GameMachineActor) =>
+  useSelector(actor, (state) =>
+    state.matches({ gameActive: { activeGame: "showingResults" } })
+  );
+
 // Error state selector
 export const useError = (actor: GameMachineActor) =>
   useSelector(actor, (state) => state.context.error);
