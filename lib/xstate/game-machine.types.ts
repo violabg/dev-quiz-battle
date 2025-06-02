@@ -28,12 +28,10 @@ export interface GameMachineContext {
 
   // Answer state
   allAnswers: AnswerWithPlayer[];
-  userAnswer: AnswerWithPlayer | null;
   winner: { playerId: string; user_name: string; score: number } | null;
 
   // UI state
   isLoadingCreateQuestion: boolean;
-  isLoadingSubmitAnswer: boolean;
   showNextTurn: boolean;
 
   // Realtime subscriptions
@@ -67,12 +65,10 @@ export type GameMachineEvent =
   | { type: "TURN_COMPLETED" }
   | { type: "NEXT_TURN" }
   | { type: "GAME_COMPLETED" }
-  | { type: "RESET_QUESTION_STATE" }
   | {
       type: "SET_WINNER";
       winner: { playerId: string; user_name: string; score: number };
     }
-  | { type: "TIMER_TICK" }
   | { type: "ERROR"; error: string }
   | { type: "RETRY" }
   | { type: "CLEAR_ERROR" };
@@ -118,14 +114,6 @@ export interface UpdateGameDataAction {
 export interface SetCurrentQuestionAction {
   type: "setCurrentQuestion";
   params: { question: Question; startTime: number };
-}
-
-export interface StartQuestionTimerAction {
-  type: "startQuestionTimer";
-}
-
-export interface StopQuestionTimerAction {
-  type: "stopQuestionTimer";
 }
 
 export interface ResetQuestionStateAction {
@@ -223,10 +211,6 @@ export interface AllPlayersAnsweredGuard {
 
 export interface HasCorrectAnswerGuard {
   type: "hasCorrectAnswer";
-}
-
-export interface IsTimeUpGuard {
-  type: "isTimeUp";
 }
 
 // Fetch Game Result Type

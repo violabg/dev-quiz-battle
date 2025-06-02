@@ -49,7 +49,7 @@ export function Navbar() {
             {navItems.map((item) => (
               <Link
                 key={item.href}
-                href={item.href}
+                href={item.href as any}
                 className={`text-sm font-medium transition-colors hover:text-primary ${
                   pathname === item.href
                     ? "text-primary"
@@ -77,7 +77,7 @@ export function Navbar() {
                   {navItems.map((item) => (
                     <Link
                       key={item.href}
-                      href={item.href}
+                      href={item.href as any}
                       className={`block px-4 py-2 rounded-md text-base font-medium transition-colors hover:bg-primary/10 hover:text-primary ${
                         pathname === item.href
                           ? "text-primary bg-primary/5"

@@ -16,13 +16,7 @@ export const useIsHost = (actor: GameMachineActor) =>
 export const useUser = (actor: GameMachineActor) =>
   useSelector(actor, (state) => state.context.user);
 
-export const useGameCode = (actor: GameMachineActor) =>
-  useSelector(actor, (state) => state.context.gameCode);
-
 // Player state selectors
-export const useCurrentPlayerIndex = (actor: GameMachineActor) =>
-  useSelector(actor, (state) => state.context.currentPlayerIndex);
-
 export const useCurrentPlayer = (actor: GameMachineActor) =>
   useSelector(actor, (state) => {
     const { game, currentPlayerIndex } = state.context;
@@ -63,18 +57,12 @@ export const useSelectedDifficulty = (actor: GameMachineActor) =>
 export const useAllAnswers = (actor: GameMachineActor) =>
   useSelector(actor, (state) => state.context.allAnswers);
 
-export const useUserAnswer = (actor: GameMachineActor) =>
-  useSelector(actor, (state) => state.context.userAnswer);
-
 export const useWinner = (actor: GameMachineActor) =>
   useSelector(actor, (state) => state.context.winner);
 
 // UI state selectors
 export const useIsLoadingCreateQuestion = (actor: GameMachineActor) =>
   useSelector(actor, (state) => state.context.isLoadingCreateQuestion);
-
-export const useIsLoadingSubmitAnswer = (actor: GameMachineActor) =>
-  useSelector(actor, (state) => state.context.isLoadingSubmitAnswer);
 
 export const useShowNextTurn = (actor: GameMachineActor) =>
   useSelector(actor, (state) => state.context.showNextTurn);
@@ -101,70 +89,12 @@ export const useIsLoading = (actor: GameMachineActor) =>
 export const useIsInLobby = (actor: GameMachineActor) =>
   useSelector(actor, (state) => state.matches({ gameActive: "lobby" }));
 
-export const useIsInActiveGame = (actor: GameMachineActor) =>
-  useSelector(actor, (state) => state.matches({ gameActive: "activeGame" }));
-
-export const useIsSelectingQuestion = (actor: GameMachineActor) =>
-  useSelector(actor, (state) =>
-    state.matches({ gameActive: { activeGame: "questionSelection" } })
-  );
-
-export const useIsCreatingQuestion = (actor: GameMachineActor) =>
-  useSelector(actor, (state) =>
-    state.matches({ gameActive: { activeGame: "creatingQuestion" } })
-  );
-
-export const useIsQuestionActive = (actor: GameMachineActor) =>
-  useSelector(actor, (state) =>
-    state.matches({ gameActive: { activeGame: "questionActive" } })
-  );
-
-export const useIsAnswering = (actor: GameMachineActor) =>
-  useSelector(actor, (state) =>
-    state.matches({
-      gameActive: { activeGame: { questionActive: "answering" } },
-    })
-  );
-
-export const useIsSubmittingAnswer = (actor: GameMachineActor) =>
-  useSelector(actor, (state) =>
-    state.matches({
-      gameActive: { activeGame: { questionActive: "submittingAnswer" } },
-    })
-  );
-
-export const useHasAnswered = (actor: GameMachineActor) =>
-  useSelector(actor, (state) =>
-    state.matches({
-      gameActive: { activeGame: { questionActive: "answered" } },
-    })
-  );
-
-export const useIsAdvancingTurn = (actor: GameMachineActor) =>
-  useSelector(actor, (state) =>
-    state.matches({ gameActive: { activeGame: "advancingTurn" } })
-  );
-
-export const useIsGameCompleted = (actor: GameMachineActor) =>
-  useSelector(actor, (state) => state.matches({ gameActive: "completed" }));
-
 export const useHasError = (actor: GameMachineActor) =>
   useSelector(actor, (state) => state.matches("error"));
-
-export const useErrorMessage = (actor: GameMachineActor) =>
-  useSelector(actor, (state) => state.context.error);
 
 // Composite selectors for complex UI logic
 export const useIsRoundComplete = (actor: GameMachineActor) =>
   useSelector(actor, (state) => state.context.game?.status === "completed");
-
-export const useTimeIsUp = (actor: GameMachineActor) =>
-  useSelector(actor, (state) => {
-    const { questionStartTime, game } = state.context;
-    if (!questionStartTime || !game) return false;
-    const timeLimit = game.time_limit * 1000;
-    return Date.now() - questionStartTime >= timeLimit;
-  });
 
 export const useCanStartGame = (actor: GameMachineActor) =>
   useSelector(actor, (state) => {

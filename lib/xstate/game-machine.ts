@@ -143,17 +143,6 @@ export const gameMachine = setup({
         // Turn changed, reset answers
         return [];
       },
-      userAnswer: ({ event, context }) => {
-        if (
-          event.type !== "GAME_UPDATED" ||
-          event.game.current_turn === undefined ||
-          event.game.current_turn === context.currentPlayerIndex
-        ) {
-          return context.userAnswer;
-        }
-        // Turn changed, reset user answer
-        return null;
-      },
       winner: ({ event, context }) => {
         if (
           event.type !== "GAME_UPDATED" ||
@@ -261,11 +250,9 @@ export const gameMachine = setup({
       currentQuestion: null,
       questionStartTime: null,
       allAnswers: [],
-      userAnswer: null,
       winner: null,
       showNextTurn: false,
       isLoadingCreateQuestion: false,
-      isLoadingSubmitAnswer: false,
     }),
 
     // Answer actions
@@ -274,24 +261,13 @@ export const gameMachine = setup({
         if (event.type !== "ANSWERS_UPDATED") return [];
         return event.answers;
       },
-      userAnswer: ({ event, context }) => {
-        if (event.type !== "ANSWERS_UPDATED" || !context.user) return null;
-        return (
-          event.answers.find((a) => a.player_id === context.user!.id) || null
-        );
-      },
-    }),
-
-    setAnswerSubmitted: assign({
-      userAnswer: ({ event }) => {
-        if (event.type !== "ANSWER_SUBMITTED") return null;
-        return event.answer;
-      },
-      isLoadingSubmitAnswer: false,
     }),
 
     setWinner: assign({
       winner: ({ event }) => {
+        if (event.type === "SET_WINNER") {
+          return event.winner;
+        }
         if (event.type.includes("done.actor") && "output" in event) {
           const output = event as {
             output: { playerId: string; user_name: string; score: number };
@@ -299,14 +275,6 @@ export const gameMachine = setup({
           return output.output;
         }
         return null;
-      },
-    }),
-
-    // Turn actions
-    advanceCurrentPlayerIndex: assign({
-      currentPlayerIndex: ({ context }) => {
-        if (!context.game) return 0;
-        return (context.currentPlayerIndex + 1) % context.game.players.length;
       },
     }),
 
@@ -319,20 +287,8 @@ export const gameMachine = setup({
       isLoadingCreateQuestion: false,
     }),
 
-    setLoadingSubmitAnswer: assign({
-      isLoadingSubmitAnswer: true,
-    }),
-
-    clearLoadingSubmitAnswer: assign({
-      isLoadingSubmitAnswer: false,
-    }),
-
     setShowNextTurn: assign({
       showNextTurn: true,
-    }),
-
-    clearShowNextTurn: assign({
-      showNextTurn: false,
     }),
 
     // Error handling actions
@@ -548,16 +504,12 @@ export const gameMachine = setup({
     // Question timer
     questionTimer: fromCallback(({ sendBack, input }) => {
       const { timeLimit } = input as { timeLimit: number };
-      const timer = setInterval(() => {
-        sendBack({ type: "TIMER_TICK" });
-      }, 1000);
 
       const timeout = setTimeout(() => {
         sendBack({ type: "QUESTION_ENDED" });
       }, timeLimit * 1000);
 
       return () => {
-        clearInterval(timer);
         clearTimeout(timeout);
       };
     }),
@@ -624,15 +576,7 @@ export const gameMachine = setup({
       return result;
     },
 
-    isTimeUp: ({ context }) => {
-      if (!context.questionStartTime || !context.game) return false;
-      const timeLimit = context.game.time_limit * 1000;
-      return Date.now() - context.questionStartTime >= timeLimit;
-    },
-
     // Answer guards
-    hasUserAnswered: ({ context }) => context.userAnswer !== null,
-
     // Game completion guards
     isGameCompleted: ({ context }) => {
       return context.game?.status === "completed";
@@ -657,7 +601,7 @@ export const gameMachine = setup({
     hasError: ({ context }) => context.error !== null,
   },
 }).createMachine({
-  /** @xstate-layout N4IgpgJg5mDOIC5RQIYFswFkUGMAWAlgHZgB0xBALgSgDYEBexUAxAJIBybAKmwIIAZNgC0AogG0ADAF1EoAA4B7WFQKKickAA9EARgBsADlIB2Q7oBMAVgA0IAJ6JzpK5Le6r1w2YCck-QC+AXaoGNj4xGS0iigQzCwQ6mTEAG6KANZkoVi4hCSk0bHMCKmKOCjU6lLS1ZpKKpUaSNqIAMz6kqZWZpa2DnpmpJI9ACySXr7+QSHoORH5hXFErGAATquKq6TytBUAZptopNnheVExS1AlRGnljdW1zfWq6po6CCY++qStVh761jsjgQukGw3MYwmhj8gWCIBOuUipFgYEo1GWAFV5ABlACuACNYDhVgR5I1YCxHgplC8mqB3r9OiZuuZAf0QfpWiMXCYTBYfD5DJIRkYTK1pvDZqckSi0cwsXjCcTSeTKbpZE8aY03m0Ol0emzga0LLpSLpQRZxszvNCpnCEfMsrM+DhqCkwCwBKI+AA1UQAfQA4nxMBIZHUtWo6S0EK1dNDSIZfj5WsygYgLCNWq1TPofAYTEZWvmfFYJQ6zsdna6CO6WMHQ-6MQAFAAifG4olbVJAz21zXeuhhQxTafZzIsPxhkKsNvz5aliPy2Rdbo9zYEfAAmqIAErYpttjtdnt9qM6kHQ7l53RjAF9YH6KxWRO9DxQ+f2xeOqsYVe1j0913AB5XdT0jV4Bz0FNuVcA0H0QZ8fFICwuWLcZZ18XQFzCJcnT-Gs6wAYS9Phd39IDQPAhpzygkF80nQxnxFbwEIQEVJyfAEnw-O0Zlwn8V0IsgIFRNY0AoZZmzwFAUUpcNNRoyD6UQPluQsCwuMNPQsxMM0n0kd9MOhHC5krIS11IUTKHEySoGk2SPXEdUIyU6N3jUlDNKse90xBXRfkTcwDF0SQfBNDSyy-ATzOrSzrNsohmAcuTxAsDVqTci8kNIUU2NQyRjBGcxDEMEYPE8MVxWisykQsgCCkUfF8XsesQwDFt207bsFMy2kLxTHNmLyvzQsFEdLUFKxwssVDTOlZc4oa6Jmtajdtz3A9OuPHqMt7CD3LaSRXFIL4wtTNjLBMTpCqMPwP3mvDfzAf93Ua1bSAAdxQVRlhYbFuDI7gg3a6j+ro2bkPNEx4zHYFzW8FxDDujC50ewSlrelaWuRSgUFWdFWESfJSkyZ6Fvwl7hPenHYDxgnilKO4oweXr9qyuirBGZCRvZVCudIYr4zKiqLCq9HYoIyzsfsXH8cJlg1g2LYdn2Q5yae+qsaa2n6cJ65bgqFmZDB-sVJBbNjFHS6wu5NxvB44yfAlurMbIXA10DWY2sbIjgMwDdRG603aPNzS-BcONtIQMWh1MONSvK58xezF3FqlhqPYAr2MBYABFDFRABthgI4f0iN3b1g7Zs9lJjXlkMMnzo4067cvCwwTSfSrU5qinnte93hJzj0C6L3hS8PLqTxrg6LwMVpjDGi6-LjdoUIMTNF6+YqRgsNPKcH0gs-dEerLE1YJKS5ZuFxVYiBSpzZ4583QvNFC99h-KRU6IXE9F8WfdNZu2PsPWY58bKXzsrfe+j81R7VrodEEhlTSZhNKxPymZbyCxKiLZOgD+K1XTlTSyJ8wBnwAI64jgI0bEYBaBgBrOof6ogvREWBpuDggYMR8EDGGBBc8IaFlNCxOG0F+QoU5LeVGvgD4D2pmQyh1C6ZRjoQwphRAWFsOBq2NgAAxPRbAiIYgENwLcIc66DmZMhW0vl2TxmNLlJiTcHpAIxhnN6ijwFUJoao+hjDGgsArlXAMY9i6lwsUg0KfIUJoTEfRVMgsAq3jMKVBxsJCH9y1kPT24DiRgCNssPOyjAnE2SDcDIlMskgK8RgUg+TClQGKb49QBsyhGyqCbZ+4NX7DEnKhXS+VQrGB8imTuAIUw+BFHI7JoDcl1IaYTZpKjmFK02NsXYlADiXw1u4khmcwELNWAUpZJSoxtOZp0mo3SzYxmGf0uJl1BR6XzHGEYqSSrtBmTUw5ZAfErKIIPfOhdwll1EBwVsM8BEvxjFvF84JeiYNTN8FOXN9ATnCl8b5HicnZ28Wc9QQK+AcGxAAdU2lPHakSLwaUKiOFefNCrIS5JYR2aM3GS32Z435pB-mNCBdiIO-pSWcA4HualdE4VDHgpg6wnQjCZn8G4Wc01qqZOATiuZeK6l8qjEfFARBYCfTWPEbEGIABCmAeD+mJWS8VNzQ53NcJ0WxLc97GGGM3KK6q9n6p5bqwl1NYAEgknKZYfBDXGtWAkJI5AKlkwrK7TVtS-kEsBUGkNVBCYRqNWsC5HSiCs2hT02FwpJwjCsFHfKxo9L6DzGMYUa8PDYq5bi0++KWnpsssG-Eobs2RrWIrdY6zVZbPVom4hfr5mps7UfHtfbmA5qjfm+4XTi23MHJ4ScjykXDCSZMmRJkOVJtbVq9tdTYB4EUJ9Zgu44C4loJQCkYqAAawNuAYl3BwCVvTPCC0LF6zBg0hgdDcPmfBvcfWcqndq92EAUgGpwMwGBmiylxrSAm780GFE8tiAhogSGb53yICu421z12Oo8gmJudjgT8iTC4UDYUAGQclDFE9MHz1wfw4RqAKGh3Kw2WrHZE7D44encfeDiHkPEdI1cn9dzjrloA7RjMSZkJ-zwT3NVbGiFRAKSkeIaHSZVKegwlAhnlhycLWu1yJb3ieFXtzPSXMsxGGhPoXe+9j0LAM-ENZKtNnbKOKJgofmrNMwLUWuzG62jxhscmBl8N9CWEFlzPwxYYa-CzHIgLLBK7cF3OYh1ljVJfB+H8QD7JnDOpcU7Piun+55ZIt6cilEwIlaQb8dee8vgYPscdIKfheTWkmLCOERBFCiXgM0UTMXKOIAALT6D8stuRFBqB0EYMwebpX2IWFGoNyQ6ERv1YyY1szFwduKXs4hTzPJjuIvZFM06z4TAjA+9YCt3QdOhdlITBUBIiQkjJFGGbfVYv7dGgx97tKxZnZbYPXbSDuaml5sCEsQxCoAdcVBjj1MEpQOvvZGSKJkfZWLE4+J5ouRmjjAFY673XMjER9TGW5O6KlRfMNfr8M3DfFcA7TwTtWfSx1rLb6v0oAc9fgjM00dzQmlyvTlLYUIpzR82JsXH06by2uxDhbII-hMkusMwWnnuafa5s+QwouDnTpl-XOMQx-gK7zEvZxRl2V48neJ2DEDEoydgaTsAjuPKfBd1Vuje8cwdHc0nbTdvuUSYDUQNRATHWIPnh9l8rQ3AysZXnxM5VvK44u76v3XH6nHMacs25We6IN0j6p+iFgPWLxSaVT553QuzJTbytNSObuQ4CpaM0d4W4WlOkOdCZfe8-JT4PhRA6STLDD3odoS8J-VuKkjQqYwvhizb0ntt5CO0ArnZmsNUAl1rHXyCYRkcnt0eNN8d773vBt6zHvbzPutf2-91T31RX0gHvw0mcE838BbnaBzEzGZFBCFCHEtBZ013kVIR5UvWvVvXvUfXB3ZluwQAhGbxbiYhEWRQCmNCHDGF+yw3x3QIkzw2kyI3vnvwCk5FOjKiSwzHzBuiY3A0T1QNmRwEUDQB2DEggDAOhD0jbxhBbhhk6EFGFgTxThoPY18ws313wMh2zCfBAzd00mn38GzACiFEtFt1QIYT2EoDALbz0LYi5BhlMCmU3w8y81y2HVWFYOO0nGmhUxbj3RFD5CtARyCACCAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5RQIYFswFkUGMAWAlgHZgB0xBALgSgDYEBexUAxAJIBybAKmwIIAZNgC0AogG0ADAF1EoAA4B7WFQKKickAA9EARgBsATlIAOfQHZd5gCyHJAVkmSAzOYA0IAJ6ITu0o6dXa3tzQ2d7ACYAXyiPVAxsfGIyWkUUCGYWCHUyYgA3RQBrMnisXEISUlT05gR8xRwUanUpaVbNJRVmjSRtRAiTCNNB0JNrc0HDfRMPbwQrc1JDe2ddeytdE0MI5fsYuPQypMrqjKJWMAAnS8VL0nlaJoAzW7RSUsSKlLSzqDqiAqNbqtdq9TqqdSaHQIcwRPzWfSSMwmcKGAzOayzPTmRbLVbrSxbHb2PaxEAfcrJUiwMCUajnACq8gAygBXABGsBwlwI8m6sBYoIUyghPVA0IiA1I1jhZkkhgmO2mESx8x2Jml5n09hMJnMkgiBoc+3Jh0+VJpdOYTLZnO5vP5gt0sjBIu6UP6g2GEVG40m01VzkNSx2+t0znCJhJ+hNFOOJUOfBw1DyYBYAlEfAAaqIAPoAcT4mAkMg6brUYr6CGcKOspF08ply0MUbMqt0aI1umsY2WcJbrnMsbNlMqpSTKbTheLuYZAAUACJ8biiBdCkDg929aGRSRLFby6aKpz2VUy5zGbaGqYRaZWazDhKjhMYCcEVMsad5+dLldr51ll0FYegg9iIvuziHnqgwnqqhqSIsWxRrohoki41gPmScZfO8ibJu+U5Ft+i7Lqu4gRC6wpAZC26IOse54lBx4OJiXh6Aafi3mBqJovo1jOI+Rw4eO+Efl+s4kX+4jOJRG7ljR4p6OMdY1gMIQRBhVj6CqbEIBYXaMbYyH3oJ5pjnhk4sHOAh8AAmqIABKzISb+ZGlq61GVhKBh+Aq+j+UE6wYme2nSpI2n6BekUoVsmEHE+8a4a+olpo5DkAPIOeum7AbRCCSgapAuHYyxRtqmynrp-HTKQriROY9iGLYfmmc+SVgG+H4AMIZnwDm5mlmXZfJXn9Jse5IcEjg1g2OlzCSGpRmE0zQTs4StYlImTqQEC0lcaAUOcc54CgNKCu5VGiiBRiLEqkyWBGOr6O2Rj2KYLaIg1EwrCsG3CRZBE7XtlwHUQzDHadabiABHlXXl+q3VM93hpGz26d2-mkBEJLOP5CFGEEf1UltgO7ZQ+2HVAENneRsk5QpVYI1jSOhijT3tgYdaGNsmxjLYkq-VhI6bQDqZVIo7Lsp4n5ES5pFrhdcmeSBmwIvWPaNQ2kjdg2zjthhzi1dpBjafxEY+kT5nJdtqSS9L4k-vL0N0yNIFonW4YDOFVjm-rKz+AMgwdkGOrrULCX-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-B-ui3acQUD5cUPwMYH1YIUsFMOwvg5M4EUGgB4tJmChIp1mxvY3S+06kCv7v6orbyhLH4Q5n4gQMJ7hfI7aDDYyRR6wdrhRczYwRjApDIv5v4f5gHcJTqwIb6fbN6NYgLAG4Ff6HAQGn7aaW5gQMQHhX7wTD5wjyi1Qtg9guAHg+gz7b6BLkGgGQA-4N5FD-5LqAECF7QQDUHm60FpwwFYxbDwECxIEKJTBGzIgyg6hOADDYEgFSFr6EGa5b4kHfYrySHkzSHXxg6QFyHQERr7j6gYiP5BhzRO52BDAUK4x8QOCTwNRAKoooB5CZD177xiE4SBHBHnAyG96EKRBnhjB+B5way6gyJxSz5tSRGZAEEa4fZa6mEpBJpRF-DWGc6xFVjxFVQaow6bCWDjCyjLBAIEEsDWLcAOSKrrY6YwhwjbbIiog3qqhmYBAuBqKhDhBmol6JTNE9SZj9SDRZSdGW4xRDBgTYwaqNSzwsGFTjCgriJSKRAxgmhECKC7TwC9Ay5QF5QAC0uqiAVxTiySOoeozYPYgC5qiUFA1AdAjAzAlxhCMo7Yo8SwpCUwGEsik+ARPwvxdheUPiWcqxkE-qe2H8ukTUXiPqfaYEec3u2ulo28NoHIXIPIfIFYZxl0G2AJKBGokE4wSIWo2wiIhxkxLeKUfxVY-yl+GezBkGtYTa2oji3ElW6RfBy6kyFS0yVMDyYAbJO4DYnJq0J4kGf8sIpgFgGkmkA4iG7xLJNsEsUsMpPgmMnsxqPsJm6MuMvkwQNgWqaICEUYcmqCjczc28BpaoKEtUo8d4+e0i-k+sOIjK1mps-kAwExGR4hICjp4Cl85wrp9udYZ2tgkEBMow+skUpgNYsIAQfMYw2OIShwrp9U8pricE6I9YGk3MjCIQ-i2ppBcuAeYpoMh+dSrp+gcp6eCpWeHaKy2sLY7srgKEhguZJSimbWAqDqXqqcIESoSRGkVgPo0i-EpWHa-kdYwQCG3ER4OJBROuT612o6zA46Lyk5POSotUPoFZyEk8LBrZe4LEowAwsIuoQ5cKbWJ8sZCEl4Yw4iNgsIEY7gHaWoq5fMcIPijUYQz5I5U2cWi2PIMZMJhCf8PoSwX5rK9Rf5yOkQBqGE+e-OjUvB25O+v2aG-2s2D2zAwOVwsZkQfggKa5XBkEcIyOX8g4oQ0mJqEFrGr50FA2kAsZUiqymyf5iIKEyOoUp29Jecx6wpBFE2euBuzOxulArpYKwGIQEwwQxqXuZWYQSw3YM02oHBoZIpgB9msAQeIe5wYenWkeZJSs9a+Ueofg2sKw-YwQf8bYXShoz8tgWozx0wnyHF2ie+HeK+NSrpvE9YVgs8Yw-qSI2eBgWSxWBs4w3MehFB5woSrpGIYKtUlg8orgdgBgKIJZVg0o2MA5-ZywGEaVghEAWVU0fJSMBVo8qwZ4jYpgBUHEDYVpARRR0J5JXRF4ywihc8A42w0iw+HYSIlK6wkwt4v50u25qKTwSl8F3qOwTa6ituHYYKk+CRCVvhxUoQwKGiNZlQBB4VOo16kmKlviugcEwG55+oYQU+3MwQMQMQQAA */
   id: "gameMachine",
   initial: "initializing",
   context: {
@@ -671,10 +615,8 @@ export const gameMachine = setup({
     selectedLanguage: "javascript",
     selectedDifficulty: "medium",
     allAnswers: [],
-    userAnswer: null,
     winner: null,
     isLoadingCreateQuestion: false,
-    isLoadingSubmitAnswer: false,
     showNextTurn: false,
     gameSubscription: null,
     playersSubscription: null,
@@ -893,7 +835,6 @@ export const gameMachine = setup({
                   on: {
                     SUBMIT_ANSWER: {
                       guard: ({ context }) =>
-                        !context.userAnswer &&
                         !!context.currentQuestion?.id &&
                         !!context.user?.id &&
                         !!context.game?.id,
@@ -902,7 +843,6 @@ export const gameMachine = setup({
                   },
                 },
                 submittingAnswer: {
-                  entry: "setLoadingSubmitAnswer",
                   invoke: {
                     src: "submitAnswer",
                     input: ({ context, event }) => {
@@ -934,13 +874,9 @@ export const gameMachine = setup({
                     },
                     onDone: {
                       target: "answered",
-                      actions: [
-                        "setAnswerSubmitted",
-                        "clearLoadingSubmitAnswer",
-                      ],
                     },
                     onError: {
-                      actions: ["setError", "clearLoadingSubmitAnswer"],
+                      actions: "setError",
                       target: "answering",
                     },
                   },
