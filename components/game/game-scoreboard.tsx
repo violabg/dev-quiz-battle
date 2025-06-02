@@ -114,14 +114,14 @@ export default function Scoreboard({
       </CardContent>
       {isRoundComplete && (
         <CardFooter className="flex justify-center gap-4">
-          <Link href="/" className="w-full">
+          <Link href="/dashboard" className="w-full">
             <Button
               variant="gradient"
               className="flex items-center gap-2 w-full"
               onClick={onLeaveGame}
             >
               <Home className="w-4 h-4" />
-              Torna alla Home
+              Gioca ancora
             </Button>
           </Link>
         </CardFooter>
