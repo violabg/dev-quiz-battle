@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/pagination";
 import { createClient } from "@/lib/supabase/server";
 import { getLeaderboardPlayers } from "@/lib/supabase/supabase-game-players";
-import { LeaderboardPlayerWithItems } from "@/lib/supabase/types";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import LeaderboardLanguageFilter from "./LeaderboardLanguageFilter";
@@ -44,32 +43,25 @@ async function getPlayers(
 ) {
   const offset = (page - 1) * PAGE_SIZE;
   const limit = PAGE_SIZE;
-  const data = await getLeaderboardPlayers(
-    supabase,
-    offset,
-    limit,
-    languageFilter
-  );
-  const players: LeaderboardPlayerForStanding[] = data.map(
-    (p: LeaderboardPlayerWithItems) => ({
+  const data = await getLeaderboardPlayers(offset, limit, languageFilter);
+  const players: LeaderboardPlayerForStanding[] = data.map((p) => ({
+    id: p.player_id,
+    score: Number(p.total_score),
+    profile: {
       id: p.player_id,
-      score: Number(p.total_score),
-      profile: {
-        id: p.player_id,
-        name: p.name,
-        full_name: p.full_name,
-        user_name: p.user_name,
-        avatar_url: p.avatar_url,
-        created_at: "",
-        updated_at: "",
-      },
-      game_id: "",
-      player_id: p.player_id,
-      turn_order: 0,
-      is_active: true,
-      joined_at: "",
-    })
-  );
+      name: p.name,
+      full_name: p.full_name,
+      user_name: p.user_name,
+      avatar_url: p.avatar_url,
+      created_at: "",
+      updated_at: "",
+    },
+    game_id: "",
+    player_id: p.player_id,
+    turn_order: 0,
+    is_active: true,
+    joined_at: "",
+  }));
   // Use total_items from the first row if available, otherwise fallback to 0
   const count = data.length > 0 ? Number(data[0].total_items) : 0;
   return {

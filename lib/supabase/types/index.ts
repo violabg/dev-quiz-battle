@@ -280,10 +280,11 @@ export type Database = {
           | {
               offset_value: number;
               limit_value: number;
-              language_filter?: string;
+              language_filter?: string | null;
             };
         Returns: {
           player_id: string;
+          total_items: number;
           total_score: number;
           name: string;
           full_name: string;

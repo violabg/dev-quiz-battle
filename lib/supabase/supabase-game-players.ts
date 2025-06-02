@@ -1,5 +1,4 @@
 import type { GamePlayer, Profile } from "@/lib/supabase/types";
-import { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./client";
 
 const supabase = createClient();
@@ -38,7 +37,6 @@ export async function getPlayerInGame(game_id: string, player_id: string) {
 }
 
 export async function getLeaderboardPlayers(
-  supabase: SupabaseClient,
   offset: number,
   limit: number,
   languageFilter?: string
