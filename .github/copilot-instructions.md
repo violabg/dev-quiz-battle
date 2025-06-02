@@ -10,6 +10,7 @@
   - @radix-ui/react-\* (dialog, dropdown-menu, label, popover, select, slot)
   - @supabase/supabase-js
   - class-variance-authority, clsx, lucide-react, next-themes, sonner, tailwind-merge, tw-animate-css, zod
+  - xstate v5
 
 ## Styling
 
@@ -26,6 +27,8 @@
 - Use Supabase for backend/database interactions.
 - Use arrow functions for methods and new components.
 - Use typs over interfaces.
+- Use xstate for state management, via context and state machines.
+- Since is a multiplayer game, use supabase real-time features for live updates, and avoid using local state for data that needs to be shared across components.
 
 ### UI/UX Expectations
 
