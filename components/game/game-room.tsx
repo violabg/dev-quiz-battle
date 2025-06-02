@@ -80,10 +80,6 @@ export function GameRoom({ onLeaveGame }: GameRoomProps) {
     actorRef.send({ type: "NEXT_TURN" });
   };
 
-  const handleLeaveGame = () => {
-    onLeaveGame();
-  };
-
   // Helper to transform currentPlayer for CurrentTurnCard
   const currentPlayerForCard = currentPlayer
     ? {
