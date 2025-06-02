@@ -10,6 +10,7 @@ import {
 import {
   useGameData,
   useHasError,
+  useHasLeftGame,
   useIsInLobby,
   useIsLoading,
 } from "@/lib/hooks/useGameSelectors";
@@ -34,6 +35,14 @@ function GameContent({ code, user }: { code: string; user: User }) {
   const isLoading = useIsLoading(actorRef);
   const isInLobby = useIsInLobby(actorRef);
   const hasError = useHasError(actorRef);
+  const hasLeftGame = useHasLeftGame(actorRef);
+
+  // Redirect to dashboard when user has left the game
+  useEffect(() => {
+    if (hasLeftGame) {
+      router.push("/dashboard");
+    }
+  }, [hasLeftGame, router]);
 
   const handleStartGame = () => actorRef.send({ type: "START_GAME" });
   const handleLeaveGame = () => actorRef.send({ type: "LEAVE_GAME" });

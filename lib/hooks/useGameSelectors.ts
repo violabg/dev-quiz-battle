@@ -116,3 +116,7 @@ export const useCurrentPlayerUsername = (actor: GameMachineActor) =>
     const currentPlayer = game.players[currentPlayerIndex];
     return currentPlayer?.profile?.user_name;
   });
+
+// Game exit selectors
+export const useHasLeftGame = (actor: GameMachineActor) =>
+  useSelector(actor, (state) => state.matches("left"));
