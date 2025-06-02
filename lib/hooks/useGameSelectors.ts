@@ -156,17 +156,7 @@ export const useErrorMessage = (actor: GameMachineActor) =>
 
 // Composite selectors for complex UI logic
 export const useIsRoundComplete = (actor: GameMachineActor) =>
-  useSelector(actor, (state) => {
-    const isCompleted = state.context.game?.status === "completed";
-    console.log("🔍 useIsRoundComplete selector:", {
-      gameStatus: state.context.game?.status,
-      turnsCompleted: state.context.game?.turns_completed,
-      playersLength: state.context.game?.players?.length,
-      isCompleted,
-      currentState: state.value,
-    });
-    return isCompleted;
-  });
+  useSelector(actor, (state) => state.context.game?.status === "completed");
 
 export const useTimeIsUp = (actor: GameMachineActor) =>
   useSelector(actor, (state) => {

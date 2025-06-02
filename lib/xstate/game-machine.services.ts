@@ -152,23 +152,11 @@ export const gameServices = {
     totalPlayers: number;
   }) => {
     try {
-      console.log("⏭️ advanceTurn called:", {
-        gameId,
-        currentPlayerIndex,
-        totalPlayers,
-      });
-
       const nextTurn = (currentPlayerIndex + 1) % totalPlayers;
       await updateGameTurn(gameId, nextTurn);
 
-      console.log("⏭️ advanceTurn completed:", {
-        gameId,
-        nextTurn,
-      });
-
       return { nextTurn };
     } catch (error) {
-      console.error("❌ advanceTurn error:", error);
       throw new Error(
         error instanceof Error ? error.message : "Failed to advance turn"
       );
@@ -196,17 +184,13 @@ export const gameServices = {
   // Complete the game by updating status to completed
   completeGame: async ({ gameId }: { gameId: string }) => {
     try {
-      console.log("🏁 completeGame called:", { gameId });
-
       const { error } = await updateGameStatus(gameId, "completed");
       if (error) {
         throw new Error(`Failed to complete game: ${error.message}`);
       }
 
-      console.log("🏁 completeGame completed successfully:", { gameId });
       return { success: true };
     } catch (error) {
-      console.error("❌ completeGame error:", error);
       throw new Error(
         error instanceof Error ? error.message : "Failed to complete game"
       );
@@ -247,35 +231,16 @@ export const gameServices = {
     hasCorrectAnswer: boolean;
   }) => {
     try {
-      console.log("⏰ handleQuestionTimeout called:", {
-        gameId,
-        isHost,
-        hasCorrectAnswer,
-      });
-
       // Only increment turns_completed if:
       // 1. This is the host (to avoid multiple increments)
       // 2. No one answered correctly (time ran out)
       // If someone answered correctly, submit_answer already incremented it
       if (isHost && !hasCorrectAnswer) {
         await incrementTurnsCompleted(gameId);
-        console.log("⏰ Time's up! Incremented turns_completed:", {
-          gameId,
-          hasCorrectAnswer,
-          reason: "time ran out",
-        });
-      } else {
-        console.log("⏭️ Skipping turns_completed increment on timeout:", {
-          gameId,
-          isHost,
-          hasCorrectAnswer,
-          reason: isHost ? "someone answered correctly" : "not host",
-        });
       }
 
       return { success: true };
     } catch (error) {
-      console.error("❌ handleQuestionTimeout error:", error);
       throw new Error(
         error instanceof Error
           ? error.message
