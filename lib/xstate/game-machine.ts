@@ -292,10 +292,14 @@ export const gameMachine = setup({
 
     setWinner: assign({
       winner: ({ event }) => {
-        if (event.type !== "SET_WINNER") return null;
-        return event.winner;
+        if (event.type.includes("done.actor") && "output" in event) {
+          const output = event as {
+            output: { playerId: string; user_name: string; score: number };
+          };
+          return output.output;
+        }
+        return null;
       },
-      showNextTurn: true,
     }),
 
     // Turn actions
@@ -620,14 +624,18 @@ export const gameMachine = setup({
     },
 
     shouldCompleteGame: ({ context }) => {
-      if (!context.game || !context.currentQuestion?.ended_at) return false;
+      if (!context.game) return false;
 
-      // Check if all players have created a question
-      // This logic matches the existing implementation in GameRoom component
-      // We would need to fetch questions to count unique creators,
-      // but for the machine guards, we'll rely on the GAME_COMPLETED event
-      // sent from the subscription when the game status changes to "completed"
-      return false;
+      // Don't try to complete if already completed
+      if (context.game.status === "completed") return false;
+
+      // Each player should play 1 turn, so total turns = totalPlayers * 1
+      const totalPlayers = context.game.players.length;
+      const totalTurnsNeeded = totalPlayers; // 1 turn per player
+      const turnsCompleted = context.game.turns_completed || 0;
+
+      // Game should complete when we've completed all required turns
+      return turnsCompleted >= totalTurnsNeeded;
     },
 
     // Error guards
@@ -783,6 +791,22 @@ export const gameMachine = setup({
             determiningTurnPhase: {
               always: [
                 {
+                  guard: ({ context }) => {
+                    // Only check completion when there's no active question
+                    if (!context.game || context.currentQuestion) return false;
+
+                    const shouldComplete =
+                      context.game.status !== "completed" &&
+                      (context.game.turns_completed || 0) >=
+                        context.game.players.length;
+
+                    // Check if game should be completed
+
+                    return shouldComplete;
+                  },
+                  target: "#gameMachine.gameActive.completingGame",
+                },
+                {
                   guard: "hasCurrentQuestion",
                   target: "questionActive",
                 },
@@ -916,6 +940,12 @@ export const gameMachine = setup({
                 },
                 ANSWERS_UPDATED: [
                   {
+                    guard: ({ context }) =>
+                      context.currentQuestion?.ended_at !== null,
+                    actions: ["updateAnswers"],
+                    target: "showingResults",
+                  },
+                  {
                     guard: "allPlayersAnswered",
                     actions: ["updateAnswers"],
                     target: "showingResults",
@@ -925,7 +955,7 @@ export const gameMachine = setup({
                   },
                 ],
                 SET_WINNER: {
-                  actions: "setWinner",
+                  actions: ["setWinner"],
                   target: "showingResults",
                 },
               },
@@ -969,13 +999,47 @@ export const gameMachine = setup({
               target: ".questionActive",
             },
             QUESTION_UPDATED: {
-              actions: "updateCurrentQuestion",
+              actions: ["updateCurrentQuestion"],
+            },
+          },
+        },
+
+        completingGame: {
+          invoke: {
+            src: fromPromise(async ({ input }) => {
+              const { gameId } = input as { gameId: string };
+              return await gameServices.completeGame({ gameId });
+            }),
+            input: ({ context }) => ({
+              gameId: context.game!.id,
+            }),
+            onDone: {
+              // Wait for the game status to be updated via realtime
+              // The GAME_UPDATED event will trigger transition to completed
+            },
+            onError: {
+              actions: "setError",
+              target: "activeGame",
             },
           },
         },
 
         completed: {
-          type: "final",
+          invoke: {
+            src: fromPromise(async ({ input }) => {
+              const { game } = input as { game: GameWithPlayers };
+              return await gameServices.calculateWinner({ game });
+            }),
+            input: ({ context }) => ({
+              game: context.game!,
+            }),
+            onDone: {
+              actions: "setWinner",
+            },
+            onError: {
+              actions: "setError",
+            },
+          },
           entry: "cleanupSubscriptions",
         },
       },
@@ -984,6 +1048,30 @@ export const gameMachine = setup({
           target: "leaving",
         },
         GAME_UPDATED: [
+          {
+            guard: "isGameCompleted",
+            actions: "updateGameData",
+            target: ".completed",
+          },
+          {
+            guard: ({ context }) => {
+              // Only trigger completion if:
+              // 1. Game is not already completed
+              // 2. We're not currently in a question (to avoid interrupting normal flow)
+              // 3. Turns are actually completed
+              if (!context.game) return false;
+
+              const shouldComplete =
+                context.game.status !== "completed" &&
+                !context.currentQuestion &&
+                (context.game.turns_completed || 0) >=
+                  context.game.players.length;
+
+              return shouldComplete;
+            },
+            actions: "updateGameData",
+            target: ".completingGame",
+          },
           {
             guard: ({ context, event }) => {
               // Check if the turn changed

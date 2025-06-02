@@ -241,6 +241,23 @@ export interface Database {
           total_score: number;
         }[];
       };
+      submit_answer: {
+        Args: {
+          p_question_id: string;
+          p_player_id: string;
+          p_game_id: string;
+          p_selected_option: number;
+          p_response_time_ms: number;
+          p_time_limit_ms: number;
+        };
+        Returns: {
+          answer_id: string;
+          was_winning_answer: boolean;
+          score_earned: number;
+          turn_completed: boolean;
+          game_completed: boolean;
+        }[];
+      };
     };
   };
 }
@@ -347,4 +364,20 @@ export type GetLeaderboardPlayersByLanguageReturn = {
   full_name: string;
   user_name: string;
   avatar_url: string | null;
+};
+
+export type SubmitAnswerArgs = {
+  p_question_id: string;
+  p_player_id: string;
+  p_game_id: string;
+  p_selected_option: number;
+  p_response_time_ms: number;
+  p_time_limit_ms: number;
+};
+export type SubmitAnswerReturn = {
+  answer_id: string;
+  was_winning_answer: boolean;
+  score_earned: number;
+  turn_completed: boolean;
+  game_completed: boolean;
 };

@@ -10,7 +10,11 @@ import {
   updateGameTurn,
 } from "@/lib/supabase/supabase-games";
 import { getProfileById } from "@/lib/supabase/supabase-profiles";
-import type { GameDifficulty, GameLanguage } from "@/types/supabase";
+import type {
+  GameDifficulty,
+  GameLanguage,
+  GameWithPlayers,
+} from "@/types/supabase";
 import type { User } from "@supabase/supabase-js";
 
 const supabase = createClient();
@@ -171,6 +175,44 @@ export const gameServices = {
     } catch (error) {
       throw new Error(
         error instanceof Error ? error.message : "Failed to leave game"
+      );
+    }
+  },
+
+  // Complete the game by updating status to completed
+  completeGame: async ({ gameId }: { gameId: string }) => {
+    try {
+      const { error } = await updateGameStatus(gameId, "completed");
+      if (error) {
+        throw new Error(`Failed to complete game: ${error.message}`);
+      }
+      return { success: true };
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to complete game"
+      );
+    }
+  },
+
+  // Calculate the winner based on scores
+  calculateWinner: async ({ game }: { game: GameWithPlayers }) => {
+    try {
+      // Sort players by score (descending) and get the winner
+      const sortedPlayers = [...game.players].sort((a, b) => b.score - a.score);
+      const winner = sortedPlayers[0];
+
+      if (!winner) {
+        throw new Error("No players found in game");
+      }
+
+      return {
+        playerId: winner.player_id,
+        user_name: winner.profile.user_name || winner.profile.name,
+        score: winner.score,
+      };
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to calculate winner"
       );
     }
   },

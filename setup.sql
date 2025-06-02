@@ -218,7 +218,9 @@ CREATE OR REPLACE FUNCTION submit_answer(
 RETURNS TABLE(
   answer_id UUID, 
   was_winning_answer BOOLEAN, 
-  score_earned DECIMAL
+  score_earned DECIMAL,
+  turn_completed BOOLEAN,
+  game_completed BOOLEAN
 ) 
 LANGUAGE plpgsql
 SECURITY INVOKER 
@@ -231,10 +233,15 @@ DECLARE
   v_is_correct BOOLEAN := FALSE;
   v_score_earned DECIMAL := 0;
   v_was_winning_answer BOOLEAN := FALSE;
+  v_turn_completed BOOLEAN := FALSE;
+  v_game_completed BOOLEAN := FALSE;
   v_update_id UUID;
   v_question_exists_count INTEGER; 
   v_player_answered_count INTEGER; 
-  v_rows_affected INTEGER; -- For GET DIAGNOSTICS
+  v_rows_affected INTEGER;
+  v_total_players INTEGER;
+  v_current_turns_completed INTEGER;
+  v_all_players_answered_count INTEGER;
 BEGIN
   -- 1. First check if the question exists
   SELECT COUNT(*) INTO v_question_exists_count FROM questions WHERE id = p_question_id;
@@ -245,7 +252,6 @@ BEGIN
   END IF;
 
   -- 2. Get the question data with a FOR SHARE lock
-  -- correct_answer is NOT NULL in the questions table, so it will be populated.
   SELECT 
     ended_at, 
     correct_answer 
@@ -275,11 +281,10 @@ BEGIN
   -- 5. Determine if answer is correct
   v_is_correct := (p_selected_option = v_correct_answer);
   
-  -- If p_selected_option was SQL NULL, the comparison (p_selected_option = v_correct_answer) yields SQL NULL.
-  -- Treat this as incorrect. The answers.selected_option is NOT NULL, so client should not send NULL.
+  -- If p_selected_option was SQL NULL, treat as incorrect
   IF v_is_correct IS NULL THEN
     v_is_correct := FALSE;
-    RAISE LOG 'Answer comparison: p_selected_option was NULL or comparison resulted in NULL. Treated as incorrect. selected=%, correct=%', 
+    RAISE LOG 'Answer comparison: p_selected_option was NULL. Treated as incorrect. selected=%, correct=%', 
               p_selected_option, v_correct_answer;
   ELSE
     RAISE LOG 'Answer comparison: selected=%, correct=%, is_correct=%', 
@@ -311,63 +316,88 @@ BEGIN
   )
   RETURNING id INTO v_answer_id;
   
-  -- 8. If correct answer, try to end the question and update scores
-  IF v_is_correct THEN
-    -- This flag indicates to the calling client that *their* answer was correct.
-    v_was_winning_answer := TRUE;
+  -- 8. Get total players in the game
+  SELECT COUNT(*) INTO v_total_players 
+  FROM game_players 
+  WHERE game_id = p_game_id AND is_active = TRUE;
+  
+  -- 9. Check if all players have answered this question
+  SELECT COUNT(*) INTO v_all_players_answered_count
+  FROM answers a
+  JOIN game_players gp ON a.player_id = gp.player_id
+  WHERE a.question_id = p_question_id 
+    AND gp.game_id = p_game_id 
+    AND gp.is_active = TRUE;
+  
+  -- 10. If correct answer or all players answered, end the turn
+  IF v_is_correct OR v_all_players_answered_count >= v_total_players THEN
+    v_was_winning_answer := v_is_correct;
+    v_turn_completed := TRUE;
 
-    -- Try to end the question. This only succeeds for the first correct answer
-    -- due to the "ended_at IS NULL" condition, ensuring atomicity for ending.
+    -- Try to end the question. This only succeeds for the first call that ends it
     UPDATE questions
     SET ended_at = NOW()
     WHERE id = p_question_id AND ended_at IS NULL
     RETURNING id INTO v_update_id;
 
-    RAISE LOG 'Question end attempt: question_id=%, player_id=%, ended_by_this_call=%', 
-              p_question_id, p_player_id, (v_update_id IS NOT NULL);
+    RAISE LOG 'Question end attempt: question_id=%, player_id=%, ended_by_this_call=%, reason=%', 
+              p_question_id, p_player_id, (v_update_id IS NOT NULL), 
+              CASE WHEN v_is_correct THEN 'correct_answer' ELSE 'all_answered' END;
+
+    -- If this call successfully ended the question, increment turns_completed
+    IF v_update_id IS NOT NULL THEN
+      UPDATE games
+      SET turns_completed = turns_completed + 1
+      WHERE id = p_game_id
+      RETURNING turns_completed INTO v_current_turns_completed;
+      
+      RAISE LOG 'Game % turns_completed incremented to %', p_game_id, v_current_turns_completed;
+      
+      -- Check if game should be completed (each player gets 1 turn)
+      IF v_current_turns_completed >= v_total_players THEN
+        v_game_completed := TRUE;
+        -- Don't set game status to completed automatically - let player trigger that step
+        
+        RAISE LOG 'Game % ready to complete after % turns with % players', 
+                  p_game_id, v_current_turns_completed, v_total_players;
+      END IF;
+    END IF;
 
     -- Update player's game score for this correct answer
-    UPDATE game_players
-    SET score = score + v_score_earned
-    WHERE game_id = p_game_id AND player_id = p_player_id;
+    IF v_is_correct THEN
+      UPDATE game_players
+      SET score = score + v_score_earned
+      WHERE game_id = p_game_id AND player_id = p_player_id;
 
-    GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
-    RAISE LOG 'Player % game_players score updated by % points (rows: %)', 
-              p_player_id, v_score_earned, v_rows_affected;
+      GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
+      RAISE LOG 'Player % game_players score updated by % points (rows: %)', 
+                p_player_id, v_score_earned, v_rows_affected;
 
-    -- Update player_language_scores for the language of the question
-    DECLARE
-      v_language TEXT;
-    BEGIN
-      SELECT language INTO v_language FROM questions WHERE id = p_question_id;
-      IF v_language IS NOT NULL THEN
-        INSERT INTO player_language_scores (player_id, language, total_score)
-        VALUES (p_player_id, v_language, v_score_earned)
-        ON CONFLICT (player_id, language)
-        DO UPDATE SET total_score = player_language_scores.total_score + EXCLUDED.total_score;
-        
-        GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
-        RAISE LOG 'Updated player_language_scores for player %, language %, score % (rows: %)', 
-                  p_player_id, v_language, v_score_earned, v_rows_affected;
-      ELSE
-        RAISE LOG 'Could not determine language for question % to update player_language_scores.', p_question_id;
-      END IF;
-    EXCEPTION WHEN OTHERS THEN
-        RAISE LOG 'Error updating player_language_scores for player %, language %: %', p_player_id, v_language, SQLERRM;
-    END;
-
-    IF v_update_id IS NOT NULL THEN
-      -- This specific call was the one that ended the question
-      RAISE LOG 'Question % ended successfully by player %', p_question_id, p_player_id;
-    ELSE
-      -- This answer was correct, but another correct answer had already ended the question
-      RAISE LOG 'Question % was already ended when player % submitted a correct answer.', 
-                p_question_id, p_player_id;
+      -- Update player_language_scores for the language of the question
+      DECLARE
+        v_language TEXT;
+      BEGIN
+        SELECT language INTO v_language FROM questions WHERE id = p_question_id;
+        IF v_language IS NOT NULL THEN
+          INSERT INTO player_language_scores (player_id, language, total_score)
+          VALUES (p_player_id, v_language, v_score_earned)
+          ON CONFLICT (player_id, language)
+          DO UPDATE SET total_score = player_language_scores.total_score + EXCLUDED.total_score;
+          
+          GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
+          RAISE LOG 'Updated player_language_scores for player %, language %, score % (rows: %)', 
+                    p_player_id, v_language, v_score_earned, v_rows_affected;
+        ELSE
+          RAISE LOG 'Could not determine language for question % to update player_language_scores.', p_question_id;
+        END IF;
+      EXCEPTION WHEN OTHERS THEN
+          RAISE LOG 'Error updating player_language_scores for player %, language %: %', p_player_id, v_language, SQLERRM;
+      END;
     END IF;
   END IF;
   
-  -- 9. Return results
-  RETURN QUERY SELECT v_answer_id, v_was_winning_answer, v_score_earned;
+  -- 11. Return results
+  RETURN QUERY SELECT v_answer_id, v_was_winning_answer, v_score_earned, v_turn_completed, v_game_completed;
 END;
 $$;
 

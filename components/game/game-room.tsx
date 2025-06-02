@@ -118,14 +118,6 @@ export function GameRoom({ onLeaveGame }: GameRoomProps) {
 
       <div className="gap-8 grid lg:grid-cols-3">
         <div className="lg:col-span-2">
-          {/* Game completed state */}
-          {isGameCompleted && (
-            <div className="flex flex-col items-center space-y-4">
-              <h1 className="font-bold text-2xl">Partita terminata!</h1>
-              <Button onClick={onLeaveGame}>Torna alla Dashboard</Button>
-            </div>
-          )}
-
           {/* Question selection phase */}
           {isSelectingQuestion && (
             <QuestionSelection
