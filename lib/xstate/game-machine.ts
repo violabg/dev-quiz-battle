@@ -328,7 +328,15 @@ export const gameMachine = setup({
     }),
 
     setShowNextTurn: assign({
-      showNextTurn: true,
+      showNextTurn: ({ context }) => {
+        console.log("🎯 setShowNextTurn called:", {
+          gameStatus: context.game?.status,
+          turnsCompleted: context.game?.turns_completed,
+          playersLength: context.game?.players?.length,
+          currentPlayerIndex: context.currentPlayerIndex,
+        });
+        return true;
+      },
     }),
 
     clearShowNextTurn: assign({
@@ -419,10 +427,24 @@ export const gameMachine = setup({
           gameId: string;
           currentPlayerIndex: number;
           totalPlayers: number;
-          hasCorrectAnswer: boolean;
         };
       }) => {
         return gameServices.advanceTurn(input);
+      }
+    ),
+
+    // Handle question timeout
+    handleQuestionTimeout: fromPromise(
+      async ({
+        input,
+      }: {
+        input: {
+          gameId: string;
+          isHost: boolean;
+          hasCorrectAnswer: boolean;
+        };
+      }) => {
+        return gameServices.handleQuestionTimeout(input);
       }
     ),
 
@@ -621,7 +643,12 @@ export const gameMachine = setup({
 
     // Game completion guards
     isGameCompleted: ({ context }) => {
-      return context.game?.status === "completed";
+      const isCompleted = context.game?.status === "completed";
+      console.log("🔍 isGameCompleted guard:", {
+        gameStatus: context.game?.status,
+        isCompleted,
+      });
+      return isCompleted;
     },
 
     shouldCompleteGame: ({ context }) => {
@@ -794,14 +821,31 @@ export const gameMachine = setup({
                 {
                   guard: ({ context }) => {
                     // Only check completion when there's no active question
-                    if (!context.game || context.currentQuestion) return false;
+                    if (!context.game || context.currentQuestion) {
+                      console.log(
+                        "🔍 determiningTurnPhase: Not checking completion",
+                        {
+                          hasGame: !!context.game,
+                          hasCurrentQuestion: !!context.currentQuestion,
+                        }
+                      );
+                      return false;
+                    }
 
                     const shouldComplete =
                       context.game.status !== "completed" &&
                       (context.game.turns_completed || 0) >=
                         context.game.players.length;
 
-                    // Check if game should be completed
+                    console.log(
+                      "🔍 determiningTurnPhase: Checking completion",
+                      {
+                        gameStatus: context.game.status,
+                        turnsCompleted: context.game.turns_completed,
+                        playersLength: context.game.players.length,
+                        shouldComplete,
+                      }
+                    );
 
                     return shouldComplete;
                   },
@@ -937,7 +981,7 @@ export const gameMachine = setup({
               },
               on: {
                 QUESTION_ENDED: {
-                  target: "showingResults",
+                  target: "handlingTimeout",
                 },
                 ANSWERS_UPDATED: [
                   {
@@ -962,6 +1006,26 @@ export const gameMachine = setup({
               },
             },
 
+            handlingTimeout: {
+              invoke: {
+                src: "handleQuestionTimeout",
+                input: ({ context }) => ({
+                  gameId: context.game?.id || "",
+                  isHost: context.isHost,
+                  hasCorrectAnswer: context.allAnswers.some(
+                    (answer) => answer.is_correct
+                  ),
+                }),
+                onDone: {
+                  target: "showingResults",
+                },
+                onError: {
+                  actions: "setError",
+                  target: "showingResults",
+                },
+              },
+            },
+
             showingResults: {
               entry: "setShowNextTurn",
               on: {
@@ -980,9 +1044,6 @@ export const gameMachine = setup({
                     gameId: context.game?.id || "",
                     currentPlayerIndex: context.currentPlayerIndex,
                     totalPlayers: context.game?.players.length || 0,
-                    hasCorrectAnswer: context.allAnswers.some(
-                      (answer) => answer.is_correct
-                    ),
                   };
 
                   return input;
@@ -1013,6 +1074,14 @@ export const gameMachine = setup({
         },
 
         completingGame: {
+          entry: ({ context }) => {
+            console.log("🏁 Entering completingGame state:", {
+              gameId: context.game?.id,
+              gameStatus: context.game?.status,
+              turnsCompleted: context.game?.turns_completed,
+              playersLength: context.game?.players?.length,
+            });
+          },
           invoke: {
             src: fromPromise(async ({ input }) => {
               const { gameId } = input as { gameId: string };
@@ -1062,18 +1131,30 @@ export const gameMachine = setup({
             target: ".completed",
           },
           {
-            guard: ({ context }) => {
-              // Only trigger completion if:
-              // 1. Game is not already completed
-              // 2. We're not currently in a question (to avoid interrupting normal flow)
-              // 3. Turns are actually completed
-              if (!context.game) return false;
+            guard: ({ context, event }) => {
+              // Trigger completion immediately when all turns are done
+              // This should happen as soon as turns_completed reaches the required number
+              if (!context.game) {
+                console.log("🔄 GAME_UPDATED: No game context");
+                return false;
+              }
 
               const shouldComplete =
                 context.game.status !== "completed" &&
-                !context.currentQuestion &&
-                (context.game.turns_completed || 0) >=
+                (event.game.turns_completed || 0) >=
                   context.game.players.length;
+
+              console.log("🔄 GAME_UPDATED: Checking immediate completion", {
+                gameStatus: context.game.status,
+                eventTurnsCompleted: event.game.turns_completed,
+                playersLength: context.game.players.length,
+                shouldComplete,
+                eventGame: {
+                  status: event.game.status,
+                  turnsCompleted: event.game.turns_completed,
+                  currentTurn: event.game.current_turn,
+                },
+              });
 
               return shouldComplete;
             },
@@ -1083,10 +1164,17 @@ export const gameMachine = setup({
           {
             guard: ({ context, event }) => {
               // Check if the turn changed
-              return (
+              const turnChanged =
                 event.game.current_turn !== undefined &&
-                event.game.current_turn !== context.currentPlayerIndex
-              );
+                event.game.current_turn !== context.currentPlayerIndex;
+
+              console.log("🔄 GAME_UPDATED: Checking turn change", {
+                eventCurrentTurn: event.game.current_turn,
+                contextCurrentPlayerIndex: context.currentPlayerIndex,
+                turnChanged,
+              });
+
+              return turnChanged;
             },
             actions: "updateGameData",
             target: ".activeGame.determiningTurnPhase",
