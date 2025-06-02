@@ -39,9 +39,6 @@ export function useGameMachine(gameCode: string, user: User | null) {
   const hasAnswered = state.matches({
     gameActive: { activeGame: { questionActive: "answered" } },
   });
-  const isShowingResults = state.matches({
-    gameActive: { activeGame: "showingResults" },
-  });
   const isAdvancingTurn = state.matches({
     gameActive: { activeGame: "advancingTurn" },
   });
@@ -78,7 +75,6 @@ export function useGameMachine(gameCode: string, user: User | null) {
     isAnswering,
     isSubmittingAnswer,
     hasAnswered,
-    isShowingResults,
     isAdvancingTurn,
     isGameCompleted,
     hasError,

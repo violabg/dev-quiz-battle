@@ -135,11 +135,6 @@ export const useHasAnswered = (actor: GameMachineActor) =>
     })
   );
 
-export const useIsShowingResults = (actor: GameMachineActor) =>
-  useSelector(actor, (state) =>
-    state.matches({ gameActive: { activeGame: "showingResults" } })
-  );
-
 export const useIsAdvancingTurn = (actor: GameMachineActor) =>
   useSelector(actor, (state) =>
     state.matches({ gameActive: { activeGame: "advancingTurn" } })

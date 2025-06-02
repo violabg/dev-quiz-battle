@@ -12,15 +12,10 @@ import {
   useCurrentPlayerUsername,
   useCurrentQuestion,
   useGameData,
-  useIsCreatingQuestion,
   useIsCurrentPlayersTurn,
-  useIsGameCompleted,
   useIsLoadingCreateQuestion,
   useIsNextPlayersTurn,
-  useIsQuestionActive,
   useIsRoundComplete,
-  useIsSelectingQuestion,
-  useIsShowingResults,
   useQuestionStartTime,
   useSelectedDifficulty,
   useSelectedLanguage,
@@ -46,11 +41,6 @@ export function GameRoom({ onLeaveGame }: GameRoomProps) {
   const currentPlayer = useCurrentPlayer(actorRef);
   const isCurrentPlayersTurn = useIsCurrentPlayersTurn(actorRef);
   const isNextPlayersTurn = useIsNextPlayersTurn(actorRef);
-  const isSelectingQuestion = useIsSelectingQuestion(actorRef);
-  const isCreatingQuestion = useIsCreatingQuestion(actorRef);
-  const isQuestionActive = useIsQuestionActive(actorRef);
-  const isShowingResults = useIsShowingResults(actorRef);
-  const isGameCompleted = useIsGameCompleted(actorRef);
   const winner = useWinner(actorRef);
   const isLoadingCreateQuestion = useIsLoadingCreateQuestion(actorRef);
   const selectedLanguage = useSelectedLanguage(actorRef);
@@ -118,8 +108,7 @@ export function GameRoom({ onLeaveGame }: GameRoomProps) {
 
       <div className="gap-8 grid lg:grid-cols-3">
         <div className="lg:col-span-2">
-          {/* Question selection phase */}
-          {isSelectingQuestion && (
+          {!currentQuestion && (
             <QuestionSelection
               isCurrentPlayersTurn={isCurrentPlayersTurn}
               currentPlayerUsername={currentPlayerUsername}
@@ -134,46 +123,16 @@ export function GameRoom({ onLeaveGame }: GameRoomProps) {
             />
           )}
 
-          {/* Creating question state */}
-          {isCreatingQuestion && (
-            <div className="text-center">
-              <p className="text-lg">Generazione domanda in corso...</p>
-            </div>
-          )}
-
-          {/* Active question state */}
-          {isQuestionActive && currentQuestion && (
+          {currentQuestion && (
             <QuestionDisplay
               question={currentQuestion}
               onSubmitAnswer={handleSubmitAnswer}
               winner={winner}
               allAnswers={allAnswers}
-              timeIsUp={false}
+              timeIsUp={!!currentQuestion.ended_at}
               timeLimit={game.time_limit}
               user={user}
             />
-          )}
-
-          {/* Results state */}
-          {isShowingResults && currentQuestion && (
-            <>
-              <QuestionDisplay
-                question={currentQuestion}
-                onSubmitAnswer={handleSubmitAnswer}
-                winner={winner}
-                allAnswers={allAnswers}
-                timeIsUp={true}
-                timeLimit={game.time_limit}
-                user={user}
-              />
-              <TurnResultCard
-                winner={winner}
-                showNextTurn={showNextTurn}
-                isNextPlayersTurn={isNextPlayersTurn}
-                isRoundComplete={isRoundComplete}
-                handleNextTurn={handleNextTurn}
-              />
-            </>
           )}
         </div>
 
@@ -181,21 +140,19 @@ export function GameRoom({ onLeaveGame }: GameRoomProps) {
           <Scoreboard
             game={game}
             isRoundComplete={isRoundComplete}
-            onLeaveGame={handleLeaveGame}
+            onLeaveGame={onLeaveGame}
           />
 
-          {/* Turn result card in sidebar when showing results or when question ended */}
-          {!isShowingResults &&
-            (winner ||
-              (currentQuestion && currentQuestion.ended_at && !winner)) && (
-              <TurnResultCard
-                winner={winner}
-                showNextTurn={showNextTurn}
-                isNextPlayersTurn={isNextPlayersTurn}
-                isRoundComplete={isRoundComplete}
-                handleNextTurn={handleNextTurn}
-              />
-            )}
+          {(winner ||
+            (currentQuestion && currentQuestion.ended_at && !winner)) && (
+            <TurnResultCard
+              winner={winner}
+              showNextTurn={showNextTurn}
+              isNextPlayersTurn={isNextPlayersTurn}
+              isRoundComplete={isRoundComplete}
+              handleNextTurn={handleNextTurn}
+            />
+          )}
 
           {currentPlayerForCard && (
             <CurrentTurnCard
