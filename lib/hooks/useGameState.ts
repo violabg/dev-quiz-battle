@@ -11,7 +11,7 @@ import {
   updateGameStatus,
 } from "@/lib/supabase/supabase-games";
 import { getProfileById } from "@/lib/supabase/supabase-profiles";
-import type { GameWithPlayers } from "@/types/supabase";
+import type { GameWithPlayers } from "@/lib/supabase/types";
 import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -40,7 +40,9 @@ export function useGameState({
     try {
       const { data: gameData } = await getGameByCode(supabase, code);
       const playersData = await getPlayersForGame(gameData.id);
-      const hostData = await getProfileById(gameData.host_id);
+      const hostData = gameData.host_id
+        ? await getProfileById(gameData.host_id)
+        : null;
       setIsHost(user.id === gameData.host_id);
       const gameWithPlayers = {
         ...gameData,

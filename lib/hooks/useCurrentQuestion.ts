@@ -11,7 +11,7 @@ import type {
   GameLanguage,
   GameWithPlayers,
   Question,
-} from "@/types/supabase";
+} from "@/lib/supabase/types";
 import type { User } from "@supabase/supabase-js";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -46,10 +46,11 @@ export const useCurrentQuestion = ({
     (async () => {
       const questions = await getQuestionsForGame(game.id);
       if (isMounted && questions && questions.length > 0) {
-        const data = questions.sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        )[0];
+        const data = questions.sort((a, b) => {
+          const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return bTime - aTime;
+        })[0];
         setCurrentQuestion(data as Question);
         const startTime = data.started_at
           ? new Date(data.started_at).getTime()
@@ -75,8 +76,10 @@ export const useCurrentQuestion = ({
         if (
           !currentQuestion ||
           payload.new.id === currentQuestion.id ||
-          new Date(payload.new.created_at) >
-            new Date(currentQuestion.created_at)
+          (payload.new.created_at &&
+            currentQuestion.created_at &&
+            new Date(payload.new.created_at) >
+              new Date(currentQuestion.created_at))
         ) {
           setCurrentQuestion(payload.new);
           const startTime = payload.new.started_at
@@ -192,7 +195,7 @@ export const useCurrentQuestion = ({
           await updateGameStatus(game.id, "active");
         }
         return newQuestion as Question;
-      } catch (_error) {
+      } catch {
         toast.error("Errore", {
           description: "Impossibile creare la domanda",
         });

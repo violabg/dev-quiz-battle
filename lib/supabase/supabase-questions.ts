@@ -1,4 +1,4 @@
-import type { Question } from "@/types/supabase";
+import type { Question } from "@/lib/supabase/types";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./client";
 

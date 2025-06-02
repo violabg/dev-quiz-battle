@@ -3,7 +3,7 @@ import {
   subscribeToAnswers,
   unsubscribeFromAnswers,
 } from "@/lib/supabase/supabase-answers";
-import type { AnswerWithPlayer } from "@/types/supabase";
+import type { AnswerWithPlayer } from "@/lib/supabase/types";
 import { useCallback, useEffect, useState } from "react";
 
 type UseGameAnswersProps = {

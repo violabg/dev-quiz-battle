@@ -2,7 +2,7 @@ import type {
   GetUserProfileWithScoreArgs,
   GetUserProfileWithScoreReturn,
   Profile,
-} from "@/types/supabase";
+} from "@/lib/supabase/types";
 import * as crypto from "crypto";
 import { createClient } from "./client";
 
@@ -72,7 +72,7 @@ export async function getProfileWithScore(userId: string) {
     user_id: userId,
   } as GetUserProfileWithScoreArgs);
   if (error) throw error;
-  return data[0] as GetUserProfileWithScoreReturn;
+  return data[0] as GetUserProfileWithScoreReturn[0];
 }
 
 export function subscribeToProfiles(

@@ -3,7 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { GameWithPlayers } from "@/types/supabase";
+import type { GameWithPlayers } from "@/lib/supabase/types";
 import { Copy, Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -96,7 +96,13 @@ export function GameLobby({
               <Avatar>
                 <AvatarImage src={player.profile.avatar_url || undefined} />
                 <AvatarFallback>
-                  {player.profile.user_name.substring(0, 2).toUpperCase()}
+                  {(
+                    player.profile.user_name ||
+                    player.profile.full_name ||
+                    "??"
+                  )
+                    .substring(0, 2)
+                    .toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">

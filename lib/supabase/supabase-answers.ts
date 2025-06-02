@@ -1,13 +1,14 @@
 import type {
   Answer,
+  AnswerWithPlayer,
   CalculateScoreArgs,
   CalculateScoreReturn,
-} from "@/types/supabase";
+} from "@/lib/supabase/types";
 import { createClient } from "./client";
 
 const supabase = createClient();
 
-export async function insertAnswer(answer: Partial<Answer>) {
+export async function insertAnswer(answer: Answer) {
   const { data, error } = await supabase
     .from("answers")
     .insert(answer)
@@ -32,7 +33,7 @@ export async function getAnswersWithPlayerForQuestion(question_id: string) {
     .select(`*, player:player_id(id, user_name, avatar_url)`)
     .eq("question_id", question_id);
   if (error) throw error;
-  return data;
+  return data as AnswerWithPlayer[];
 }
 
 export function subscribeToAnswers(

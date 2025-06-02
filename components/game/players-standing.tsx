@@ -1,10 +1,10 @@
-import type { Player, Profile } from "@/types/supabase";
+import type { GamePlayer, Profile } from "@/lib/supabase/types";
 import { Award, Medal, Trophy } from "lucide-react";
 import type { ElementType } from "react";
 
 // Props for the new PlayerPodiumCard component
 type PlayerPodiumCardProps = {
-  player: Player & { profile: Profile };
+  player: GamePlayer & { profile: Profile };
   MedalIcon: ElementType;
   gradientClass: string;
   medalSizeClass: string;
@@ -48,7 +48,7 @@ const PlayerPodiumCard = ({
 };
 
 interface PlayersStandingProps {
-  players: (Player & { profile: Profile })[];
+  players: (GamePlayer & { profile: Profile })[];
 }
 
 export const PlayersStanding = ({ players }: PlayersStandingProps) => {

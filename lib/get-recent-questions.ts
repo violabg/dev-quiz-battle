@@ -1,5 +1,5 @@
 import { getQuestionsByLanguageAndDifficulty } from "@/lib/supabase/supabase-questions";
-import type { Question } from "@/types/supabase";
+import type { Question } from "@/lib/supabase/types";
 import { subHours } from "date-fns";
 
 /**

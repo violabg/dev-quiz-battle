@@ -1,8 +1,4 @@
-import type {
-  GetLeaderboardPlayersReturn,
-  Player,
-  Profile,
-} from "@/types/supabase";
+import type { GamePlayer, Profile } from "@/lib/supabase/types";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./client";
 
@@ -27,7 +23,7 @@ export async function getPlayersForGame(game_id: string) {
     .eq("game_id", game_id)
     .order("turn_order", { ascending: true });
   if (error) throw error;
-  return data as (Player & { profile: Profile })[];
+  return data as (GamePlayer & { profile: Profile })[];
 }
 
 export async function getPlayerInGame(game_id: string, player_id: string) {
@@ -38,7 +34,7 @@ export async function getPlayerInGame(game_id: string, player_id: string) {
     .eq("player_id", player_id)
     .maybeSingle();
   if (error) throw error;
-  return data as Player | null;
+  return data as GamePlayer | null;
 }
 
 export async function getLeaderboardPlayers(
@@ -54,14 +50,14 @@ export async function getLeaderboardPlayers(
     language_filter: languageFilter ?? null,
   });
   if (error) throw error;
-  return (data || []) as GetLeaderboardPlayersReturn[];
+  return data;
 }
 
 export function subscribeToGamePlayers(
   handler: (payload: {
     eventType: string;
-    new: Player | null;
-    old: Player | null;
+    new: GamePlayer | null;
+    old: GamePlayer | null;
   }) => void
 ) {
   return supabase
@@ -72,8 +68,8 @@ export function subscribeToGamePlayers(
       (payload) => {
         handler({
           eventType: payload.eventType,
-          new: payload.new as Player | null,
-          old: payload.old as Player | null,
+          new: payload.new as GamePlayer | null,
+          old: payload.old as GamePlayer | null,
         });
       }
     )

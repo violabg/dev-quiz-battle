@@ -37,7 +37,7 @@ const LeaderboardLanguageFilter = ({
               params.delete("language");
             }
             startTransition(() => {
-              router.replace(`${pathname}?${params.toString()}`);
+              router.replace(`${pathname}?${params.toString()}` as any);
             });
           }}
           disabled={isPending}

@@ -1,7 +1,7 @@
 import { generateQuestion } from "@/lib/groq";
 import { createClient } from "@/lib/supabase/server";
 import { insertQuestion } from "@/lib/supabase/supabase-questions";
-import { GameDifficulty, GameLanguage } from "@/types/supabase";
+import { GameDifficulty, GameLanguage } from "@/lib/supabase/types";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {

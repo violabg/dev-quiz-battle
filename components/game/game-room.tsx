@@ -22,7 +22,7 @@ import type {
   GameLanguage,
   GameWithPlayers,
   Question,
-} from "@/types/supabase";
+} from "@/lib/supabase/types";
 import { User } from "@supabase/supabase-js";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -147,15 +147,16 @@ export function GameRoom({
         return;
       }
 
-      const [firstCorrect] = correctAnswers.sort(
-        (a, b) =>
-          new Date(a.answered_at).getTime() - new Date(b.answered_at).getTime()
-      );
+      const [firstCorrect] = correctAnswers.sort((a, b) => {
+        const aTime = a.answered_at ? new Date(a.answered_at).getTime() : 0;
+        const bTime = b.answered_at ? new Date(b.answered_at).getTime() : 0;
+        return aTime - bTime;
+      });
 
-      if (firstCorrect) {
+      if (firstCorrect && firstCorrect.player) {
         const newWinner = {
-          playerId: firstCorrect.player_id,
-          user_name: firstCorrect.player.user_name,
+          playerId: firstCorrect.player_id || "",
+          user_name: firstCorrect.player.user_name || "Unknown Player",
           score: firstCorrect.score_earned,
         };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { updateGameTurn } from "@/lib/supabase/supabase-games";
-import { GameWithPlayers } from "@/types/supabase";
+import { GameWithPlayers } from "@/lib/supabase/types";
 import { User } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";

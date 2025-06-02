@@ -1,12 +1,12 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { GameWithPlayers } from "@/lib/supabase/types";
 import { getInitials } from "@/lib/utils";
-import type { GameWithPlayers } from "@/types/supabase";
 
 interface CurrentTurnCardProps {
   currentPlayer: GameWithPlayers["players"][number]["profile"] & {
-    player_id: string;
+    player_id: string | null;
   };
   isCurrentPlayersTurn: boolean;
 }

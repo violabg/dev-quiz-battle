@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { GameDifficulty, GameLanguage } from "@/types/supabase";
+import type { GameDifficulty, GameLanguage } from "@/lib/supabase/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import * as React from "react";
@@ -26,7 +26,7 @@ import { z } from "zod";
 
 interface QuestionSelectionProps {
   isCurrentPlayersTurn: boolean;
-  currentPlayerUsername?: string;
+  currentPlayerUsername?: string | null;
   isLoading: boolean;
   language: GameLanguage;
   difficulty: GameDifficulty;

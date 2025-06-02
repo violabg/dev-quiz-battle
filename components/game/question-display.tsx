@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import type { AnswerWithPlayer, Question } from "@/types/supabase";
+import type { AnswerWithPlayer, Question } from "@/lib/supabase/types";
 import { User } from "@supabase/supabase-js";
 import { Check, Clock, Loader2, X } from "lucide-react";
 import { Highlight, themes } from "prism-react-renderer";
@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 interface QuestionDisplayProps {
-  question: Question & { ended_at?: string; started_at?: string };
+  question: Question & { ended_at?: string | null; started_at?: string | null };
   onSubmitAnswer: (selectedOption: number) => void;
   winner?: { playerId: string; user_name: string; score: number } | null;
   allAnswers: AnswerWithPlayer[];
@@ -371,44 +371,48 @@ export function QuestionDisplay({
                     {/* Show wrong players for this option */}
                     {wrongPlayers.length > 0 && (
                       <div className="flex flex-col items-end">
-                        {wrongPlayers.map((a) => (
-                          <span
-                            key={a.player.id}
-                            className="bg-[oklch(0.98_0.005_210)] shadow mt-1 px-2 py-1 border border-[oklch(0.6_0.18_22.5)] rounded font-bold text-[oklch(0.65_0.18_22.5)] text-xs uppercase tracking-wide"
-                          >
-                            {a.player.user_name}
-                          </span>
-                        ))}
+                        {wrongPlayers
+                          .filter((a) => a.player)
+                          .map((a) => (
+                            <span
+                              key={a.player!.id}
+                              className="bg-[oklch(0.98_0.005_210)] shadow mt-1 px-2 py-1 border border-[oklch(0.6_0.18_22.5)] rounded font-bold text-[oklch(0.65_0.18_22.5)] text-xs uppercase tracking-wide"
+                            >
+                              {a.player!.user_name}
+                            </span>
+                          ))}
                       </div>
                     )}
 
                     {/* Show correct answers with points */}
                     {correctAnswers.length > 0 && (
                       <div className="flex flex-col items-end">
-                        {correctAnswers.map((a) => (
-                          <div
-                            key={a.player.id}
-                            className="flex flex-col items-end"
-                          >
-                            <span className="flex items-center gap-1.5 bg-[oklch(0.45_0.2_140)] shadow mt-1 px-3 py-1.5 border border-[oklch(0.55_0.25_140)] rounded-md font-bold text-[oklch(0.98_0.005_140)] text-xs uppercase tracking-wide">
-                              {a.player.user_name}
-                              <span className="bg-[oklch(0.98_0.005_140)] px-1.5 py-0.5 rounded-sm text-[oklch(0.45_0.2_140)]">
-                                +{a.score_earned.toFixed(1)}
+                        {correctAnswers
+                          .filter((a) => a.player)
+                          .map((a) => (
+                            <div
+                              key={a.player!.id}
+                              className="flex flex-col items-end"
+                            >
+                              <span className="flex items-center gap-1.5 bg-[oklch(0.45_0.2_140)] shadow mt-1 px-3 py-1.5 border border-[oklch(0.55_0.25_140)] rounded-md font-bold text-[oklch(0.98_0.005_140)] text-xs uppercase tracking-wide">
+                                {a.player!.user_name}
+                                <span className="bg-[oklch(0.98_0.005_140)] px-1.5 py-0.5 rounded-sm text-[oklch(0.45_0.2_140)]">
+                                  +{a.score_earned.toFixed(1)}
+                                </span>
+                                {winner && a.player_id === winner.playerId && (
+                                  <span className="ml-0.5 text-[oklch(1_0.1_60)]">
+                                    ⭐
+                                  </span>
+                                )}
                               </span>
-                              {winner && a.player_id === winner.playerId && (
-                                <span className="ml-0.5 text-[oklch(1_0.1_60)]">
-                                  ⭐
+                              {a.is_correct && (
+                                <span className="mt-1 ml-auto px-2 py-1 rounded text-black dark:text-white text-xs">
+                                  {getTimeBonusLabel(a.response_time_ms)} (
+                                  {(a.response_time_ms / 1000).toFixed(1)}s)
                                 </span>
                               )}
-                            </span>
-                            {a.is_correct && (
-                              <span className="mt-1 ml-auto px-2 py-1 rounded text-black dark:text-white text-xs">
-                                {getTimeBonusLabel(a.response_time_ms)} (
-                                {(a.response_time_ms / 1000).toFixed(1)}s)
-                              </span>
-                            )}
-                          </div>
-                        ))}
+                            </div>
+                          ))}
                       </div>
                     )}
                   </div>

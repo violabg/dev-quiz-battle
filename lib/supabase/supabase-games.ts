@@ -2,7 +2,7 @@ import type {
   Game,
   GenerateUniqueGameCodeArgs,
   GenerateUniqueGameCodeReturn,
-} from "@/types/supabase";
+} from "@/lib/supabase/types";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./client";
 
