@@ -92,11 +92,13 @@ GROQ_API_KEY="gsk_***"
 - **shadcn/ui & Radix UI** — Accessible, modern UI components
 - **Zod** — Schema validation
 - **react-hook-form** — Form management
+- **XState v5** — State management for game logic
 
 ## Documentation Index
 
 - [Architecture Overview](./docs/architecture.md)
 - [Supabase Integration](./docs/supabase.md)
+- [XState Machine Documentation](./docs/xstate-machine.md)
 - [UI Components](./docs/components.md)
 - [Styling & Theming](./docs/styling.md)
 - [Game Logic](./docs/game-logic.md)
