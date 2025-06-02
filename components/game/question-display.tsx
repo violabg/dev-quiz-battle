@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import type { AnswerWithPlayer, Question } from "@/lib/supabase/types";
+import { AnswersWithPlayer } from "@/lib/supabase/supabase-answers";
+import type { Question } from "@/lib/supabase/types";
 import { User } from "@supabase/supabase-js";
 import { Check, Clock, Loader2, X } from "lucide-react";
 import { Highlight, themes } from "prism-react-renderer";
@@ -13,7 +14,7 @@ interface QuestionDisplayProps {
   question: Question & { ended_at?: string | null; started_at?: string | null };
   onSubmitAnswer: (selectedOption: number) => void;
   winner?: { playerId: string; user_name: string; score: number } | null;
-  allAnswers: AnswerWithPlayer[];
+  allAnswers: AnswersWithPlayer;
   timeIsUp?: boolean;
   timeLimit?: number;
   user: User;

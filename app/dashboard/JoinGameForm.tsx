@@ -54,7 +54,6 @@ export const JoinGameForm = ({ user }: { user: User }) => {
       const profileExists = await ensureUserProfile(user);
       if (!profileExists) return;
       const { data: game, error: gameError } = await getGameByCode(
-        supabase,
         values.gameCode
       );
       if (gameError) throw new Error("Game not found");

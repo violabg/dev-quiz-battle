@@ -1,9 +1,9 @@
 import type {
   Answer,
-  AnswerWithPlayer,
   CalculateScoreArgs,
   CalculateScoreReturn,
 } from "@/lib/supabase/types";
+import { QueryData } from "@supabase/supabase-js";
 import { createClient } from "./client";
 
 const supabase = createClient();
@@ -27,14 +27,20 @@ export async function getAnswersForQuestion(question_id: string) {
   return data as Answer[];
 }
 
-export async function getAnswersWithPlayerForQuestion(question_id: string) {
-  const { data, error } = await supabase
+const query = (question_id: string) => {
+  return supabase
     .from("answers")
     .select(`*, player:player_id(id, user_name, avatar_url)`)
     .eq("question_id", question_id);
+};
+
+export async function getAnswersWithPlayerForQuestion(question_id: string) {
+  const { data, error } = await query(question_id);
   if (error) throw error;
-  return data as AnswerWithPlayer[];
+  return data;
 }
+
+export type AnswersWithPlayer = QueryData<ReturnType<typeof query>>;
 
 export function subscribeToAnswers(
   handler: (payload: {

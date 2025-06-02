@@ -6,7 +6,6 @@ import {
   updateQuestion,
 } from "@/lib/supabase/supabase-questions";
 import type {
-  AnswerWithPlayer,
   GameDifficulty,
   GameLanguage,
   GameWithPlayers,
@@ -15,11 +14,12 @@ import type {
 import type { User } from "@supabase/supabase-js";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { AnswersWithPlayer } from "../supabase/supabase-answers";
 
 type UseCurrentQuestionProps = {
   game: GameWithPlayers;
   user: User | null;
-  allAnswers: AnswerWithPlayer[];
+  allAnswers: AnswersWithPlayer;
   winner: { playerId: string; user_name: string; score: number } | null;
   isCurrentPlayersTurn: boolean;
   onQuestionLoaded?: (question: Question, startTime: number) => void;

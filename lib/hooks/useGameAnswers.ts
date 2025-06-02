@@ -1,21 +1,21 @@
 import {
+  AnswersWithPlayer,
   getAnswersWithPlayerForQuestion,
   subscribeToAnswers,
   unsubscribeFromAnswers,
 } from "@/lib/supabase/supabase-answers";
-import type { AnswerWithPlayer } from "@/lib/supabase/types";
 import { useCallback, useEffect, useState } from "react";
 
 type UseGameAnswersProps = {
   currentQuestionId: string | undefined | null;
-  onAnswersLoaded?: (answers: AnswerWithPlayer[]) => void;
+  onAnswersLoaded?: (answers: AnswersWithPlayer) => void;
 };
 
 export const useGameAnswers = ({
   currentQuestionId,
   onAnswersLoaded,
 }: UseGameAnswersProps) => {
-  const [allAnswers, setAllAnswers] = useState<AnswerWithPlayer[]>([]);
+  const [allAnswers, setAllAnswers] = useState<AnswersWithPlayer>([]);
 
   const fetchAnswers = useCallback(
     async (questionId: string) => {

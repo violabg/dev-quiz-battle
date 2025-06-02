@@ -16,9 +16,7 @@ import { User } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { createClient } from "../supabase/client";
 
-const supabase = createClient();
 type LoadingState = "idle" | "initializing" | "starting";
 
 export function useGameState({
@@ -38,7 +36,7 @@ export function useGameState({
   const fetchGame = useCallback(async () => {
     if (!user) return;
     try {
-      const { data: gameData } = await getGameByCode(supabase, code);
+      const { data: gameData } = await getGameByCode(code);
       const playersData = await getPlayersForGame(gameData.id);
       const hostData = gameData.host_id
         ? await getProfileById(gameData.host_id)

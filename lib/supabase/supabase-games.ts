@@ -3,7 +3,6 @@ import type {
   GenerateUniqueGameCodeArgs,
   GenerateUniqueGameCodeReturn,
 } from "@/lib/supabase/types";
-import { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "./client";
 
 const supabase = createClient();
@@ -19,17 +18,17 @@ export async function createGame(
     .select()
     .single();
   if (error) throw error;
-  return { data: data as Game, error };
+  return { data, error };
 }
 
-export async function getGameByCode(supabase: SupabaseClient, code: string) {
+export async function getGameByCode(code: string) {
   const { data, error } = await supabase
     .from("games")
     .select("*")
     .eq("code", code.toUpperCase())
     .single();
   if (error) throw error;
-  return { data: data as Game, error };
+  return { data, error };
 }
 
 export async function generateUniqueGameCode(
