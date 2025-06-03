@@ -4,6 +4,7 @@ import type { GameDifficulty, GameLanguage } from "@/lib/supabase/types";
 import { groq } from "@ai-sdk/groq";
 import { generateObject } from "ai";
 import { z } from "zod";
+import { LLM_MODEL } from "./utils";
 
 interface GenerateQuestionOptions {
   language: GameLanguage;
@@ -94,7 +95,7 @@ export async function generateQuestion({
 
   try {
     const { object: questionData } = await generateObject({
-      model: groq("meta-llama/llama-4-maverick-17b-128e-instruct"),
+      model: groq(LLM_MODEL),
       schema: questionSchema,
       prompt,
       temperature: 0.7,
