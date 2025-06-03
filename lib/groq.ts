@@ -58,6 +58,7 @@ export async function generateQuestion({
     Genera una domanda a scelta multipla sulla programmazione ${language} con difficoltà ${difficulty}.
     
     La domanda deve testare la conoscenza della sintassi, dei concetti o delle best practice di ${language}.
+    Puo anche chiedere di identificare errori comuni, spiegare concetti o risolvere problemi pratici, risolvere bux del codice proposto come esempio.
     
     Per la difficoltà ${difficulty}:
     - facile: Sintassi di base e concetti fondamentali
@@ -65,7 +66,7 @@ export async function generateQuestion({
     - difficile: Concetti avanzati e casi limite
     - esperto: Algoritmi complessi, ottimizzazioni o particolarità del linguaggio
     
-    Includi un esempio di codice rilevante per la domanda.
+    Includi un esempio di codice rilevante per la domanda. ma NON INLUDERE MAI LA SOLUZIONE NEL CODICE.
     
     ${previousQuestionsPrompt}
     

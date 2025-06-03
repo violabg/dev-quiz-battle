@@ -15,4 +15,5 @@ export const getInitials = (name?: string | null) => {
   );
 };
 
-export const LLM_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct";
+export const LLM_MODEL = "llama-3.3-70b-versatile";
+// export const LLM_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct";
