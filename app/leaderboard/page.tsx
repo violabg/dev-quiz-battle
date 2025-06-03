@@ -100,14 +100,15 @@ const LeaderboardPage = async (props: {
       {totalPages > 1 && (
         <Pagination className="mt-8">
           <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                href={`/leaderboard?page=${page - 1}${
-                  languageFilter ? `&language=${languageFilter}` : ""
-                }`}
-                aria-disabled={page === 1}
-              />
-            </PaginationItem>
+            {page > 1 && (
+              <PaginationItem>
+                <PaginationPrevious
+                  href={`/leaderboard?page=${page - 1}${
+                    languageFilter ? `&language=${languageFilter}` : ""
+                  }`}
+                />
+              </PaginationItem>
+            )}
             {Array.from({ length: totalPages }).map((_, i) => (
               <PaginationItem key={i}>
                 <PaginationLink
@@ -120,14 +121,15 @@ const LeaderboardPage = async (props: {
                 </PaginationLink>
               </PaginationItem>
             ))}
-            <PaginationItem>
-              <PaginationNext
-                href={`/leaderboard?page=${page + 1}${
-                  languageFilter ? `&language=${languageFilter}` : ""
-                }`}
-                aria-disabled={page === totalPages}
-              />
-            </PaginationItem>
+            {page < totalPages && (
+              <PaginationItem>
+                <PaginationNext
+                  href={`/leaderboard?page=${page + 1}${
+                    languageFilter ? `&language=${languageFilter}` : ""
+                  }`}
+                />
+              </PaginationItem>
+            )}
           </PaginationContent>
         </Pagination>
       )}

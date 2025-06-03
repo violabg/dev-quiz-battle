@@ -45,7 +45,7 @@ export async function getLeaderboardPlayers(
   const { data, error } = await supabase.rpc("get_leaderboard_players", {
     offset_value: offset,
     limit_value: limit,
-    language_filter: languageFilter ?? null,
+    language_filter: languageFilter,
   });
   if (error) throw error;
   return data;

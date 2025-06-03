@@ -275,21 +275,19 @@ export type Database = {
         Returns: string;
       };
       get_leaderboard_players: {
-        Args:
-          | { offset_value: number; limit_value: number }
-          | {
-              offset_value: number;
-              limit_value: number;
-              language_filter?: string | null;
-            };
+        Args: {
+          offset_value: number;
+          limit_value: number;
+          language_filter?: string;
+        };
         Returns: {
           player_id: string;
-          total_items: number;
           total_score: number;
           name: string;
           full_name: string;
           user_name: string;
           avatar_url: string;
+          total_items: number;
         }[];
       };
       get_user_profile_with_score: {
@@ -442,13 +440,12 @@ export const Constants = {
 // Additional convenience types for your application
 
 // Table row types
-export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
-export type Game = Database["public"]["Tables"]["games"]["Row"];
-export type GamePlayer = Database["public"]["Tables"]["game_players"]["Row"];
-export type Question = Database["public"]["Tables"]["questions"]["Row"];
-export type Answer = Database["public"]["Tables"]["answers"]["Row"];
-export type PlayerLanguageScore =
-  Database["public"]["Tables"]["player_language_scores"]["Row"];
+export type Profile = Tables<"profiles">;
+export type Game = Tables<"games">;
+export type GamePlayer = Tables<"game_players">;
+export type Question = Tables<"questions">;
+export type Answer = Tables<"answers">;
+export type PlayerLanguageScore = Tables<"player_language_scores">;
 
 // Table insert types
 export type ProfileInsert = Database["public"]["Tables"]["profiles"]["Insert"];
