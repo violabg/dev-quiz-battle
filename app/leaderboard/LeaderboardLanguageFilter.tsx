@@ -1,6 +1,13 @@
 // Client component for language filter
 "use client";
 import { LANGUAGE_OPTIONS } from "@/components/game/question-selection";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
@@ -18,20 +25,16 @@ const LeaderboardLanguageFilter = ({
   const [isPending, startTransition] = useTransition();
 
   return (
-    <form method="get" className="relative flex items-center gap-2">
+    <div className="relative flex items-center gap-2">
       <label htmlFor="language" className="font-medium text-lg">
         Language:
       </label>
       <div className="relative">
-        <select
-          id="language"
-          name="language"
-          defaultValue={language}
-          className="bg-background px-3 py-1 border rounded text-foreground"
-          onChange={(e) => {
-            const value = e.target.value;
+        <Select
+          value={language || "all"}
+          onValueChange={(value) => {
             const params = new URLSearchParams(searchParams.toString());
-            if (value) {
+            if (value && value !== "all") {
               params.set("language", value);
             } else {
               params.delete("language");
@@ -42,18 +45,23 @@ const LeaderboardLanguageFilter = ({
           }}
           disabled={isPending}
         >
-          <option value="">All</option>
-          {LANGUAGE_OPTIONS.map((lang) => (
-            <option key={lang.value} value={lang.value}>
-              {lang.label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="All" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            {LANGUAGE_OPTIONS.map((lang) => (
+              <SelectItem key={lang.value} value={lang.value}>
+                {lang.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {isPending && (
           <Loader2 className="top-1/2 right-[-20px] absolute w-4 h-4 text-gray-500 -translate-y-1/2 animate-spin" />
         )}
       </div>
-    </form>
+    </div>
   );
 };
 export default LeaderboardLanguageFilter;
