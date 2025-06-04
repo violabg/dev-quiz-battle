@@ -51,7 +51,9 @@ export function GameLobby({
       <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="font-bold text-3xl">
-            <span className="text-gradient">{"Sala d'attesa"}</span>
+            <span className="font-dqb text-gradient text-4xl">
+              {"Sala d'attesa"}
+            </span>
           </h1>
           <p className="text-muted-foreground">{lobbyMessage}</p>
         </div>

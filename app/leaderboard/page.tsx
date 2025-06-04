@@ -89,8 +89,8 @@ const LeaderboardPage = async (props: {
 
   return (
     <main className="mx-auto px-4 py-10 max-w-2x container">
-      <h1 className="mb-8 font-bold text-gradient text-3xl text-center">
-        Leaderboard
+      <h1 className="mb-8 font-dqb text-gradient text-4xl text-center">
+        Classifica
       </h1>
       <div className="flex justify-center mb-6">
         {/* Client component for language filter */}

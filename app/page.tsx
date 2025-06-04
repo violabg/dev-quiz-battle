@@ -1,3 +1,4 @@
+import DQBLogoGradient from "@/components/icons/dqb-gradient-logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
@@ -13,8 +14,9 @@ export default async function Home() {
         <div className="px-4 md:px-6 container">
           <div className="flex flex-col items-center space-y-4 text-center">
             <div className="space-y-2">
-              <h1 className="font-bold text-3xl sm:text-4xl md:text-5xl lg:text-6xl/none tracking-tighter">
-                <span className="text-gradient">DevQuizBattle</span>
+              <h1 className="flex flex-col justify-center items-center gap-2 text-2xl sm:text-3xl md:text-4xl lg:text-5xl/none">
+                <DQBLogoGradient size={80} />
+                <span className="font-dqb">DevQuizBattle</span>
               </h1>
               <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
                 Metti alla prova le tue conoscenze di programmazione in
@@ -44,7 +46,7 @@ export default async function Home() {
                 <div className="inline-block bg-primary/10 p-3 rounded-full">
                   <Code className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="font-bold text-xl">Sfide di programmazione</h3>
+                <h3 className="font-dqb text-xl">Sfide di programmazione</h3>
                 <p className="text-muted-foreground text-center">
                   Metti alla prova le tue abilità con domande di programmazione
                   specifiche per linguaggio su diversi livelli di difficoltà
@@ -56,7 +58,7 @@ export default async function Home() {
                 <div className="inline-block bg-primary/10 p-3 rounded-full">
                   <Cpu className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="font-bold text-xl">
+                <h3 className="font-dqb text-xl">
                   Domande generate dall&apos;IA
                 </h3>
                 <p className="text-muted-foreground text-center">
@@ -70,7 +72,7 @@ export default async function Home() {
                 <div className="inline-block bg-primary/10 p-3 rounded-full">
                   <Users className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="font-bold text-xl">Battaglie multiplayer</h3>
+                <h3 className="font-dqb text-xl">Battaglie multiplayer</h3>
                 <p className="text-muted-foreground text-center">
                   Sfida i tuoi amici in tempo reale per vedere chi risponde più
                   velocemente

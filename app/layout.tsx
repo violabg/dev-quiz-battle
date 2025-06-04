@@ -1,10 +1,12 @@
 import { Navbar } from "@/components/layout/navbar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SupabaseProvider } from "@/lib/supabase/supabase-provider";
-import { Inter } from "next/font/google";
+import { Cormorant, Inter } from "next/font/google";
 import type React from "react";
 import { Toaster } from "sonner";
 import "./globals.css";
+
+const cormorant = Cormorant({ subsets: ["latin"] });
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -39,7 +41,7 @@ export default async function RootLayout({
         href="/favicon/apple-touch-icon.png"
       />
       <link rel="manifest" href="/favicon/site.webmanifest" />
-      <body className={inter.className}>
+      <body className={`${inter.className} ${cormorant.className}`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

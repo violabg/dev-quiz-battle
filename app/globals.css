@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -42,6 +41,8 @@
   );
 
   --backdrop-blur-xs: 2px;
+
+  --font-dqb: "Cormorant", serif;
 
   @keyframes gradient {
     0% {
@@ -253,4 +254,11 @@
   box-shadow: 0 2px 8px 0 oklch(0.7 0.03 260 / 0.15),
     0 1.5px 0 0 oklch(0.98 0.01 260 / 0.5) inset;
   filter: drop-shadow(0 1px 2px oklch(0.7 0.03 260 / 0.15));
+}
+
+/* Custom font utilities */
+@utility font-dqb {
+  font-family: var(--font-dqb);
+  font-weight: 600;
+  letter-spacing: normal;
 }

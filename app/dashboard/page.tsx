@@ -17,7 +17,7 @@ export default async function DashboardPage() {
   return (
     <main className="flex-1 py-8 container">
       <h1 className="mb-8 font-bold text-3xl">
-        <span className="text-gradient">Dashboard</span>
+        <span className="font-dqb text-gradient text-4xl">Dashboard</span>
       </h1>
       <div className="gap-8 grid md:grid-cols-2">
         <Card className="gradient-border glass-card">

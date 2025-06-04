@@ -20,6 +20,7 @@ import { Loader2, LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { CurrentUserAvatar } from "../auth/current-user-avatar";
+import DQBLogoGradient from "../icons/dqb-gradient-logo";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -40,9 +41,12 @@ export function Navbar() {
   return (
     <header className="border-b">
       <div className="flex justify-between items-center h-16 container">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="font-bold text-gradient text-2xl">
-            DevQuizBattle
+        <div className="flex md:flex-row flex-row-reverse items-center gap-1 md:gap-6">
+          <Link href="/" className="flex items-center gap-2">
+            <DQBLogoGradient size={30} />
+            <span className="hidden md:inline font-dqb text-lg">
+              DevQuizBattle
+            </span>
           </Link>
           {/* Desktop nav */}
           <nav className="hidden md:flex gap-6">
@@ -50,7 +54,7 @@ export function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
+                className={`text-lg font-dqb  transition-colors hover:text-primary ${
                   pathname === item.href
                     ? "text-primary"
                     : "text-muted-foreground"

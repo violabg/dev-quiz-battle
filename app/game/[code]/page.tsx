@@ -16,7 +16,9 @@ export default async function GamePage({
     // Optionally, you can redirect or render a not found UI
     return (
       <main className="flex flex-col flex-1 justify-center items-center py-8 container">
-        <h1 className="mb-4 font-bold text-2xl">Partita non trovata</h1>
+        <h1 className="mb-4 font-dqb text-gradient text-4xl">
+          Partita non trovata
+        </h1>
         <a href="/dashboard" className="btn btn-primary">
           Torna alla Dashboard
         </a>

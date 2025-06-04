@@ -265,7 +265,7 @@ export function QuestionDisplay({
           </div>
         </div>
 
-        <h2 className="mb-4 font-bold text-xl">{question.question_text}</h2>
+        <h2 className="mb-4 text-xl">{question.question_text}</h2>
 
         {question.code_sample && (
           <div className="mb-6 overflow-x-auto">

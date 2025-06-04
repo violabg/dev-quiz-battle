@@ -311,7 +311,9 @@ export function GameRoom({
       <div className="flex md:flex-row flex-col justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="font-bold text-3xl">
-            <span className="text-gradient">DevQuizBattle</span>
+            <span className="font-dqb text-gradient text-4xl">
+              Dev Quiz Battle
+            </span>
           </h1>
           <p className="text-muted-foreground">Codice partita: {game.code}</p>
         </div>
