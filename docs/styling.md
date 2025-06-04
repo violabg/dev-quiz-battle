@@ -2,7 +2,7 @@
 
 [← Back to README](../README.md)
 
-This document explains the styling and theming approach in DevQuizBattle.
+This document explains the styling and theming approach in Dev Quiz Battle.
 
 ---
 

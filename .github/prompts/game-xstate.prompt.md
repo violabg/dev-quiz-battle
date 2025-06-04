@@ -1,4 +1,4 @@
-Create an XState v5 state machine for DevQuizBattle that implements multiplayer game flow with Supabase integration. The machine should:
+Create an XState v5 state machine for Dev Quiz Battle that implements multiplayer game flow with Supabase integration. The machine should:
 
 1. Define core game states: lobby, active gameplay, and completion phases
 2. Handle player actions, turn management, and scoring
@@ -63,7 +63,7 @@ type GameEvents =
 
 const gameMachine = createMachine(
   {
-    id: "devQuizBattle",
+    id: "Dev Quiz Battle",
     context: {
       gameCode: "",
       players: [],

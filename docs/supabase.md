@@ -2,7 +2,7 @@
 
 [← Back to README](../README.md)
 
-This document explains how DevQuizBattle integrates with Supabase for authentication, real-time updates, and database operations.
+This document explains how Dev Quiz Battle integrates with Supabase for authentication, real-time updates, and database operations.
 
 ---
 

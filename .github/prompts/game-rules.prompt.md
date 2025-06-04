@@ -1,6 +1,6 @@
 # Core Gameplay:
 
-DevQuizBattle is a multiplayer, turn-based coding quiz game powered by AI. The following outlines the core gameplay and requirements:
+Dev Quiz Battle is a multiplayer, turn-based coding quiz game powered by AI. The following outlines the core gameplay and requirements:
 
 ### Game Flow
 

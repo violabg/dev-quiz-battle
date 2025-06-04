@@ -2,7 +2,7 @@
 
 [← Back to README](../README.md)
 
-This document describes the main game logic and flow in DevQuizBattle.
+This document describes the main game logic and flow in Dev Quiz Battle.
 
 ---
 

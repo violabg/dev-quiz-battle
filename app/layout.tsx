@@ -11,7 +11,7 @@ const cormorant = Cormorant({ subsets: ["latin"] });
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "DevQuizBattle",
+  title: "Dev Quiz Battle",
   description: "AI-Powered Multiplayer Coding Quiz Game",
 };
 
@@ -55,7 +55,7 @@ export default async function RootLayout({
               <footer className="py-6 md:py-0 border-t">
                 <div className="flex md:flex-row flex-col justify-between items-center gap-4 md:h-16 container">
                   <p className="text-muted-foreground text-sm">
-                    &copy; {new Date().getFullYear()} DevQuizBattle. Tutti i
+                    &copy; {new Date().getFullYear()} Dev Quiz Battle. Tutti i
                     diritti riservati.
                   </p>
                 </div>

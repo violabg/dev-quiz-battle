@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { Route } from "next";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 
@@ -40,7 +41,7 @@ const LeaderboardLanguageFilter = ({
               params.delete("language");
             }
             startTransition(() => {
-              router.replace(`${pathname}?${params.toString()}` as any);
+              router.replace(`${pathname}?${params.toString()}` as Route);
             });
           }}
           disabled={isPending}

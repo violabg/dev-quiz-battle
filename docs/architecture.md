@@ -2,7 +2,7 @@
 
 [← Back to README](../README.md)
 
-This document provides a high-level overview of the architecture for DevQuizBattle.
+This document provides a high-level overview of the architecture for Dev Quiz Battle.
 
 ---
 

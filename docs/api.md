@@ -2,7 +2,7 @@
 
 [← Back to README](../README.md)
 
-This document provides a high-level reference for the main API functions and modules in DevQuizBattle.
+This document provides a high-level reference for the main API functions and modules in Dev Quiz Battle.
 
 ---
 

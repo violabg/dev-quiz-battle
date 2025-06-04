@@ -11,7 +11,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
 import {
   addPlayerToGame,
   getPlayerInGame,
@@ -37,7 +36,6 @@ const joinGameSchema = z.object({
 type JoinGameForm = z.infer<typeof joinGameSchema>;
 
 export const JoinGameForm = ({ user }: { user: User }) => {
-  const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const form = useForm<JoinGameForm>({

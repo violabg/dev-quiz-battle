@@ -2,7 +2,7 @@
 
 [← Back to README](../README.md)
 
-This document describes the main UI components and their organization in DevQuizBattle.
+This document describes the main UI components and their organization in Dev Quiz Battle.
 
 ---
 

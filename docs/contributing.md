@@ -2,7 +2,7 @@
 
 [← Back to README](../README.md)
 
-Thank you for your interest in contributing to DevQuizBattle!
+Thank you for your interest in contributing to Dev Quiz Battle!
 
 ---
 

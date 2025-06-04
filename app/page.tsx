@@ -16,7 +16,7 @@ export default async function Home() {
             <div className="space-y-2">
               <h1 className="flex flex-col justify-center items-center gap-2 text-2xl sm:text-3xl md:text-4xl lg:text-5xl/none">
                 <DQBLogoGradient size={80} />
-                <span className="font-dqb">DevQuizBattle</span>
+                <span className="font-dqb">Dev Quiz Battle</span>
               </h1>
               <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
                 Metti alla prova le tue conoscenze di programmazione in

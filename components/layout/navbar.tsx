@@ -1,5 +1,4 @@
 "use client";
-
 import { ModeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +35,7 @@ export function Navbar() {
     { name: "Home", href: "/" },
     { name: "Dashboard", href: "/dashboard" },
     { name: "Classifica", href: "/leaderboard" },
-  ];
+  ] as const;
 
   return (
     <header className="border-b">
@@ -45,7 +44,7 @@ export function Navbar() {
           <Link href="/" className="flex items-center gap-2">
             <DQBLogoGradient size={30} />
             <span className="hidden md:inline font-dqb text-lg">
-              DevQuizBattle
+              Dev Quiz Battle
             </span>
           </Link>
           {/* Desktop nav */}

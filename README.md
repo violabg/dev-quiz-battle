@@ -1,12 +1,12 @@
-# DevQuizBattle Documentation
+# Dev Quiz Battle Documentation
 
-Welcome to **DevQuizBattle**! This project is an AI-powered multiplayer coding quiz game built with Next.js, React, TypeScript, Tailwind CSS v4, and Supabase. This documentation provides an overview, setup instructions, and links to detailed guides for each part of the codebase.
+Welcome to **Dev Quiz Battle**! This project is an AI-powered multiplayer coding quiz game built with Next.js, React, TypeScript, Tailwind CSS v4, and Supabase. This documentation provides an overview, setup instructions, and links to detailed guides for each part of the codebase.
 
 ---
 
 ## Table of Contents
 
-- [DevQuizBattle Documentation](#devquizbattle-documentation)
+- [Dev Quiz Battle Documentation](#Dev Quiz Battle-documentation)
   - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
   - [Project Structure](#project-structure)
@@ -22,7 +22,7 @@ Welcome to **DevQuizBattle**! This project is an AI-powered multiplayer coding q
 
 ## Overview
 
-DevQuizBattle is a real-time, multiplayer coding quiz game. It leverages Supabase for authentication, real-time updates, and database operations. The UI is built with modern, accessible components using shadcn/ui and Radix UI, styled with Tailwind CSS v4 and OKLCH color spaces for theme support.
+Dev Quiz Battle is a real-time, multiplayer coding quiz game. It leverages Supabase for authentication, real-time updates, and database operations. The UI is built with modern, accessible components using shadcn/ui and Radix UI, styled with Tailwind CSS v4 and OKLCH color spaces for theme support.
 
 ## Project Structure
 
