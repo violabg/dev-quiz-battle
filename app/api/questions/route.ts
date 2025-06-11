@@ -24,12 +24,46 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const questionData = await generateQuestion({
-      language: language as GameLanguage,
-      difficulty: difficulty as GameDifficulty,
-    });
-    console.log("🚀 ~ POST ~ correct_answer:", questionData.correctAnswer);
+    // Retry logic for generating question
+    let questionData;
+    const maxRetries = 3;
 
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(
+          `🔄 Attempting to generate question (attempt ${attempt}/${maxRetries})`
+        );
+        questionData = await generateQuestion({
+          language: language as GameLanguage,
+          difficulty: difficulty as GameDifficulty,
+        });
+        console.log("🚀 ~ POST ~ correct_answer:", questionData.correctAnswer);
+        break; // Success, exit retry loop
+      } catch (error) {
+        console.warn(
+          `❌ Question generation attempt ${attempt} failed:`,
+          error
+        );
+
+        if (attempt === maxRetries) {
+          console.error("🚨 All question generation attempts failed");
+          throw error; // Re-throw the last error if all attempts failed
+        }
+
+        // Optional: Add a small delay between retries
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+
+    // Ensure questionData is defined (TypeScript safety check)
+    if (!questionData) {
+      throw new Error("Failed to generate question after all retry attempts");
+    }
+
+    console.log(
+      "🚀 ~ POST ~ questionData.correctAnswer:",
+      questionData.correctAnswer
+    );
     const startedAt = new Date().toISOString();
     const newQuestion = await insertQuestion(supabase, {
       game_id: gameId,
