@@ -101,6 +101,15 @@ export function QuestionDisplay({
   useEffect(() => {
     // Use server time if available
     let timer: NodeJS.Timeout | null = null;
+
+    // Check if there are any correct answers
+    const hasCorrectAnswers = allAnswers.some((a) => a.is_correct);
+
+    // Don't start or continue timer if there's a winner, time is up, or any correct answer
+    if (winner || timeIsUp || hasCorrectAnswers) {
+      return;
+    }
+
     if (question.started_at) {
       const start = new Date(question.started_at).getTime();
       timer = setInterval(() => {
@@ -118,7 +127,7 @@ export function QuestionDisplay({
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [question.id, question.started_at]);
+  }, [question.id, question.started_at, winner, timeIsUp, allAnswers]);
 
   const handleSelectOption = async (index: number) => {
     if (hasAnswered || winner || isSubmittingAnswer) return;
