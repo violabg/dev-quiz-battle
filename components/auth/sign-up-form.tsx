@@ -32,27 +32,32 @@ const signUpSchema = z
   .object({
     first_name: z
       .string()
-      .min(2, { message: "Nome deve essere almeno 2 caratteri" })
-      .max(30, { message: "Nome deve essere massimo 30 caratteri" }),
+      .min(2, "Nome deve essere almeno 2 caratteri")
+      .max(30, "Nome deve essere massimo 30 caratteri"),
     last_name: z
       .string()
-      .min(2, { message: "Cognome deve essere almeno 2 caratteri" })
-      .max(30, { message: "Cognome deve essere massimo 30 caratteri" }),
+      .min(2, "Cognome deve essere almeno 2 caratteri")
+      .max(30, "Cognome deve essere massimo 30 caratteri"),
     user_name: z
       .string()
-      .min(3, { message: "Username deve essere almeno 3 caratteri" })
-      .max(20, { message: "Username deve essere massimo 20 caratteri" })
-      .regex(/^[a-zA-Z0-9_-]+$/, {
-        message:
-          "Username può contenere solo lettere, numeri, underscore e trattini",
-      }),
-    email: z.string().email({ message: "Email non valida" }),
-    password: z.string().min(6, { message: "Minimo 6 caratteri" }),
-    repeatPassword: z.string().min(6, { message: "Minimo 6 caratteri" }),
+      .min(3, "Username deve essere almeno 3 caratteri")
+      .max(20, "Username deve essere massimo 20 caratteri")
+      .regex(
+        /^[a-zA-Z0-9_-]+$/,
+        "Username può contenere solo lettere, numeri, underscore e trattini"
+      ),
+    email: z.string().email("Email non valida"),
+    password: z.string().min(6, "Minimo 6 caratteri"),
+    repeatPassword: z.string().min(6, "Minimo 6 caratteri"),
   })
-  .refine((data) => data.password === data.repeatPassword, {
-    message: "Passwords do not match",
-    path: ["repeatPassword"],
+  .superRefine((data, ctx) => {
+    if (data.password !== data.repeatPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["repeatPassword"],
+        message: "Passwords do not match",
+      });
+    }
   });
 type SignUpFormValues = z.infer<typeof signUpSchema>;
 

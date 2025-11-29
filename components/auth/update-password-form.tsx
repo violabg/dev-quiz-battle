@@ -27,7 +27,7 @@ import { z } from "zod";
 import PasswordInput from "../ui/password-input";
 
 const updatePasswordSchema = z.object({
-  password: z.string().min(6, { message: "Minimo 6 caratteri" }),
+  password: z.string().min(6, "Minimo 6 caratteri"),
 });
 type UpdatePasswordFormValues = z.infer<typeof updatePasswordSchema>;
 

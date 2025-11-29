@@ -30,8 +30,8 @@ import PasswordInput from "../ui/password-input";
 import { Separator } from "../ui/separator";
 
 const loginSchema = z.object({
-  email: z.string().email({ message: "Email non valida" }),
-  password: z.string().min(6, { message: "Minimo 6 caratteri" }),
+  email: z.string().email("Email non valida"),
+  password: z.string().min(6, "Minimo 6 caratteri"),
 });
 type LoginFormValues = z.infer<typeof loginSchema>;
 

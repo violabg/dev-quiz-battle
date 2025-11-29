@@ -27,7 +27,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email({ message: "Email non valida" }),
+  email: z.string().email("Email non valida"),
 });
 type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
