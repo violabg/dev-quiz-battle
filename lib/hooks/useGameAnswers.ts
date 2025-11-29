@@ -30,17 +30,21 @@ export const useGameAnswers = ({
 
   useEffect(() => {
     if (!currentQuestionId) {
-      setAllAnswers([]);
-      if (onAnswersLoaded) {
-        onAnswersLoaded([]);
-      }
-      return;
+      const timeout = setTimeout(() => {
+        setAllAnswers([]);
+        if (onAnswersLoaded) {
+          onAnswersLoaded([]);
+        }
+      }, 0);
+      return () => clearTimeout(timeout);
     }
 
     let isMounted = true;
 
-    // Initial answers fetch
-    fetchAnswers(currentQuestionId);
+    // Initial answers fetch (deferred to avoid setState in effect body)
+    const fetchTimeout = setTimeout(() => {
+      void fetchAnswers(currentQuestionId);
+    }, 0);
 
     const answerSubscription = subscribeToAnswers(async (payload) => {
       if (
@@ -54,6 +58,7 @@ export const useGameAnswers = ({
     });
 
     return () => {
+      clearTimeout(fetchTimeout);
       isMounted = false;
       unsubscribeFromAnswers(answerSubscription);
     };

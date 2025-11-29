@@ -52,13 +52,16 @@ export function QuestionDisplay({
   // Reset submission state when the user's answer appears in allAnswers
   useEffect(() => {
     if (userAnswer && isSubmittingAnswer) {
-      setIsSubmittingAnswer(false);
-      setSubmittingOptionIndex(null);
+      const timeout = setTimeout(() => {
+        setIsSubmittingAnswer(false);
+        setSubmittingOptionIndex(null);
 
-      // Show a success toast when the answer is successfully submitted
-      toast.success("Risposta inviata!", {
-        description: "In attesa degli altri giocatori...",
-      });
+        // Show a success toast when the answer is successfully submitted
+        toast.success("Risposta inviata!", {
+          description: "In attesa degli altri giocatori...",
+        });
+      }, 0);
+      return () => clearTimeout(timeout);
     }
   }, [userAnswer, isSubmittingAnswer]);
 
@@ -93,9 +96,12 @@ export function QuestionDisplay({
 
   // Reset states when question changes (new turn)
   useEffect(() => {
-    setTimeElapsed(0);
-    setIsSubmittingAnswer(false);
-    setSubmittingOptionIndex(null);
+    const timeout = setTimeout(() => {
+      setTimeElapsed(0);
+      setIsSubmittingAnswer(false);
+      setSubmittingOptionIndex(null);
+    }, 0);
+    return () => clearTimeout(timeout);
   }, [question.id]);
 
   useEffect(() => {

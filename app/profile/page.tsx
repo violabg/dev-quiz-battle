@@ -7,26 +7,33 @@ import { ProfileContentError } from "./ProfileContentError";
 import { ProfileContentFallback } from "./ProfileContentFallback";
 
 async function ProfileLoader({ userId }: { userId: string }) {
+  let profileData;
+  let errorMessage: string | null = null;
   try {
-    const profileData = await getProfileWithScore(userId);
-    return (
-      <ProfileContent
-        profile={{
-          id: profileData.profile_id,
-          user_name: profileData.user_name,
-          full_name: profileData.full_name,
-          avatar_url: profileData.avatar_url,
-          total_score: profileData.total_score,
-        }}
-      />
-    );
+    profileData = await getProfileWithScore(userId);
   } catch (e: any) {
+    errorMessage = e?.message || "Errore nel caricamento del profilo.";
+  }
+
+  if (errorMessage || !profileData) {
     return (
       <ProfileContentError
-        error={e.message || "Errore nel caricamento del profilo."}
+        error={errorMessage || "Errore nel caricamento del profilo."}
       />
     );
   }
+
+  return (
+    <ProfileContent
+      profile={{
+        id: profileData.profile_id,
+        user_name: profileData.user_name,
+        full_name: profileData.full_name,
+        avatar_url: profileData.avatar_url,
+        total_score: profileData.total_score,
+      }}
+    />
+  );
 }
 
 export default async function ProfilePage() {
