@@ -28,7 +28,7 @@
     "crypto": "^1.0.1",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.555.0",
-    "next": "16.0.9",
+    "next": "16.0.10",
     "next-themes": "latest",
     "prism-react-renderer": "^2.4.1",
     "react": "^19.2.0",
