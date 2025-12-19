@@ -1,5 +1,5 @@
 "use client";
-
+import { GithubIcon } from "@/components/icons/github";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,8 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-// Removed unused Label import
 import {
   Form,
   FormControl,
@@ -18,13 +16,18 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { createClient } from "@/lib/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { api } from "@/convex/_generated/api";
 import { cn } from "@/lib/utils";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "convex/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useTransition } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 import PasswordInput from "../ui/password-input";
 
@@ -38,7 +41,7 @@ const signUpSchema = z
       .string()
       .min(2, "Cognome deve essere almeno 2 caratteri")
       .max(30, "Cognome deve essere massimo 30 caratteri"),
-    user_name: z
+    username: z
       .string()
       .min(3, "Username deve essere almeno 3 caratteri")
       .max(20, "Username deve essere massimo 20 caratteri")
@@ -65,47 +68,78 @@ export function SignUpForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const { signIn } = useAuthActions();
+  const initializeUserProfile = useMutation(api.auth.initializeUserProfile);
+
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
       first_name: "",
       last_name: "",
-      user_name: "",
+      username: "",
       email: "",
       password: "",
       repeatPassword: "",
     },
     mode: "onChange",
   });
-  const { handleSubmit, setError } = form;
 
   const handleSignUp = async (values: SignUpFormValues) => {
-    const supabase = createClient();
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signUp({
-        email: values.email,
-        password: values.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            user_name: values.user_name,
-            name: `${values.first_name} ${values.last_name}`,
-            full_name: `${values.first_name} ${values.last_name}`,
-          },
-        },
-      });
-      if (error) throw error;
-      router.push("/auth/sign-up-success");
-    } catch (error: unknown) {
-      setError("email", {
-        message: error instanceof Error ? error.message : "An error occurred",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    startTransition(async () => {
+      try {
+        // Sign up with email and password
+        const formData = new FormData();
+        formData.append("first_name", values.first_name);
+        formData.append("last_name", values.last_name);
+        formData.append("username", values.username);
+        formData.append("email", values.email);
+        formData.append("password", values.password);
+        formData.append("flow", "signUp");
+
+        await signIn("password", formData);
+
+        // Initialize user profile fields after successful signup
+        await initializeUserProfile({
+          username: values.username,
+        });
+
+        toast.success("Registrazione completata!");
+        router.push("/dashboard");
+      } catch (error: unknown) {
+        console.error("Sign up error:", error);
+        toast.error("Errore", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "Impossibile completare la registrazione",
+        });
+      }
+    });
+  };
+
+  const handleGitHubSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    startTransition(async () => {
+      try {
+        // Sign up with GitHub - user initialization is automatic via Convex Auth
+        const formData = new FormData();
+        formData.append("redirectTo", "/gioca");
+        await signIn("github", formData);
+
+        toast.success("Registrazione completata!");
+        router.push("/dashboard");
+      } catch (error: unknown) {
+        console.error("GitHub sign up error:", error);
+        toast.error("Errore", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "Impossibile completare la registrazione con GitHub",
+        });
+      }
+    });
   };
 
   return (
@@ -113,12 +147,12 @@ export function SignUpForm({
       <Card className="gradient-border glass-card">
         <CardHeader>
           <CardTitle className="text-2xl">Registrati</CardTitle>
-          <CardDescription>Crea un nuovo account</CardDescription>
+          <CardDescription>Crea un nuovo account per giocare</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form
-              onSubmit={handleSubmit(handleSignUp)}
+              onSubmit={form.handleSubmit(handleSignUp)}
               className="space-y-4"
               autoComplete="off"
             >
@@ -133,7 +167,7 @@ export function SignUpForm({
                         type="text"
                         placeholder="Mario"
                         autoComplete="given-name"
-                        disabled={isLoading}
+                        disabled={isPending}
                         {...field}
                       />
                     </FormControl>
@@ -152,7 +186,7 @@ export function SignUpForm({
                         type="text"
                         placeholder="Rossi"
                         autoComplete="family-name"
-                        disabled={isLoading}
+                        disabled={isPending}
                         {...field}
                       />
                     </FormControl>
@@ -161,7 +195,7 @@ export function SignUpForm({
                 )}
               />
               <FormField
-                name="user_name"
+                name="username"
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
@@ -170,8 +204,8 @@ export function SignUpForm({
                       <Input
                         type="text"
                         placeholder="johndoe"
-                        autoComplete="user_name"
-                        disabled={isLoading}
+                        autoComplete="off"
+                        disabled={isPending}
                         {...field}
                       />
                     </FormControl>
@@ -179,6 +213,7 @@ export function SignUpForm({
                   </FormItem>
                 )}
               />
+
               <FormField
                 name="email"
                 control={form.control}
@@ -190,7 +225,7 @@ export function SignUpForm({
                         type="email"
                         placeholder="m@example.com"
                         autoComplete="email"
-                        disabled={isLoading}
+                        disabled={isPending}
                         {...field}
                       />
                     </FormControl>
@@ -198,6 +233,7 @@ export function SignUpForm({
                   </FormItem>
                 )}
               />
+
               <FormField
                 name="password"
                 control={form.control}
@@ -207,7 +243,7 @@ export function SignUpForm({
                     <FormControl>
                       <PasswordInput
                         autoComplete="new-password"
-                        disabled={isLoading}
+                        disabled={isPending}
                         {...field}
                       />
                     </FormControl>
@@ -215,6 +251,7 @@ export function SignUpForm({
                   </FormItem>
                 )}
               />
+
               <FormField
                 name="repeatPassword"
                 control={form.control}
@@ -224,7 +261,7 @@ export function SignUpForm({
                     <FormControl>
                       <PasswordInput
                         autoComplete="new-password"
-                        disabled={isLoading}
+                        disabled={isPending}
                         {...field}
                       />
                     </FormControl>
@@ -235,21 +272,36 @@ export function SignUpForm({
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isLoading || !form.formState.isValid}
+                disabled={isPending || !form.formState.isValid}
               >
-                {isLoading ? "Creazione account..." : "Registrati"}
+                {isPending ? "Registrazione in corso..." : "Registrati"}
               </Button>
-              <div className="mt-4 text-sm text-center">
-                Hai già un account?{" "}
-                <Link
-                  href="/auth/login"
-                  className="underline underline-offset-4"
-                >
-                  Accedi
-                </Link>
-              </div>
             </form>
           </Form>
+
+          <Separator className="my-4" />
+
+          <div className="flex flex-col gap-4">
+            <Button
+              className="flex justify-center items-center gap-2 bg-background hover:bg-accent border border-input w-full text-black dark:text-white transition-colors hover:text-accent-foreground"
+              disabled={isPending}
+              onClick={handleGitHubSignUp}
+            >
+              <GithubIcon className="w-5 h-5" />
+              <span className="font-medium">
+                {isPending
+                  ? "Registrazione in corso..."
+                  : "Registrati con GitHub"}
+              </span>
+            </Button>
+          </div>
+
+          <div className="mt-4 text-sm text-center">
+            Hai già un account?{" "}
+            <Link href="/auth/login" className="underline underline-offset-4">
+              Accedi
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

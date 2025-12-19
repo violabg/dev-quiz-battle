@@ -1,19 +1,9 @@
 {
-  "inputs": [
-    {
-      "type": "promptString",
-      "id": "supabase-access-token",
-      "description": "Supabase personal access token",
-      "password": true
-    }
-  ],
   "servers": {
-    "supabase": {
+    "convex-mcp": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@supabase/mcp-server-supabase@latest"],
-      "env": {
-        "SUPABASE_ACCESS_TOKEN": "${input:supabase-access-token}"
-      }
+      "args": ["-y", "convex@latest", "mcp", "start"]
     }
   }
 }

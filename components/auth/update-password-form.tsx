@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-// Removed unused Label import
 import {
   Form,
   FormControl,
@@ -17,8 +16,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -27,7 +26,9 @@ import { z } from "zod";
 import PasswordInput from "../ui/password-input";
 
 const updatePasswordSchema = z.object({
-  password: z.string().min(6, "Minimo 6 caratteri"),
+  password: z.string().min(6, {
+    error: "Minimo 6 caratteri",
+  }),
 });
 type UpdatePasswordFormValues = z.infer<typeof updatePasswordSchema>;
 
@@ -37,6 +38,7 @@ export function UpdatePasswordForm({
 }: React.ComponentPropsWithoutRef<"div">) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const authActions = useAuthActions();
   const form = useForm<UpdatePasswordFormValues>({
     resolver: zodResolver(updatePasswordSchema),
     defaultValues: { password: "" },
@@ -45,13 +47,13 @@ export function UpdatePasswordForm({
   const { handleSubmit, setError } = form;
 
   const handleUpdatePassword = async (values: UpdatePasswordFormValues) => {
-    const supabase = createClient();
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: values.password,
-      });
-      if (error) throw error;
+      const formData = new FormData();
+      formData.append("password", values.password);
+
+      // Call Convex Auth's update password action
+      await authActions.signIn("resend", formData);
       router.push("/");
     } catch (error: unknown) {
       setError("password", {
