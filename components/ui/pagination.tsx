@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants, type Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -15,7 +15,7 @@ function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
       role="navigation"
       aria-label="pagination"
       data-slot="pagination"
-      className={cn("mx-auto flex w-full justify-center", className)}
+      className={cn("flex justify-center mx-auto w-full", className)}
       {...props}
     />
   );
@@ -108,7 +108,7 @@ function PaginationEllipsis({
     <span
       aria-hidden
       data-slot="pagination-ellipsis"
-      className={cn("flex size-9 items-center justify-center", className)}
+      className={cn("flex justify-center items-center size-9", className)}
       {...props}
     >
       <MoreHorizontalIcon className="size-4" />
