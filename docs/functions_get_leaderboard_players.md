@@ -1,6 +1,6 @@
-# get_leaderboard_players(offset, limit, language_filter)
+# Leaderboard Query
 
-[← Back to Supabase Docs](./supabase.md)
+[← Back to Convex Docs](./convex.md)
 
 ## Purpose
 
@@ -8,76 +8,84 @@ Returns a paginated list of players for the leaderboard, optionally filtered by 
 
 ## How it works
 
-- This is a **PL/pgSQL function** that returns player info and scores, with pagination and optional language filtering.
-- If a language is provided, it uses the `player_language_scores` table; otherwise, it sums scores from all games.
+- This is a **Convex query** located in `convex/queries/leaderboard.ts`.
+- Returns player info and scores with pagination and optional language filtering.
+- If a language is provided, it uses the `player_language_scores` table; otherwise, it uses the `users` table.
 
-## SQL Code Explained
+## Convex Query Implementation
 
-```sql
-CREATE OR REPLACE FUNCTION get_leaderboard_players(
-  offset_value integer,
-  limit_value integer,
-  language_filter text DEFAULT NULL
-)
-RETURNS TABLE (
-  player_id uuid,
-  total_score numeric,
-  name text,
-  full_name text,
-  user_name text,
-  avatar_url text,
-  total_items bigint
-) AS $$
-BEGIN
-  IF language_filter IS NOT NULL AND length(trim(language_filter)) > 0 THEN
-    RETURN QUERY
-      WITH filtered AS (
-        SELECT
-          pls.player_id,
-          pls.total_score,
-          p.name,
-          p.full_name,
-          p.user_name,
-          p.avatar_url
-        FROM player_language_scores pls
-        JOIN profiles p ON pls.player_id = p.id
-        WHERE pls.language = language_filter
-      ), counted AS (
-        SELECT *, count(*) OVER() AS total_items
-        FROM filtered
-        ORDER BY total_score DESC
-        LIMIT limit_value OFFSET offset_value
-      )
-      SELECT * FROM counted;
-  ELSE
-    RETURN QUERY
-      WITH filtered AS (
-        SELECT
-          gp.player_id,
-          SUM(gp.score) AS total_score,
-          p.name,
-          p.full_name,
-          p.user_name,
-          p.avatar_url
-        FROM game_players gp
-        JOIN profiles p ON gp.player_id = p.id
-        GROUP BY gp.player_id, p.name, p.full_name, p.user_name, p.avatar_url
-      ), counted AS (
-        SELECT *, count(*) OVER() AS total_items
-        FROM filtered
-        ORDER BY total_score DESC
-        LIMIT limit_value OFFSET offset_value
-      )
-      SELECT * FROM counted;
-  END IF;
-END;
-$$ LANGUAGE plpgsql SECURITY INVOKER SET search_path = 'public';
+```typescript
+export const getLeaderboard = query({
+  args: {
+    language: v.optional(v.string()),
+    page: v.optional(v.number()),
+    pageSize: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const page = args.page ?? 1;
+    const pageSize = args.pageSize ?? 10;
+    const offset = (page - 1) * pageSize;
+
+    let players: LeaderboardPlayer[];
+
+    if (args.language) {
+      // Get scores filtered by language
+      const languageScores = await ctx.db
+        .query("player_language_scores")
+        .withIndex("by_language", (q) => q.eq("language", args.language!))
+        .collect();
+
+      players = await Promise.all(
+        languageScores.map(async (score) => {
+          const user = await ctx.db.get(score.player_id);
+          return {
+            player_id: score.player_id,
+            total_score: score.total_score,
+            user,
+          };
+        })
+      );
+    } else {
+      // Get all users sorted by total score
+      const allUsers = await ctx.db
+        .query("users")
+        .withIndex("by_total_score")
+        .order("desc")
+        .collect();
+
+      players = allUsers.map((user) => ({
+        player_id: user._id,
+        total_score: user.total_score ?? 0,
+        user,
+      }));
+    }
+
+    // Sort and paginate
+    players.sort((a, b) => b.total_score - a.total_score);
+    const total = players.length;
+    const paginatedPlayers = players.slice(offset, offset + pageSize);
+
+    return {
+      players: paginatedPlayers,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
+  },
+});
 ```
 
-- Uses a CTE (WITH clause) to filter and count leaderboard entries.
-- Returns player info, score, and the total number of items for pagination.
-- If a language is provided, only scores for that language are shown.
+- Queries either `player_language_scores` (if language filter provided) or `users` table.
+- Sorts by total score in descending order.
+- Returns paginated results with metadata.
 
 ## Usage
 
-- Used to display the leaderboard in the app, with pagination and optional language filter.
+```typescript
+const leaderboard = useQuery(api.queries.leaderboard.getLeaderboard, {
+  language: "javascript",
+  page: 1,
+  pageSize: 10,
+});
+```

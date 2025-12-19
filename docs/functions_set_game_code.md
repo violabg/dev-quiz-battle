@@ -1,37 +1,76 @@
-# set_game_code()
+# Set Game Code
 
-[← Back to Supabase Docs](./supabase.md)
+[← Back to Convex Docs](./convex.md)
 
 ## Purpose
 
-Ensures every new game in the `games` table has a unique code. If a code is not provided, it generates one using `generate_unique_game_code()`.
+Ensures every new game has a unique code. The code is always generated automatically in the `createGame` mutation.
 
 ## How it works
 
-- This is a **trigger function**: it runs before a new row is inserted into the `games` table.
-- If the `code` field is empty, it generates a new code and checks for uniqueness.
+- In Convex, the game code is generated directly in the mutation logic.
+- No separate trigger needed - the mutation handles code generation atomically.
+- The code is required and always generated during game creation.
 
-## SQL Code Explained
+## Implementation
 
-```sql
-CREATE OR REPLACE FUNCTION set_game_code()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF NEW.code IS NULL OR NEW.code = '' THEN
-    LOOP
-      NEW.code := generate_unique_game_code();
-      EXIT WHEN NOT EXISTS (SELECT 1 FROM games WHERE code = NEW.code);
-    END LOOP;
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY INVOKER SET search_path = 'public';
+See the `createGame` mutation in `convex/mutations/games.ts`:
+
+```typescript
+export const createGame = mutation({
+  args: {
+    max_players: v.optional(v.number()),
+    time_limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Not authenticated");
+    }
+
+    // Generate unique code
+    const code = await generateUniqueCode(ctx);
+    const now = Date.now();
+
+    // Create game with generated code
+    const gameId = await ctx.db.insert("games", {
+      code,
+      host_id: userId,
+      status: "waiting",
+      max_players: args.max_players ?? 8,
+      current_turn: 0,
+      time_limit: args.time_limit ?? 120,
+      created_at: now,
+      updated_at: now,
+    });
+
+    // Auto-join host as first player
+    await ctx.db.insert("game_players", {
+      game_id: gameId,
+      player_id: userId,
+      score: 0,
+      turn_order: 0,
+      is_active: true,
+      joined_at: now,
+    });
+
+    return { gameId, code };
+  },
+});
 ```
 
-- Checks if the new game's code is missing.
-- Generates a code and ensures it doesn't already exist in the `games` table.
-- Returns the new row with the code set.
+- Code is always generated for new games
+- Uniqueness is checked during generation
+- Host is automatically added as the first player
 
 ## Usage
 
-- Linked to the `trigger_set_game_code` trigger on the `games` table.
+```typescript
+const createGame = useMutation(api.mutations.games.createGame);
+const { gameId, code } = await createGame({
+  max_players: 4,
+  time_limit: 120,
+});
+
+console.log(`Game created with code: ${code}`);
+```

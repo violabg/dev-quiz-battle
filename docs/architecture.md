@@ -20,13 +20,13 @@ This document provides a high-level overview of the architecture for Dev Quiz Ba
 
 - **State Management**
 
-  - React hooks and context (see `lib/hooks/` and `lib/supabase/supabase-provider.tsx`).
-  - Real-time updates via Supabase subscriptions.
+  - React hooks and context (see `hooks/` and `components/convex-provider.tsx`).
+  - Real-time updates via Convex subscriptions.
 
-- **Backend (Supabase)**
+- **Backend (Convex)**
 
-  - Authentication, database, and real-time features are handled by Supabase.
-  - All database logic is in `lib/supabase/`.
+  - Authentication, database, and real-time features are handled by Convex.
+  - All backend logic is in `convex/` (queries, mutations, actions, schema).
 
 - **Styling**
   - Tailwind CSS v4 with OKLCH color variables for theme support.
@@ -35,32 +35,33 @@ This document provides a high-level overview of the architecture for Dev Quiz Ba
 ## Data Flow
 
 1. **User Authentication**
-   - Managed by Supabase Auth.
+   - Managed by Convex Auth.
    - User state is provided via context.
 2. **Game Creation & Joining**
    - Users can create or join games via forms.
-   - Game and player data is stored in Supabase tables.
+   - Game and player data is stored in Convex tables.
 3. **Real-Time Game Play**
-   - Game state, player actions, and answers are synced in real-time using Supabase channels.
+   - Game state, player actions, and answers are synced in real-time using Convex subscriptions.
 4. **Question Generation**
-   - AI-generated questions via Groq API (see `lib/groq.ts`).
+   - AI-generated questions via Groq API (see `lib/groq.ts` and `convex/actions/questions.ts`).
 5. **Score Calculation & Leaderboard**
-   - Scores are calculated and persisted in Supabase.
-   - Leaderboard is paginated and filterable.
+   - Scores are calculated and persisted in Convex.
+   - Leaderboard is queried from Convex with pagination and filtering.
 
 ## Directory Structure
 
 - `app/` — Routing, pages, layouts
 - `components/` — UI and feature components
-- `lib/` — Supabase logic, hooks, utilities
-- `types/` — TypeScript types
+- `convex/` — Backend (queries, mutations, actions, schema)
+- `lib/` — Utilities, helpers, types
+- `hooks/` — Custom React hooks
 - `public/` — Static assets
 
 ---
 
 See also:
 
-- [Supabase Integration](./supabase.md)
+- [Convex Integration](./convex.md)
 - [UI Components](./components.md)
 - [Game Logic](./game-logic.md)
 

@@ -1,6 +1,6 @@
 # Dev Quiz Battle Documentation
 
-Welcome to **Dev Quiz Battle**! This project is an AI-powered multiplayer coding quiz game built with Next.js, React, TypeScript, Tailwind CSS v4, and Supabase. This documentation provides an overview, setup instructions, and links to detailed guides for each part of the codebase.
+Welcome to **Dev Quiz Battle**! This project is an AI-powered multiplayer coding quiz game built with Next.js, React, TypeScript, Tailwind CSS v4, and Convex. This documentation provides an overview, setup instructions, and links to detailed guides for each part of the codebase.
 
 ---
 
@@ -22,18 +22,18 @@ Welcome to **Dev Quiz Battle**! This project is an AI-powered multiplayer coding
 
 ## Overview
 
-Dev Quiz Battle is a real-time, multiplayer coding quiz game. It leverages Supabase for authentication, real-time updates, and database operations. The UI is built with modern, accessible components using shadcn/ui and Radix UI, styled with Tailwind CSS v4 and OKLCH color spaces for theme support.
+Dev Quiz Battle is a real-time, multiplayer coding quiz game. It leverages Convex for authentication, real-time updates, and database operations. The UI is built with modern, accessible components using shadcn/ui and Radix UI, styled with Tailwind CSS v4 and OKLCH color spaces for theme support.
 
 ## Project Structure
 
 ```
 app/                # Next.js app directory (routing, pages, layouts)
 components/         # Reusable UI and feature components
-lib/                # Supabase logic, hooks, and utilities
+convex/             # Convex backend (queries, mutations, actions, schema)
+lib/                # Utilities, hooks, and types
 public/             # Static assets
 hooks/              # Custom React hooks
 styles/             # Global and utility CSS (see app/globals.css)
-types/              # TypeScript types
 README.md           # Project overview and quickstart
 /docs/              # Additional documentation (see below)
 ```
@@ -50,29 +50,26 @@ README.md           # Project overview and quickstart
    npm install
    ```
 3. **Set up environment variables:**
-   - Copy `.env.example` to `.env.local` and fill in your Supabase credentials.
-4. **Run the development server:**
+   - Copy `.env.example` to `.env.local` and fill in your Convex and Groq API credentials.
+4. **Run Convex development server:**
+   ```sh
+   npx convex dev
+   ```
+5. **Run the Next.js development server:**
    ```sh
    npm run dev
    ```
-5. **Open [http://localhost:3000](http://localhost:3000) in your browser.**
+6. **Open [http://localhost:3000](http://localhost:3000) in your browser.**
 
 ## Environment Variables
 
 ```env
-POSTGRES_URL="postgres://postgres:***@host:6543/postgres?..."
-POSTGRES_PRISMA_URL="postgres://postgres:***@host:6543/postgres?..."
-SUPABASE_URL="https://your-project.supabase.co"
-NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
-POSTGRES_URL_NON_POOLING="postgres://postgres:***@host:5432/postgres?..."
-SUPABASE_JWT_SECRET="***"
-POSTGRES_USER="postgres"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJI...***"
-POSTGRES_PASSWORD="***"
-POSTGRES_DATABASE="postgres"
-SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJI...***"
-POSTGRES_HOST="db.your-project.supabase.co"
-GROQ_API_KEY="gsk_***"
+# Convex
+CONVEX_DEPLOYMENT=your-deployment-name
+NEXT_PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud
+
+# Groq API for AI question generation
+GROQ_API_KEY=gsk_***
 ```
 
 ## Scripts
@@ -88,7 +85,7 @@ GROQ_API_KEY="gsk_***"
 - **React v19** — Functional components, hooks
 - **TypeScript v5** — Type safety
 - **Tailwind CSS v4** — Utility-first styling, OKLCH color support
-- **Supabase** — Auth, real-time, database
+- **Convex** — Backend, auth, real-time, database
 - **shadcn/ui & Radix UI** — Accessible, modern UI components
 - **Zod** — Schema validation
 - **react-hook-form** — Form management
@@ -96,7 +93,7 @@ GROQ_API_KEY="gsk_***"
 ## Documentation Index
 
 - [Architecture Overview](./docs/architecture.md)
-- [Supabase Integration](./docs/supabase.md)
+- [Convex Integration](./docs/convex.md)
 - [UI Components](./docs/components.md)
 - [Styling & Theming](./docs/styling.md)
 - [Game Logic](./docs/game-logic.md)

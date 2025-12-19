@@ -1,49 +1,60 @@
-# handle_new_user()
+# User Creation & Authentication
 
-[← Back to Supabase Docs](./supabase.md)
+[← Back to Convex Docs](./convex.md)
 
 ## Purpose
 
-Automatically creates a new row in the `profiles` table whenever a new user signs up via Supabase Auth.
+Handles user creation and authentication via Convex Auth. User data is automatically stored in the `users` table.
 
 ## How it works
 
-- This is a **trigger function**: it runs automatically after a new user is inserted into the `auth.users` table.
-- It copies user metadata (name, full_name, user_name, avatar_url) from the auth system into the `profiles` table.
+- Convex Auth automatically manages user accounts in the `users` table.
+- User profile data (name, email, username, image) is stored directly in the `users` table.
+- No separate trigger or function needed - Convex Auth handles this natively.
 
-## SQL Code Explained
+## Schema
 
-```sql
-create function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer set search_path = ''
-as $$
-begin
-  insert into public.profiles (
-    id,
-    name,
-    full_name,
-    user_name,
-    avatar_url
-  )
-  values (
-    new.id,
-    new.raw_user_meta_data ->> 'name',
-    new.raw_user_meta_data ->> 'full_name',
-    new.raw_user_meta_data ->> 'user_name',
-    new.raw_user_meta_data ->> 'avatar_url'
-  );
-  return new;
-end;
-$$;
+The `users` table is defined in `convex/schema.ts`:
+
+```typescript
+users: defineTable({
+  name: v.optional(v.string()),
+  image: v.optional(v.string()),
+  email: v.optional(v.string()),
+  emailVerificationTime: v.optional(v.number()),
+  phone: v.optional(v.string()),
+  phoneVerificationTime: v.optional(v.number()),
+  isAnonymous: v.optional(v.boolean()),
+  first_name: v.optional(v.string()),
+  last_name: v.optional(v.string()),
+  username: v.optional(v.string()),
+  total_score: v.optional(v.number()),
+  games_played: v.optional(v.number()),
+});
 ```
 
-- `new` refers to the new user row being inserted.
-- The function extracts fields from the user's metadata and inserts them into the `profiles` table.
-- The function returns the new user row (required for triggers).
+## Updating User Profile
+
+Users can update their profile using the mutation in `convex/mutations/auth.ts`:
+
+```typescript
+export const updateUser = mutation({
+  args: {
+    name: v.optional(v.string()),
+    username: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Not authenticated");
+    }
+    await ctx.db.patch(userId, args);
+  },
+});
+```
 
 ## Usage
 
-- Linked to the `on_auth_user_created` trigger:
-  - Every time a user signs up, this function runs and creates their profile automatically.
+- Authentication is configured in `convex/auth.config.ts`
+- User data is automatically created when a user signs up
+- Access current user via `useQuery(api.queries.auth.currentUser)`

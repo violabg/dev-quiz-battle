@@ -1,6 +1,6 @@
-# get_user_profile_with_score(user_id)
+# Get User Profile with Score
 
-[← Back to Supabase Docs](./supabase.md)
+[← Back to Convex Docs](./convex.md)
 
 ## Purpose
 
@@ -8,29 +8,40 @@ Returns a user's profile information along with their total score across all gam
 
 ## How it works
 
-- This is a **PL/pgSQL function** that joins the `profiles` and `game_players` tables.
-- Sums up the user's scores from all games and returns profile fields and total score.
+- In Convex, user profile data is stored directly in the `users` table.
+- The `total_score` and `games_played` fields are maintained in the user record.
+- No separate query needed - just access the user record.
 
-## SQL Code Explained
+## Implementation
 
-```sql
-CREATE OR REPLACE FUNCTION get_user_profile_with_score(user_id uuid)
-RETURNS TABLE(profile_id uuid, name text, full_name text, user_name text, avatar_url text, total_score bigint) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT p.id, p.name, p.full_name, p.user_name, p.avatar_url, COALESCE(SUM(gp.score)::bigint, 0) AS total_score
-    FROM profiles p
-    LEFT JOIN game_players gp ON p.id = gp.player_id
-    WHERE p.id = user_id
-    GROUP BY p.id;
-END;
-$$ LANGUAGE plpgsql SECURITY INVOKER SET search_path = 'public';
+```typescript
+export const currentUser = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return null;
+    }
+    return await ctx.db.get(userId);
+  },
+});
 ```
 
-- Joins the user's profile with their game scores.
-- Uses `COALESCE` to return 0 if the user has no games played.
-- Returns all main profile fields and the total score.
+The user document includes:
+
+- `name` - User's display name
+- `username` - Unique username
+- `email` - User's email
+- `image` - Avatar URL
+- `total_score` - Cumulative score across all games
+- `games_played` - Total number of games played
 
 ## Usage
 
-- Used to show a user's profile and their total score in the app.
+```typescript
+const user = useQuery(api.queries.auth.currentUser);
+
+if (user) {
+  console.log(`${user.name} has ${user.total_score} points`);
+}
+```
