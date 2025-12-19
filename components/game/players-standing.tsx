@@ -1,10 +1,10 @@
-import type { GamePlayer, Profile } from "@/lib/supabase/types";
+import { GamePlayer, GameWithPlayers } from "@/lib/convex-types";
 import { Award, Medal, Trophy } from "lucide-react";
 import type { ElementType } from "react";
 
 // Props for the new PlayerPodiumCard component
 type PlayerPodiumCardProps = {
-  player: GamePlayer & { profile: Profile };
+  player: GamePlayer;
   MedalIcon: ElementType;
   gradientClass: string;
   medalSizeClass: string;
@@ -39,8 +39,10 @@ const PlayerPodiumCard = ({
       </div>
       {/* Name Row */}
       <div className="flex justify-center items-start pt-1 w-full min-h-[3em] text-center">
-        <p className="max-w-full font-medium break-words whitespace-pre-line hyphens-auto">
-          {player.profile.full_name}
+        <p className="max-w-full font-medium wrap-break-word whitespace-pre-line hyphens-auto">
+          {player.user?.name ||
+            player.user?.username ||
+            "Giocatore Sconosciuto"}
         </p>
       </div>
     </div>
@@ -48,7 +50,7 @@ const PlayerPodiumCard = ({
 };
 
 interface PlayersStandingProps {
-  players: (GamePlayer & { profile: Profile })[];
+  players: GameWithPlayers["players"];
 }
 
 export const PlayersStanding = ({ players }: PlayersStandingProps) => {
@@ -100,14 +102,18 @@ export const PlayersStanding = ({ players }: PlayersStandingProps) => {
         <ul className="divide-y divide-input">
           {sortedPlayers.map((player, index) => (
             <li
-              key={player.id}
+              key={player._id}
               className="flex justify-between items-center p-4"
             >
               <div className="flex items-center space-x-2">
                 <span className="font-medium text-muted-foreground">
                   #{index + 1}
                 </span>
-                <span>{player.profile.full_name}</span>
+                <span>
+                  {player.user?.name ||
+                    player.user?.username ||
+                    "Giocatore Sconosciuto"}
+                </span>
               </div>
               <span className="font-bold">{player.score}</span>
             </li>

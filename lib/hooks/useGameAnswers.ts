@@ -1,68 +1,30 @@
-import {
-  AnswersWithPlayer,
-  getAnswersWithPlayerForQuestion,
-  subscribeToAnswers,
-  unsubscribeFromAnswers,
-} from "@/lib/supabase/supabase-answers";
-import { useCallback, useEffect, useState } from "react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
+import type { AnswerWithUser } from "@/lib/convex-types";
+import { useQuery } from "convex/react";
+import { useEffect } from "react";
 
 type UseGameAnswersProps = {
-  currentQuestionId: string | undefined | null;
-  onAnswersLoaded?: (answers: AnswersWithPlayer) => void;
+  currentQuestionId: Id<"questions"> | undefined | null;
+  onAnswersLoaded?: (answers: AnswerWithUser[]) => void;
 };
 
 export const useGameAnswers = ({
   currentQuestionId,
   onAnswersLoaded,
 }: UseGameAnswersProps) => {
-  const [allAnswers, setAllAnswers] = useState<AnswersWithPlayer>([]);
-
-  const fetchAnswers = useCallback(
-    async (questionId: string) => {
-      const answers = await getAnswersWithPlayerForQuestion(questionId);
-      setAllAnswers(answers);
-      if (onAnswersLoaded) {
-        onAnswersLoaded(answers);
-      }
-    },
-    [onAnswersLoaded]
+  // Convex auto-subscribes to changes with useQuery
+  const allAnswers = useQuery(
+    api.queries.answers.getAnswersByQuestion,
+    currentQuestionId ? { question_id: currentQuestionId } : "skip"
   );
 
+  // Call onAnswersLoaded when answers change
   useEffect(() => {
-    if (!currentQuestionId) {
-      const timeout = setTimeout(() => {
-        setAllAnswers([]);
-        if (onAnswersLoaded) {
-          onAnswersLoaded([]);
-        }
-      }, 0);
-      return () => clearTimeout(timeout);
+    if (allAnswers && onAnswersLoaded) {
+      onAnswersLoaded(allAnswers);
     }
+  }, [allAnswers, onAnswersLoaded]);
 
-    let isMounted = true;
-
-    // Initial answers fetch (deferred to avoid setState in effect body)
-    const fetchTimeout = setTimeout(() => {
-      void fetchAnswers(currentQuestionId);
-    }, 0);
-
-    const answerSubscription = subscribeToAnswers(async (payload) => {
-      if (
-        isMounted &&
-        payload.new &&
-        payload.new.question_id === currentQuestionId
-      ) {
-        // Refetch all answers for the question to ensure consistency
-        await fetchAnswers(currentQuestionId);
-      }
-    });
-
-    return () => {
-      clearTimeout(fetchTimeout);
-      isMounted = false;
-      unsubscribeFromAnswers(answerSubscription);
-    };
-  }, [currentQuestionId, fetchAnswers, onAnswersLoaded]);
-
-  return { allAnswers, setAllAnswers }; // Expose setAllAnswers for reset
+  return { allAnswers: allAnswers ?? [] };
 };

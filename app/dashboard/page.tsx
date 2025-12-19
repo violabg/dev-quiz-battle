@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Card,
   CardContent,
@@ -5,15 +7,30 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { createClient } from "@/lib/supabase/server";
+import { api } from "@/convex/_generated/api";
+import { useQuery } from "convex/react";
+import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { CreateGameForm } from "./CreateGameForm";
 import { JoinGameForm } from "./JoinGameForm";
 
-export default async function DashboardPage() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
+export default function DashboardPage() {
+  const currentUser = useQuery(api.queries.auth.currentUser);
+  const router = useRouter();
 
-  const user = data.user;
+  if (currentUser === undefined) {
+    return (
+      <main className="flex flex-1 justify-center items-center">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </main>
+    );
+  }
+
+  if (!currentUser) {
+    router.push("/auth/login");
+    return null;
+  }
+
   return (
     <main className="flex-1 py-8 container">
       <h1 className="mb-8 font-bold text-3xl">
@@ -27,7 +44,9 @@ export default async function DashboardPage() {
               Imposta una nuova sfida di quiz di programmazione
             </CardDescription>
           </CardHeader>
-          <CardContent>{user && <CreateGameForm user={user} />}</CardContent>
+          <CardContent>
+            <CreateGameForm />
+          </CardContent>
         </Card>
         <Card className="gradient-border glass-card">
           <CardHeader>
@@ -36,7 +55,9 @@ export default async function DashboardPage() {
               Inserisci un codice partita per unirti a una partita esistente
             </CardDescription>
           </CardHeader>
-          <CardContent>{user && <JoinGameForm user={user} />}</CardContent>
+          <CardContent>
+            <JoinGameForm />
+          </CardContent>
         </Card>
       </div>
     </main>

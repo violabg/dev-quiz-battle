@@ -14,7 +14,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useAuth } from "@/lib/supabase/supabase-provider";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { useConvexAuth } from "convex/react";
 import { Loader2, LogOut, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -24,10 +25,11 @@ import DQBLogoGradient from "../icons/dqb-gradient-logo";
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { loading, supabase, user } = useAuth();
+  const authActions = useAuthActions();
+  const { isAuthenticated, isLoading } = useConvexAuth();
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await authActions.signOut();
     router.push("/auth/login");
   };
 
@@ -98,11 +100,11 @@ export function Navbar() {
         </div>
         <div className="flex items-center gap-4">
           <ModeToggle />
-          {loading ? (
+          {isLoading ? (
             <Loader2 className="mr-2 w-4 h-4 animate-spin" />
           ) : (
             <>
-              {user ? (
+              {isAuthenticated ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon">

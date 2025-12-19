@@ -1,6 +1,6 @@
-# calculate_score(response_time_ms, time_limit_ms)
+# Score Calculation
 
-[← Back to Supabase Docs](./supabase.md)
+[← Back to Convex Docs](./convex.md)
 
 ## Purpose
 
@@ -8,67 +8,90 @@ Calculates a player's score for a question based on how quickly they answered, r
 
 ## How it works
 
-- This is a **PL/pgSQL function** that takes the player's response time and the allowed time limit.
-- Returns a score: base score (1.0) plus a time bonus (ranging from 0.0 to 9.0). The total score can range from 1.0 (if `time_bonus` is 0.0) to 10.0 (if `time_bonus` is 9.0).
+- Score calculation is implemented in the `submitAnswer` mutation in `convex/mutations/answers.ts`.
+- Returns a score: base score (1.0) plus a time bonus (ranging from 0.0 to 9.0).
+- The total score can range from 1.0 to 10.0 depending on response time.
 
-## SQL Code Explained
+## Implementation
 
-```sql
-CREATE OR REPLACE FUNCTION calculate_score(
-  response_time_ms INTEGER,
-  time_limit_ms INTEGER
-)
-RETURNS DECIMAL
-LANGUAGE plpgsql
-SECURITY INVOKER
-SET search_path = 'public'
-AS $$
-DECLARE
-  base_score DECIMAL := 1.0;
-  time_bonus DECIMAL := 0.0;
-  t1 DECIMAL := time_limit_ms * 0.05;   -- 5%
-  t2 DECIMAL := time_limit_ms * 0.10;   -- 10%
-  t3 DECIMAL := time_limit_ms * 0.15;   -- 15%
-  t4 DECIMAL := time_limit_ms * 0.20;   -- 20%
-  t5 DECIMAL := time_limit_ms * 0.30;   -- 30%
-  t6 DECIMAL := time_limit_ms * 0.40;   -- 40%
-  t7 DECIMAL := time_limit_ms * 0.55;   -- 55%
-  t8 DECIMAL := time_limit_ms * 0.70;   -- 70%
-  t9 DECIMAL := time_limit_ms * 0.85;   -- 85%
-  t10 DECIMAL := time_limit_ms;         -- 100%
-BEGIN
-  IF response_time_ms < t1 THEN
-    time_bonus := 9.0;
-  ELSIF response_time_ms < t2 THEN
-    time_bonus := 8.0;
-  ELSIF response_time_ms < t3 THEN
-    time_bonus := 7.0;
-  ELSIF response_time_ms < t4 THEN
-    time_bonus := 6.0;
-  ELSIF response_time_ms < t5 THEN
-    time_bonus := 5.0;
-  ELSIF response_time_ms < t6 THEN
-    time_bonus := 4.0;
-  ELSIF response_time_ms < t7 THEN
-    time_bonus := 3.0;
-  ELSIF response_time_ms < t8 THEN
-    time_bonus := 2.0;
-  ELSIF response_time_ms < t9 THEN
-    time_bonus := 1.0;
-  ELSIF response_time_ms < t10 THEN
-    time_bonus := 0.5;
-  END IF;
+The scoring logic is embedded in the answer submission:
 
-  RETURN base_score + time_bonus;
-END;
-$$;
+```typescript
+function calculateScore(responseTimeMs: number, timeLimitMs: number): number {
+  const baseScore = 1.0;
+  let timeBonus = 0.0;
+
+  const t1 = timeLimitMs * 0.05; // 5%
+  const t2 = timeLimitMs * 0.1; // 10%
+  const t3 = timeLimitMs * 0.15; // 15%
+  const t4 = timeLimitMs * 0.2; // 20%
+  const t5 = timeLimitMs * 0.3; // 30%
+  const t6 = timeLimitMs * 0.4; // 40%
+  const t7 = timeLimitMs * 0.55; // 55%
+  const t8 = timeLimitMs * 0.7; // 70%
+  const t9 = timeLimitMs * 0.85; // 85%
+
+  if (responseTimeMs < t1) {
+    timeBonus = 9.0;
+  } else if (responseTimeMs < t2) {
+    timeBonus = 8.0;
+  } else if (responseTimeMs < t3) {
+    timeBonus = 7.0;
+  } else if (responseTimeMs < t4) {
+    timeBonus = 6.0;
+  } else if (responseTimeMs < t5) {
+    timeBonus = 5.0;
+  } else if (responseTimeMs < t6) {
+    timeBonus = 4.0;
+  } else if (responseTimeMs < t7) {
+    timeBonus = 3.0;
+  } else if (responseTimeMs < t8) {
+    timeBonus = 2.0;
+  } else if (responseTimeMs < t9) {
+    timeBonus = 1.0;
+  } else if (responseTimeMs < timeLimitMs) {
+    timeBonus = 0.5;
+  }
+
+  return baseScore + timeBonus;
+}
+```
+
+This function is called within the `submitAnswer` mutation:
+
+```typescript
+export const submitAnswer = mutation({
+  args: {
+    question_id: v.id("questions"),
+    selected_option: v.number(),
+    response_time_ms: v.number(),
+  },
+  handler: async (ctx, args) => {
+    // ... get question, game, player, etc.
+
+    const isCorrect = args.selected_option === question.correct_answer;
+    const scoreEarned = isCorrect
+      ? calculateScore(args.response_time_ms, game.time_limit * 1000)
+      : 0;
+
+    // ... insert answer and update scores
+  },
+});
 ```
 
 - The function divides the time limit into intervals.
 - The faster the answer, the higher the bonus (up to 9.0).
-- If the `response_time_ms` is equal to or exceeds `time_limit_ms` (i.e., `t10`), the `time_bonus` is 0.0, resulting in a score of 1.0.
-- Returns the total score for the answer.
+- If response time equals or exceeds time limit, bonus is 0.0, resulting in score of 1.0.
 
 ## Usage
 
-- Used by the `submit_answer` function to calculate points for correct answers.
+Score is automatically calculated when submitting an answer:
+
+```typescript
+const submitAnswer = useMutation(api.mutations.answers.submitAnswer);
+await submitAnswer({
+  question_id: questionId,
+  selected_option: 2,
+  response_time_ms: 3500,
+});
+```

@@ -1,6 +1,5 @@
 "use server";
-import { getRecentQuestionTexts } from "@/lib/get-recent-questions";
-import type { GameDifficulty, GameLanguage } from "@/lib/supabase/types";
+import type { GameDifficulty, GameLanguage } from "@/lib/convex-types";
 import { groq } from "@ai-sdk/groq";
 import { generateObject } from "ai";
 import { z } from "zod";
@@ -9,6 +8,7 @@ import { LLM_MODEL } from "./utils";
 interface GenerateQuestionOptions {
   language: GameLanguage;
   difficulty: GameDifficulty;
+  previousQuestions?: string[];
 }
 
 interface GeneratedQuestion {
@@ -40,14 +40,8 @@ const questionSchema = z.object({
 export async function generateQuestion({
   language,
   difficulty,
+  previousQuestions = [],
 }: GenerateQuestionOptions): Promise<GeneratedQuestion> {
-  // Fetch previous questions from Supabase (last 5 hours, same language/difficulty)
-  let previousQuestions: string[] = [];
-  try {
-    previousQuestions = await getRecentQuestionTexts({ language, difficulty });
-  } catch {
-    previousQuestions = [];
-  }
   const previousQuestionsPrompt = previousQuestions.length
     ? `Evita di generare domande simili o uguali alle seguenti (già usate nelle ultime 5 ore):\n${previousQuestions
         .map((q, i) => `${i + 1}. ${q}`)
@@ -100,7 +94,6 @@ export async function generateQuestion({
       schema: questionSchema,
       prompt,
       temperature: 0.7,
-      maxTokens: 2048,
     });
 
     return questionData as GeneratedQuestion;

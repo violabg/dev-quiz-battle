@@ -1,5 +1,4 @@
 "use client";
-
 import { GithubIcon } from "@/components/icons/github";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +8,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import z from "zod";
 import {
   Form,
   FormControl,
@@ -16,18 +25,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
-import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
+} from "../ui/form";
+import { Input } from "../ui/input";
 import PasswordInput from "../ui/password-input";
-import { Separator } from "../ui/separator";
 
 const loginSchema = z.object({
   email: z.string().email("Email non valida"),
@@ -39,53 +39,55 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
     mode: "onChange",
   });
-  const { handleSubmit, setError } = form;
+  const { handleSubmit } = form;
+  const [isPending, startTransition] = useTransition();
+  const { signIn } = useAuthActions();
+  const router = useRouter();
 
   const handleLogin = async (values: LoginFormValues) => {
-    const supabase = createClient();
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password,
-      });
-      if (error) throw error;
-      router.push("/");
-    } catch (error: unknown) {
-      setError("email", {
-        message: error instanceof Error ? error.message : "An error occurred",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    startTransition(async () => {
+      try {
+        // Password authentication - user initialization is automatic via Convex Auth
+        const formData = new FormData();
+        formData.append("email", values.email);
+        formData.append("password", values.password);
+        formData.append("flow", "signIn");
+        await signIn("password", formData);
+
+        router.push("/dashboard");
+      } catch (error: unknown) {
+        toast.error("Errore", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "Failed to sign in with Resend",
+        });
+      }
+    });
   };
 
-  const handleSocialLogin = async (e: React.FormEvent) => {
+  const handleGitHubLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
-    setIsLoading(true);
-
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "github",
-        options: {
-          redirectTo: `${window.location.origin}/auth/oauth?next=/dashboard`,
-        },
-      });
-
-      if (error) throw error;
-    } catch (error: unknown) {
-      console.log("error :>> ", error);
-      //  setError(error instanceof Error ? error.message : 'An error occurred')
-      setIsLoading(false);
-    }
+    startTransition(async () => {
+      try {
+        // GitHub authentication - user initialization is automatic via Convex Auth
+        const formData = new FormData();
+        await signIn("github", formData);
+        router.push("/dashboard");
+      } catch (error: unknown) {
+        toast.error("Errore", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "Failed to sign in with GitHub",
+        });
+      }
+    });
   };
 
   return (
@@ -93,9 +95,7 @@ export function LoginForm({
       <Card className="gradient-border glass-card">
         <CardHeader>
           <CardTitle className="text-2xl">Accedi</CardTitle>
-          <CardDescription>
-            Inserisci la tua email per accedere al tuo account
-          </CardDescription>
+          <CardDescription>Accedi con il tuo account GitHub</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -115,7 +115,7 @@ export function LoginForm({
                         type="email"
                         placeholder="m@example.com"
                         autoComplete="email"
-                        disabled={isLoading}
+                        disabled={isPending}
                         {...field}
                       />
                     </FormControl>
@@ -140,7 +140,7 @@ export function LoginForm({
                     <FormControl>
                       <PasswordInput
                         autoComplete="current-password"
-                        disabled={isLoading}
+                        disabled={isPending}
                         {...field}
                       />
                     </FormControl>
@@ -151,37 +151,32 @@ export function LoginForm({
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isLoading || !form.formState.isValid}
+                disabled={isPending || !form.formState.isValid}
               >
-                {isLoading ? "Accesso in corso..." : "Accedi"}
+                {isPending ? "Accesso in corso..." : "Accedi"}
               </Button>
-              <div className="mt-4 text-sm text-center">
-                Non hai un account?{" "}
-                <Link
-                  href="/auth/sign-up"
-                  className="underline underline-offset-4"
-                >
-                  Registrati
-                </Link>
-              </div>
             </form>
           </Form>
           <Separator className="my-4" />
-          <form onSubmit={handleSocialLogin}>
-            <div className="flex flex-col gap-6">
-              {/* {error && <p className=\"text-destructive-500 text-sm\">{error}</p>} */}
-              <Button
-                type="submit"
-                className="flex justify-center items-center gap-2 bg-background hover:bg-accent border border-input w-full text-black dark:text-white transition-colors hover:text-accent-foreground"
-                disabled={isLoading}
-              >
-                <GithubIcon className="w-5 h-5" />
-                <span className="font-medium">
-                  {isLoading ? "Logging in..." : "Login con GitHub"}
-                </span>
-              </Button>
-            </div>
-          </form>
+
+          <div className="flex flex-col gap-6">
+            <Button
+              className="flex justify-center items-center gap-2 bg-background hover:bg-accent border border-input w-full text-black dark:text-white transition-colors hover:text-accent-foreground"
+              disabled={isPending}
+              onClick={handleGitHubLogin}
+            >
+              <GithubIcon className="w-5 h-5" />
+              <span className="font-medium">
+                {isPending ? "Accesso in corso..." : "Accedi con GitHub"}
+              </span>
+            </Button>
+          </div>
+          <div className="mt-4 text-sm text-center">
+            Non hai un account?{" "}
+            <Link href="/auth/sign-up" className="underline underline-offset-4">
+              Registrati
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -2,22 +2,21 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { AnswersWithPlayer } from "@/lib/supabase/supabase-answers";
-import type { Question } from "@/lib/supabase/types";
-import { User } from "@supabase/supabase-js";
+import type { Id } from "@/convex/_generated/dataModel";
+import type { AnswerWithUser, QuestionWithCreator } from "@/lib/convex-types";
 import { Check, Clock, Loader2, X } from "lucide-react";
 import { Highlight, themes } from "prism-react-renderer";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 interface QuestionDisplayProps {
-  question: Question & { ended_at?: string | null; started_at?: string | null };
+  question: QuestionWithCreator;
   onSubmitAnswer: (selectedOption: number) => void;
   winner?: { playerId: string; user_name: string; score: number } | null;
-  allAnswers: AnswersWithPlayer;
+  allAnswers: AnswerWithUser[];
   timeIsUp?: boolean;
   timeLimit?: number;
-  user: User;
+  userId: Id<"users">;
 }
 
 export function QuestionDisplay({
@@ -27,7 +26,7 @@ export function QuestionDisplay({
   allAnswers,
   timeIsUp,
   timeLimit,
-  user,
+  userId,
 }: QuestionDisplayProps) {
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
@@ -35,19 +34,20 @@ export function QuestionDisplay({
     number | null
   >(null);
 
-  // Parse options from JSON
-  const options = question.options as { text: string }[];
+  // Convert string options to display format
+  const options = question.options.map((text) => ({ text }));
 
   // --- ANSWER UI LOGIC ---
   // Only show correct answer (green) if someone answered correctly or time is up
   // Mark wrong answers in red for everyone as soon as they are given
   // Reset answer state on new turn
-  const revealCorrect = Boolean(winner) || timeIsUp;
+  const revealCorrect =
+    Boolean(winner) || timeIsUp || Boolean(question.ended_at);
 
   // Get the current user's answer
   const userAnswer = useMemo(() => {
-    return allAnswers.find((a) => a.player_id === user?.id);
-  }, [allAnswers, user?.id]);
+    return allAnswers?.find((a) => a.player_id === userId);
+  }, [allAnswers, userId]);
 
   // Reset submission state when the user's answer appears in allAnswers
   useEffect(() => {
@@ -102,7 +102,7 @@ export function QuestionDisplay({
       setSubmittingOptionIndex(null);
     }, 0);
     return () => clearTimeout(timeout);
-  }, [question.id]);
+  }, [question._id]);
 
   useEffect(() => {
     // Use server time if available
@@ -133,7 +133,7 @@ export function QuestionDisplay({
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [question.id, question.started_at, winner, timeIsUp, allAnswers]);
+  }, [question._id, question.started_at, winner, timeIsUp, allAnswers]);
 
   const handleSelectOption = async (index: number) => {
     if (hasAnswered || winner || isSubmittingAnswer) return;
@@ -263,7 +263,7 @@ export function QuestionDisplay({
   }, [question.language]);
 
   return (
-    <Card className="pt-[2px] gradient-border glass-card">
+    <Card className="pt-0.5 gradient-border glass-card">
       <div className="p-6">
         <div className="flex justify-between items-center mb-4">
           <div>
@@ -345,7 +345,7 @@ export function QuestionDisplay({
                     ? "destructive"
                     : "outline"
                 }
-                className={`w-full justify-start text-left h-auto py-3 px-4 whitespace-normal break-words ${
+                className={`w-full justify-start text-left h-auto py-3 px-4 whitespace-normal wrap-break-word ${
                   state === "correct"
                     ? "ring-2 ring-green-500 bg-[oklch(0.92_0.15_150/0.2)]"
                     : state === "wrong"
@@ -388,13 +388,13 @@ export function QuestionDisplay({
                     {wrongPlayers.length > 0 && (
                       <div className="flex flex-col items-end">
                         {wrongPlayers
-                          .filter((a) => a.player)
+                          .filter((a) => a.user)
                           .map((a) => (
                             <span
-                              key={a.player!.id}
+                              key={a.user!._id}
                               className="bg-[oklch(0.98_0.005_210)] shadow mt-1 px-2 py-1 border border-[oklch(0.6_0.18_22.5)] rounded font-bold text-[oklch(0.65_0.18_22.5)] text-xs uppercase tracking-wide"
                             >
-                              {a.player!.user_name}
+                              {a.user!.username || a.user!.name}
                             </span>
                           ))}
                       </div>
@@ -404,14 +404,14 @@ export function QuestionDisplay({
                     {correctAnswers.length > 0 && (
                       <div className="flex flex-col items-end">
                         {correctAnswers
-                          .filter((a) => a.player)
+                          .filter((a) => a.user)
                           .map((a) => (
                             <div
-                              key={a.player!.id}
+                              key={a.user!._id}
                               className="flex flex-col items-end"
                             >
                               <span className="flex items-center gap-1.5 bg-[oklch(0.45_0.2_140)] shadow mt-1 px-3 py-1.5 border border-[oklch(0.55_0.25_140)] rounded-md font-bold text-[oklch(0.98_0.005_140)] text-xs uppercase tracking-wide">
-                                {a.player!.user_name}
+                                {a.user!.username || a.user!.name}
                                 <span className="bg-[oklch(0.98_0.005_140)] px-1.5 py-0.5 rounded-sm text-[oklch(0.45_0.2_140)]">
                                   +{a.score_earned.toFixed(1)}
                                 </span>

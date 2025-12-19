@@ -6,48 +6,68 @@ This document provides a high-level reference for the main API functions and mod
 
 ---
 
-## Supabase API Modules
+## Convex API Modules
 
-All database and real-time logic is abstracted in the `lib/supabase/` directory.
+All database and real-time logic is in the `convex/` directory, organized into queries, mutations, and actions.
 
-### Games
+### Queries (convex/queries/)
 
-- `createGame(host_id, max_players, time_limit)`
-- `getGameByCode(supabase, code)`
-- `updateGameTurn(gameId, nextTurn)`
-- `updateGameStatus(gameId, status)`
+**Games:**
 
-### Game Players
+- `getGameByCode(code)` — Get game by code
+- `getGameById(game_id)` — Get game by ID
+- `getGameWithPlayers(game_id)` — Get game with all players
 
-- `addPlayerToGame(game_id, player_id, turn_order)`
-- `getPlayersForGame(game_id)`
-- `getPlayerInGame(game_id, player_id)`
-- `getLeaderboardPlayers(supabase, offset, limit, languageFilter?)`
+**Questions:**
 
-### Questions
+- `getQuestionById(question_id)` — Get question by ID
+- `getQuestionsByGame(game_id)` — Get all questions for a game
+- `getCurrentQuestion(game_id)` — Get active question
+- `getRecentQuestionTexts(language, difficulty)` — Get recent questions for deduplication
 
-- `getQuestionsForGame(game_id)`
-- `getQuestionById(question_id)`
-- `insertQuestion(question)`
-- `updateQuestion(questionId, update)`
-- `getQuestionsByLanguageAndDifficulty(language, difficulty, since?)`
+**Answers:**
 
-### Answers
+- `getAnswersByQuestion(question_id)` — Get answers for a question
+- `getAnswerByPlayerAndQuestion(question_id, player_id)` — Get specific player's answer
 
-- `insertAnswer(answer)`
-- `getAnswersForQuestion(question_id)`
-- `getAnswersWithPlayerForQuestion(question_id)`
-- `subscribeToAnswers(handler)`
-- `unsubscribeFromAnswers(channel)`
+**Leaderboard:**
 
-### Profiles
+- `getLeaderboard(language?, page?, pageSize?)` — Get paginated leaderboard
 
-- `getProfileById(id)`
-- `getProfileByUsername(user_name)`
-- `createProfile(id, user_name)`
-- `ensureUserProfile(user)`
-- `getProfileWithScore(userId)`
-- `subscribeToProfiles(handler)`
+**Auth:**
+
+- `currentUser()` — Get current authenticated user
+
+### Mutations (convex/mutations/)
+
+**Games:**
+
+- `createGame(max_players?, time_limit?)` — Create new game
+- `joinGame(code)` — Join game by code
+- `startGame(game_id)` — Start game (host only)
+- `updateGame(game_id, status?, current_turn?)` — Update game state
+- `advanceTurn(game_id, new_turn_index)` — Move to next turn
+- `deleteGame(game_id)` — Delete game (host only)
+- `updateGamePlayer(game_player_id, score?, is_active?)` — Update player state
+
+**Questions:**
+
+- `createQuestion(...)` — Create new question (internal)
+- `updateQuestion(question_id, started_at?, ended_at?)` — Update question state
+
+**Answers:**
+
+- `submitAnswer(question_id, selected_option, response_time_ms)` — Submit player answer
+
+**Auth:**
+
+- `updateUser(name?, username?)` — Update user profile
+
+### Actions (convex/actions/)
+
+**Questions:**
+
+- `generateAndCreateQuestion(game_id, player_id, language, difficulty)` — Generate AI question using Groq API
 
 ## AI & Question Generation
 
@@ -63,6 +83,7 @@ All database and real-time logic is abstracted in the `lib/supabase/` directory.
 See also:
 
 - [Game Logic](./game-logic.md)
-- [Supabase Integration](./supabase.md)
+- [Convex Integration](./convex.md)
+- [Database Schema](../convex/schema.ts)
 
 [← Back to README](../README.md)

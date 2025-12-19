@@ -11,11 +11,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { addPlayerToGame } from "@/lib/supabase/supabase-game-players";
-import { createGame } from "@/lib/supabase/supabase-games";
-import { ensureUserProfile } from "@/lib/supabase/supabase-profiles";
+import { api } from "@/convex/_generated/api";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { User } from "@supabase/supabase-js";
+import { useMutation } from "convex/react";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -24,17 +22,19 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 const createGameSchema = z.object({
-  maxPlayers: z.coerce.number().min(2, "Minimo 2 giocatori"),
+  maxPlayers: z.coerce.number<number>().min(2, "Minimo 2 giocatori"),
   timeLimit: z.coerce
-    .number()
+    .number<number>()
     .min(30, "Minimo 30 secondi")
     .max(300, "Massimo 300 secondi"),
 });
 type CreateGameForm = z.infer<typeof createGameSchema>;
 
-export const CreateGameForm = ({ user }: { user: User }) => {
+export const CreateGameForm = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const createGame = useMutation(api.mutations.games.createGame);
+
   const form = useForm<CreateGameForm>({
     resolver: zodResolver(createGameSchema),
     defaultValues: { maxPlayers: 4, timeLimit: 120 },
@@ -43,19 +43,14 @@ export const CreateGameForm = ({ user }: { user: User }) => {
   const { handleSubmit } = form;
 
   const handleCreateGame = async (values: CreateGameForm) => {
-    if (!user) return;
     setLoading(true);
     try {
-      const profileExists = await ensureUserProfile(user);
-      if (!profileExists) return;
-      const { data, error } = await createGame(
-        user.id,
-        values.maxPlayers,
-        values.timeLimit
-      );
-      if (error) throw error;
-      await addPlayerToGame(data.id, user.id, 1);
-      router.push(`/game/${data.code}`);
+      const result = await createGame({
+        max_players: values.maxPlayers,
+        time_limit: values.timeLimit,
+      });
+
+      router.push(`/game/${result.code}`);
     } catch (error: unknown) {
       toast.error("Error", {
         description: error instanceof Error ? error.message : String(error),

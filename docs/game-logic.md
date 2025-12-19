@@ -13,14 +13,14 @@ This document describes the main game logic and flow in Dev Quiz Battle.
    - A unique game code is generated.
 2. **Joining a Game**
    - Players join using the game code.
-   - Player and profile data are stored in Supabase.
+   - Player and profile data are stored in Convex.
 3. **Lobby**
    - Players wait in the lobby until the host starts the game.
    - Real-time updates show player list and status.
 4. **Question Rounds**
    - Each round, a question is generated (AI via Groq API) and displayed.
    - Players answer within the time limit.
-   - Answers are submitted and stored in Supabase.
+   - Answers are submitted and stored in Convex.
 5. **Scoring**
    - Scores are calculated and updated in real-time.
    - The scoreboard is shown after each round.
@@ -33,22 +33,22 @@ This document describes the main game logic and flow in Dev Quiz Battle.
 
 ## Real-Time Updates
 
-- Game state, player list, and answers are synced using Supabase subscriptions.
-- UI updates automatically for all players.
+- Game state, player list, and answers are synced using Convex subscriptions.
+- UI updates automatically for all players using Convex's reactive queries.
 
 ## Key Files
 
-- `lib/hooks/useGameState.ts` — Main game state logic
-- `lib/supabase/supabase-games.ts` — Game CRUD
-- `lib/supabase/supabase-game-players.ts` — Player management
-- `lib/supabase/supabase-questions.ts` — Question management
-- `lib/supabase/supabase-answers.ts` — Answer management
+- `convex/schema.ts` — Database schema definition
+- `convex/queries/` — Convex queries for reading data
+- `convex/mutations/` — Convex mutations for writing data
+- `convex/actions/questions.ts` — AI question generation action
+- `components/game/` — Game UI components
 
 ---
 
 See also:
 
-- [Supabase Integration](./supabase.md)
+- [Convex Integration](./convex.md)
 - [UI Components](./components.md)
 
 [← Back to README](../README.md)

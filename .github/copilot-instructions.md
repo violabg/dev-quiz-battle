@@ -6,9 +6,9 @@
 - Tailwind CSS is version 4.x. Use only Tailwind v4 features and syntax.
 - The following libraries are used:
   - @ai-sdk/groq, @ai-sdk/react, ai
+  - @convex-dev/auth, convex
   - @hookform/resolvers, react-hook-form
   - @radix-ui/react-\* (dialog, dropdown-menu, label, popover, select, slot)
-  - @supabase/supabase-js
   - class-variance-authority, clsx, lucide-react, next-themes, sonner, tailwind-merge, tw-animate-css, zod
 
 ## Styling
@@ -23,9 +23,9 @@
 - Use Zod for schema validation.
 - Use React Hook Form for form management.
 - Use Radix UI components.
-- Use Supabase for backend/database interactions.
+- Use Convex for backend/database interactions (queries, mutations, actions).
 - Use arrow functions for methods and new components.
-- Use typs over interfaces.
+- Use types over interfaces.
 
 ### UI/UX Expectations
 

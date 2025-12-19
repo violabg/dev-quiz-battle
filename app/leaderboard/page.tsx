@@ -1,3 +1,5 @@
+"use client";
+
 import { PlayersStanding } from "@/components/game/players-standing";
 import {
   Pagination,
@@ -7,85 +9,76 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { createClient } from "@/lib/supabase/server";
-import { getLeaderboardPlayers } from "@/lib/supabase/supabase-game-players";
-import { SupabaseClient } from "@supabase/supabase-js";
-import { redirect } from "next/navigation";
+import { api } from "@/convex/_generated/api";
+import type { Doc } from "@/convex/_generated/dataModel";
+import { useQuery } from "convex/react";
+import { Loader2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo } from "react";
 import LeaderboardLanguageFilter from "./LeaderboardLanguageFilter";
 
 const PAGE_SIZE = 10;
 
-// This type matches the shape expected by PlayersStanding
-interface LeaderboardPlayerForStanding {
-  id: string;
-  score: number;
-  profile: {
-    id: string;
-    avatar_url: string | null;
-    user_name: string;
-    name: string;
-    full_name: string;
-    created_at: string;
-    updated_at: string;
-  };
-  // The following fields are required by Player but are not used in leaderboard context
-  game_id: string;
-  player_id: string;
-  turn_order: number;
-  is_active: boolean;
-  joined_at: string;
-}
+const LeaderboardPage = () => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+  const languageFilter = searchParams.get("language") || undefined;
 
-async function getPlayers(
-  supabase: SupabaseClient,
-  page: number,
-  languageFilter?: string
-) {
-  const offset = (page - 1) * PAGE_SIZE;
-  const limit = PAGE_SIZE;
-  const data = await getLeaderboardPlayers(offset, limit, languageFilter);
-  const players: LeaderboardPlayerForStanding[] = data.map((p) => ({
-    id: p.player_id,
-    score: Number(p.total_score),
-    profile: {
-      id: p.player_id,
-      name: p.name,
-      full_name: p.full_name,
-      user_name: p.user_name,
-      avatar_url: p.avatar_url,
-      created_at: "",
-      updated_at: "",
-    },
-    game_id: "",
-    player_id: p.player_id,
-    turn_order: 0,
-    is_active: true,
-    joined_at: "",
-  }));
-  // Use total_items from the first row if available, otherwise fallback to 0
-  const count = data.length > 0 ? Number(data[0].total_items) : 0;
-  return {
-    players,
-    count,
-  };
-}
+  // Calculate pagination offset
+  const paginationOpts = useMemo(
+    () => ({
+      languageFilter,
+      limit: PAGE_SIZE,
+      offset: (page - 1) * PAGE_SIZE,
+    }),
+    [languageFilter, page]
+  );
 
-const LeaderboardPage = async (props: {
-  searchParams: { page?: string; language?: string };
-}) => {
-  const searchParams = await props.searchParams;
-  const supabase = await createClient();
-  const page = Math.max(1, Number(searchParams?.page) || 1);
-  const languageFilter = searchParams?.language || undefined;
-  const { players, count } = await getPlayers(supabase, page, languageFilter);
+  // Query leaderboard data
+  const leaderboardData = useQuery(
+    api.queries.leaderboard.getLeaderboardPlayers,
+    paginationOpts
+  );
+
+  // Redirect if page is out of bounds - must be before conditional return
+  const count = leaderboardData?.totalItems ?? 0;
   const totalPages = Math.ceil(count / PAGE_SIZE);
 
-  if (page > totalPages && totalPages > 0)
-    redirect(
-      `/leaderboard?page=${totalPages}${
-        languageFilter ? `&language=${languageFilter}` : ""
-      }`
+  useEffect(() => {
+    if (leaderboardData && page > totalPages && totalPages > 0) {
+      router.push(
+        `/leaderboard?page=${totalPages}${
+          languageFilter ? `&language=${languageFilter}` : ""
+        }`
+      );
+    }
+  }, [page, totalPages, languageFilter, router, leaderboardData]);
+
+  // Loading state
+  if (leaderboardData === undefined) {
+    return (
+      <main className="flex flex-1 justify-center items-center">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </main>
     );
+  }
+
+  // Transform data to match PlayersStanding expected format
+  const players = leaderboardData.players.map((p, index) => {
+    // Create a game player structure expected by PlayersStanding
+    return {
+      _id: p.player_id as any, // Using player_id as the _id
+      _creationTime: 0, // Not relevant for leaderboard
+      game_id: "" as any, // Not relevant for leaderboard
+      player_id: p.player_id as any,
+      score: p.total_score,
+      turn_order: index,
+      is_active: true,
+      joined_at: 0, // Not relevant for leaderboard
+      user: p.user as Doc<"users"> | null,
+    };
+  });
 
   return (
     <main className="mx-auto px-4 py-10 max-w-2x container">
@@ -93,7 +86,6 @@ const LeaderboardPage = async (props: {
         Classifica
       </h1>
       <div className="flex justify-center mb-6">
-        {/* Client component for language filter */}
         <LeaderboardLanguageFilter language={languageFilter || ""} />
       </div>
       <PlayersStanding players={players} />

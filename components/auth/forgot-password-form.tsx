@@ -8,8 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-// Removed unused Label import
 import {
   Form,
   FormControl,
@@ -18,8 +16,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { createClient } from "@/lib/supabase/client";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useState } from "react";
@@ -27,7 +26,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email("Email non valida"),
+  email: z.email(),
 });
 type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
@@ -37,6 +36,7 @@ export function ForgotPasswordForm({
 }: React.ComponentPropsWithoutRef<"div">) {
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const authActions = useAuthActions();
   const form = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: { email: "" },
@@ -45,16 +45,17 @@ export function ForgotPasswordForm({
   const { handleSubmit, setError } = form;
 
   const handleForgotPassword = async (values: ForgotPasswordFormValues) => {
-    const supabase = createClient();
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        values.email,
-        {
-          redirectTo: `${window.location.origin}/auth/update-password`,
-        }
+      const formData = new FormData();
+      formData.append("email", values.email);
+      formData.append(
+        "redirectUrl",
+        `${window.location.origin}/auth/update-password`
       );
-      if (error) throw error;
+
+      // Call Convex Auth's reset password action
+      await authActions.signIn("resend", formData);
       setSuccess(true);
     } catch (error: unknown) {
       setError("email", {

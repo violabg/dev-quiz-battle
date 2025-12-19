@@ -1,13 +1,11 @@
+import { LoginButton } from "@/components/auth/login-button";
 import DQBLogoGradient from "@/components/icons/dqb-gradient-logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { createClient } from "@/lib/supabase/server";
 import { Code, Cpu, Users } from "lucide-react";
 import Link from "next/link";
 
 export default async function Home() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
   return (
     <main className="flex-1">
       <section className="py-12 md:py-24 lg:py-32">
@@ -28,11 +26,7 @@ export default async function Home() {
               <Button asChild size="lg">
                 <Link href="/dashboard">Inizia a giocare</Link>
               </Button>
-              {!data?.user && (
-                <Button variant="outline" size="lg" asChild>
-                  <Link href="/auth/login">Sign In</Link>
-                </Button>
-              )}
+              <LoginButton />
             </div>
           </div>
         </div>

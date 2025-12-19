@@ -3,7 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { GameWithPlayers } from "@/lib/supabase/types";
+import type { GameWithPlayers } from "@/lib/convex-types";
 import { Copy, Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -43,7 +43,7 @@ export function GameLobby({
   } else if (game.status === "active") {
     lobbyMessage =
       "In attesa che venga generata la domanda da " +
-      (currentTurnPlayer?.profile.user_name || "...");
+      (currentTurnPlayer?.user?.username || "...");
   }
 
   return (
@@ -82,7 +82,7 @@ export function GameLobby({
             {game.players.length === game.max_players && (
               <Badge
                 variant="default"
-                className="bg-gradient-to-r from-[oklch(85%_0.2_160)] to-[oklch(85%_0.3_120)] ml-2 text-[oklch(25%_0.05_240)]"
+                className="bg-linear-to-r from-[oklch(85%_0.2_160)] to-[oklch(85%_0.3_120)] ml-2 text-[oklch(25%_0.05_240)]"
               >
                 Tutti presenti
               </Badge>
@@ -92,23 +92,19 @@ export function GameLobby({
         <CardContent className="gap-4 grid md:grid-cols-2">
           {game.players.map((player) => (
             <div
-              key={player.id}
+              key={player._id}
               className="flex items-center gap-3 p-3 border rounded-lg"
             >
               <Avatar>
-                <AvatarImage src={player.profile.avatar_url || undefined} />
+                <AvatarImage src={player.user?.image || undefined} />
                 <AvatarFallback>
-                  {(
-                    player.profile.user_name ||
-                    player.profile.full_name ||
-                    "??"
-                  )
+                  {(player.user?.username || "??")
                     .substring(0, 2)
                     .toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <p className="font-medium">{player.profile.full_name}</p>
+                <p className="font-medium">{player.user?.username}</p>
                 <p className="text-muted-foreground text-sm">
                   Ordine di turno: {player.turn_order}
                 </p>

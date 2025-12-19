@@ -1,113 +1,46 @@
-import {
-  getPlayersForGame,
-  setPlayerInactive,
-  subscribeToGamePlayers,
-  unsubscribeFromGamePlayers,
-} from "@/lib/supabase/supabase-game-players";
-import {
-  getGameByCode,
-  subscribeToGame,
-  unsubscribeFromGame,
-  updateGameStatus,
-} from "@/lib/supabase/supabase-games";
-import { getProfileById } from "@/lib/supabase/supabase-profiles";
-import type { GameWithPlayers } from "@/lib/supabase/types";
-import { User } from "@supabase/supabase-js";
+import { api } from "@/convex/_generated/api";
+import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type LoadingState = "idle" | "initializing" | "starting";
 
-export function useGameState({
-  code,
-  user,
-}: {
-  code: string;
-  user: User | null;
-}) {
+export function useGameState({ code }: { code: string }) {
   const router = useRouter();
   const [loadingState, setLoadingState] =
     useState<LoadingState>("initializing");
-  const [game, setGame] = useState<GameWithPlayers | null>(null);
-  const [gameId, setGameId] = useState<string | null>(null);
-  const [isHost, setIsHost] = useState(false);
 
-  const fetchGame = useCallback(async () => {
-    if (!user) return;
-    try {
-      const { data: gameData } = await getGameByCode(code);
-      const playersData = await getPlayersForGame(gameData.id);
-      const hostData = gameData.host_id
-        ? await getProfileById(gameData.host_id)
-        : null;
-      setIsHost(user.id === gameData.host_id);
-      const gameWithPlayers = {
-        ...gameData,
-        players: playersData,
-        host: hostData,
-      } as GameWithPlayers;
-      setGame(gameWithPlayers);
-      setGameId(gameData.id);
-    } catch (error) {
-      console.error("Error fetching game:", error);
-      toast.error("Errore", {
-        description:
-          "Impossibile caricare i dati della partita: " +
-          (error instanceof Error ? error.message : String(error)),
-      });
-      router.push("/dashboard");
-    } finally {
+  // Convex auto-subscribes to changes with useQuery
+  const game = useQuery(api.queries.games.getGameByCode, { code });
+  const updateGame = useMutation(api.mutations.games.updateGame);
+  const updateGamePlayer = useMutation(api.mutations.games.updateGamePlayer);
+
+  // Get current user ID from Convex auth
+  const currentUser = useQuery(api.queries.auth.currentUser);
+  const userId = currentUser?._id;
+
+  const isHost = game?.host_id === userId;
+
+  useEffect(() => {
+    if (game !== undefined) {
       setLoadingState("idle");
     }
-  }, [user, code, router]);
 
-  useEffect(() => {
-    if (!user) return;
-    fetchGame();
-  }, [user, fetchGame]);
-
-  useEffect(() => {
-    if (!user || !gameId) return;
-
-    const gameSubscription = subscribeToGame({
-      gameId,
-      onUpdate: (payload) => {
-        if (payload.eventType === "DELETE") {
-          setGame(null);
-          toast("La partita è stata chiusa.");
-          router.push("/dashboard");
-          return;
-        }
-        setGame((currentGame) => {
-          if (!currentGame) return null;
-          return { ...currentGame, ...payload.new };
-        });
-      },
-    });
-    const playersSubscription = subscribeToGamePlayers(async () => {
-      if (!gameId) return;
-      const playersData = await getPlayersForGame(gameId);
-      setGame((currentGame) => {
-        if (!currentGame) return null;
-        return { ...currentGame, players: playersData };
-      });
-    });
-
-    return () => {
-      unsubscribeFromGame(gameSubscription);
-      unsubscribeFromGamePlayers(playersSubscription);
-    };
-  }, [user, router, gameId]);
+    // Handle game deletion (game will become null when deleted)
+    if (game === null) {
+      toast("La partita è stata chiusa.");
+      router.push("/dashboard");
+    }
+  }, [game, router]);
 
   const handleStartGame = async () => {
     if (!game || !isHost) return;
     try {
       setLoadingState("starting");
-      await updateGameStatus(game.id, "active");
-      setGame((currentGame) => {
-        if (!currentGame) return null;
-        return { ...currentGame, status: "active" };
+      await updateGame({
+        game_id: game._id,
+        status: "active",
       });
     } catch (error: unknown) {
       toast.error("Errore", {
@@ -121,12 +54,22 @@ export function useGameState({
   };
 
   const handleLeaveGame = async () => {
-    if (!game || !user) return;
+    if (!game || !userId) return;
     try {
       if (isHost) {
-        await updateGameStatus(game.id, "completed");
+        await updateGame({
+          game_id: game._id,
+          status: "completed",
+        });
       } else {
-        await setPlayerInactive(game.id, user.id);
+        // Find current player's game_player record
+        const currentPlayer = game.players?.find((p) => p.player_id === userId);
+        if (currentPlayer) {
+          await updateGamePlayer({
+            game_player_id: currentPlayer._id,
+            is_active: false,
+          });
+        }
       }
       router.push("/dashboard");
     } catch (error: unknown) {
@@ -138,5 +81,12 @@ export function useGameState({
     }
   };
 
-  return { loadingState, game, isHost, handleStartGame, handleLeaveGame };
+  return {
+    loadingState,
+    game,
+    isHost,
+    handleStartGame,
+    handleLeaveGame,
+    userId,
+  };
 }
