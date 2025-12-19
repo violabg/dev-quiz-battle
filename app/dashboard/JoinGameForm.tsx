@@ -11,15 +11,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  addPlayerToGame,
-  getPlayerInGame,
-  getPlayersForGame,
-} from "@/lib/supabase/supabase-game-players";
-import { getGameByCode } from "@/lib/supabase/supabase-games";
-import { ensureUserProfile } from "@/lib/supabase/supabase-profiles";
+import { api } from "@/convex/_generated/api";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { User } from "@supabase/supabase-js";
+import { useMutation } from "convex/react";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -35,9 +29,11 @@ const joinGameSchema = z.object({
 });
 type JoinGameForm = z.infer<typeof joinGameSchema>;
 
-export const JoinGameForm = ({ user }: { user: User }) => {
+export const JoinGameForm = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const joinGame = useMutation(api.games.joinGame);
+
   const form = useForm<JoinGameForm>({
     resolver: zodResolver(joinGameSchema),
     defaultValues: { gameCode: "" },
@@ -46,33 +42,31 @@ export const JoinGameForm = ({ user }: { user: User }) => {
   const { handleSubmit } = form;
 
   const handleJoinGame = async (values: JoinGameForm) => {
-    if (!user || !values.gameCode) return;
+    if (!values.gameCode) return;
     setLoading(true);
     try {
-      const profileExists = await ensureUserProfile(user);
-      if (!profileExists) return;
-      const { data: game, error: gameError } = await getGameByCode(
-        values.gameCode
-      );
-      if (gameError) throw new Error("Game not found");
-      if (game.status !== "waiting") {
-        throw new Error("Game has already started");
-      }
-      const existingPlayer = await getPlayerInGame(game.id, user.id);
-      if (existingPlayer) {
-        router.push(`/game/${values.gameCode}`);
-        return;
-      }
-      const players = await getPlayersForGame(game.id);
-      if (players.length >= game.max_players) {
-        throw new Error("Game is full");
-      }
-      await addPlayerToGame(game.id, user.id, players.length + 1);
+      await joinGame({ code: values.gameCode });
       router.push(`/game/${values.gameCode}`);
     } catch (error: unknown) {
-      toast.error("Error", {
-        description: error instanceof Error ? error.message : String(error),
-      });
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes("not found")) {
+        toast.error("Game not found", {
+          description: "Please check the code and try again",
+        });
+      } else if (errorMessage.includes("already started")) {
+        toast.error("Game has already started", {
+          description: "You cannot join a game in progress",
+        });
+      } else if (errorMessage.includes("full")) {
+        toast.error("Game is full", {
+          description: "Maximum number of players reached",
+        });
+      } else {
+        toast.error("Error", {
+          description: errorMessage,
+        });
+      }
     } finally {
       setLoading(false);
     }

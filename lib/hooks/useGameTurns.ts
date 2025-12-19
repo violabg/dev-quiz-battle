@@ -1,27 +1,29 @@
 "use client";
 
-import { updateGameTurn } from "@/lib/supabase/supabase-games";
-import { GameWithPlayers } from "@/lib/supabase/types";
-import { User } from "@supabase/supabase-js";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
+import { useMutation } from "convex/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 type UseGameTurnsProps = {
-  game: GameWithPlayers;
-  user: User;
+  game: any; // Convex game with players
+  userId: Id<"users"> | undefined;
   isRoundComplete: boolean;
   resetQuestionState: () => void;
 };
 
 export const useGameTurns = ({
   game,
-  user,
+  userId,
   isRoundComplete,
   resetQuestionState,
 }: UseGameTurnsProps) => {
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(
-    game.current_turn ?? 0
+    game?.current_turn ?? 0
   );
+
+  const advanceTurn = useMutation(api.games.advanceTurn);
 
   // Handle turn changes from game state
   useEffect(() => {
@@ -35,38 +37,43 @@ export const useGameTurns = ({
   }, [game?.current_turn, currentPlayerIndex, resetQuestionState]);
 
   const currentPlayer = useMemo(
-    () => game.players[currentPlayerIndex],
-    [game.players, currentPlayerIndex]
+    () => game?.players?.[currentPlayerIndex],
+    [game?.players, currentPlayerIndex]
   );
 
   const isCurrentPlayersTurn = useMemo(
-    () => currentPlayer?.player_id === user?.id,
-    [currentPlayer?.player_id, user?.id]
+    () => currentPlayer?.player_id === userId,
+    [currentPlayer?.player_id, userId]
   );
 
   const nextPlayerIndex = useMemo(
-    () => (currentPlayerIndex + 1) % game.players.length,
-    [currentPlayerIndex, game.players.length]
+    () =>
+      game?.players?.length
+        ? (currentPlayerIndex + 1) % game.players.length
+        : 0,
+    [currentPlayerIndex, game?.players?.length]
   );
 
   const isNextPlayersTurn = useMemo(
-    () => game.players[nextPlayerIndex]?.player_id === user?.id,
-    [game.players, nextPlayerIndex, user?.id]
+    () => game?.players?.[nextPlayerIndex]?.player_id === userId,
+    [game?.players, nextPlayerIndex, userId]
   );
 
   const handleNextTurn = useCallback(async (): Promise<void> => {
-    if (isRoundComplete) return;
+    if (isRoundComplete || !game) return;
     try {
       const newNextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
-      const { error } = await updateGameTurn(game.id, newNextPlayerIndex);
-      if (error) throw error;
+      await advanceTurn({
+        game_id: game._id,
+        new_turn_index: newNextPlayerIndex,
+      });
       // The useEffect watching game.current_turn will handle resetting state.
     } catch {
       toast.error("Errore", {
         description: "Impossibile passare al turno successivo",
       });
     }
-  }, [isRoundComplete, currentPlayerIndex, game.id, game.players.length]);
+  }, [isRoundComplete, currentPlayerIndex, game, advanceTurn]);
 
   return {
     currentPlayerIndex,

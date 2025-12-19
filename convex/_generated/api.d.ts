@@ -8,8 +8,12 @@
  * @module
  */
 
+import type * as answers from "../answers.js";
 import type * as auth from "../auth.js";
+import type * as games from "../games.js";
 import type * as http from "../http.js";
+import type * as leaderboard from "../leaderboard.js";
+import type * as questions from "../questions.js";
 
 import type {
   ApiFromModules,
@@ -18,8 +22,12 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  answers: typeof answers;
   auth: typeof auth;
+  games: typeof games;
   http: typeof http;
+  leaderboard: typeof leaderboard;
+  questions: typeof questions;
 }>;
 
 /**
