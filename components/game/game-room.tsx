@@ -63,6 +63,7 @@ export function GameRoom({ game, userId, onLeaveGame }: GameRoomProps) {
   const resetQuestionState = useCallback(() => {
     setWinner(null);
     setShowNextTurn(false);
+    setCurrentQuestionId(null);
   }, []);
 
   const isRoundComplete = game.status === "completed";
@@ -92,12 +93,15 @@ export function GameRoom({ game, userId, onLeaveGame }: GameRoomProps) {
     timeLimit: game.time_limit,
   });
 
-  // Update currentQuestionId when currentQuestion changes
+  // Update currentQuestionId only for active questions (not ended)
   useEffect(() => {
-    if (currentQuestion?._id) {
-      setCurrentQuestionId(currentQuestion._id);
+    if (currentQuestion?._id && !currentQuestion.ended_at) {
+      // Only set for active questions
+      if (currentQuestionId !== currentQuestion._id) {
+        setCurrentQuestionId(currentQuestion._id);
+      }
     }
-  }, [currentQuestion?._id]);
+  }, [currentQuestion, currentQuestionId]);
 
   // Check game completion
   useEffect(() => {
@@ -302,7 +306,7 @@ export function GameRoom({ game, userId, onLeaveGame }: GameRoomProps) {
 
       <div className="gap-8 grid lg:grid-cols-3">
         <div className="lg:col-span-2">
-          {currentQuestion ? (
+          {currentQuestion && currentQuestionId ? (
             <QuestionDisplay
               question={currentQuestion}
               onSubmitAnswer={handleSubmitAnswer}
@@ -333,7 +337,7 @@ export function GameRoom({ game, userId, onLeaveGame }: GameRoomProps) {
             onLeaveGame={onLeaveGame}
           />
           {(winner ||
-            (currentQuestion && currentQuestion.ended_at && !winner)) && (
+            (currentQuestion?.ended_at && currentQuestionId && !winner)) && (
             <TurnResultCard
               winner={winner}
               showNextTurn={showNextTurn}

@@ -87,7 +87,7 @@ export const getQuestionsByGame = query({
 });
 
 /**
- * Get the current question for a game (latest unanswered or most recent)
+ * Get the current question for a game (latest active or most recent)
  */
 export const getCurrentQuestion = query({
   args: {
@@ -108,7 +108,7 @@ export const getCurrentQuestion = query({
       return { ...question, creator };
     }
 
-    // If no active questions, get the most recent one
+    // If no active questions, get the most recent one (so players can see the explanation)
     const allQuestions = await ctx.db
       .query("questions")
       .withIndex("by_game_id", (q) => q.eq("game_id", args.game_id))
