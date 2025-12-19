@@ -2,14 +2,20 @@ import { Doc, Id } from "@/convex/_generated/dataModel";
 
 // Language and Difficulty types
 export type GameLanguage =
+  | "html"
+  | "css"
+  | "react"
+  | "vue"
+  | "angular"
+  | "nodejs"
   | "javascript"
   | "typescript"
   | "python"
   | "java"
   | "csharp"
-  | "cpp"
   | "go"
   | "ruby"
+  | "rust"
   | "php"
   | "swift"
   | "kotlin";

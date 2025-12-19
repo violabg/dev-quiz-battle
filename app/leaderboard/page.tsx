@@ -66,18 +66,6 @@ const LeaderboardPage = () => {
 
   // Transform data to match PlayersStanding expected format
   const players = leaderboardData.players.map((p, index) => {
-    // Type guard to check if p.user is a users document (not a system table document)
-    const isUserDoc = (obj: typeof p.user): obj is Doc<"users"> => {
-      return (
-        obj !== null &&
-        "_id" in obj &&
-        typeof obj._id === "string" &&
-        obj._id.includes("users")
-      );
-    };
-
-    const user = isUserDoc(p.user) ? p.user : null;
-
     // Create a game player structure expected by PlayersStanding
     return {
       _id: p.player_id as any, // Using player_id as the _id
@@ -88,7 +76,7 @@ const LeaderboardPage = () => {
       turn_order: index,
       is_active: true,
       joined_at: 0, // Not relevant for leaderboard
-      user,
+      user: p.user as Doc<"users"> | null,
     };
   });
 

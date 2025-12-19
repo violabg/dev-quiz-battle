@@ -52,6 +52,9 @@ const questionSelectionSchema = z.object({
     "go",
     "rust",
     "ruby",
+    "php",
+    "swift",
+    "kotlin",
   ]),
   difficulty: z.enum(["easy", "medium", "hard", "expert"]),
 });
@@ -72,6 +75,9 @@ export const LANGUAGE_OPTIONS = [
   { value: "go", label: "Go" },
   { value: "rust", label: "Rust" },
   { value: "ruby", label: "Ruby" },
+  { value: "php", label: "PHP" },
+  { value: "swift", label: "Swift" },
+  { value: "kotlin", label: "Kotlin" },
 ];
 
 const DIFFICULTY_OPTIONS = [

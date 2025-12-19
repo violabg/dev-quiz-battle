@@ -40,7 +40,9 @@ const PlayerPodiumCard = ({
       {/* Name Row */}
       <div className="flex justify-center items-start pt-1 w-full min-h-[3em] text-center">
         <p className="max-w-full font-medium wrap-break-word whitespace-pre-line hyphens-auto">
-          {player.user?.username}
+          {player.user?.name ||
+            player.user?.username ||
+            "Giocatore Sconosciuto"}
         </p>
       </div>
     </div>
@@ -107,7 +109,11 @@ export const PlayersStanding = ({ players }: PlayersStandingProps) => {
                 <span className="font-medium text-muted-foreground">
                   #{index + 1}
                 </span>
-                <span>{player.user?.username}</span>
+                <span>
+                  {player.user?.name ||
+                    player.user?.username ||
+                    "Giocatore Sconosciuto"}
+                </span>
               </div>
               <span className="font-bold">{player.score}</span>
             </li>

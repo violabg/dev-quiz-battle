@@ -59,7 +59,7 @@ const LeaderboardLanguageFilter = ({
           </SelectContent>
         </Select>
         {isPending && (
-          <Loader2 className="top-1/2 right-[-20px] absolute w-4 h-4 text-gray-500 -translate-y-1/2 animate-spin" />
+          <Loader2 className="top-1/2 -right-5 absolute w-4 h-4 text-gray-500 -translate-y-1/2 animate-spin" />
         )}
       </div>
     </div>
