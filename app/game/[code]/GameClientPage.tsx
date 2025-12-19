@@ -3,22 +3,30 @@
 import { GameLobby } from "@/components/game/game-lobby";
 import { GameRoom } from "@/components/game/game-room";
 import { Button } from "@/components/ui/button";
+import { api } from "@/convex/_generated/api";
 import { useGameState } from "@/lib/hooks/useGameState";
-import { User } from "@supabase/supabase-js";
+import { useQuery } from "convex/react";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export function GameClientPage({ code, user }: { code: string; user: User }) {
+export function GameClientPage({ code }: { code: string }) {
+  const currentUser = useQuery(api.auth.currentUser);
   const { loadingState, game, isHost, handleStartGame, handleLeaveGame } =
-    useGameState({ code, user });
+    useGameState({ code });
   const router = useRouter();
 
-  if (loadingState === "initializing") {
+  // Wait for user to load
+  if (currentUser === undefined || loadingState === "initializing") {
     return (
       <main className="flex flex-1 justify-center items-center">
         <Loader2 className="w-8 h-8 animate-spin" />
       </main>
     );
+  }
+
+  if (!currentUser) {
+    router.push("/auth/login");
+    return null;
   }
 
   if (!game) {
@@ -43,7 +51,11 @@ export function GameClientPage({ code, user }: { code: string; user: User }) {
           loadingState={loadingState}
         />
       ) : (
-        <GameRoom game={game} user={user} onLeaveGame={handleLeaveGame} />
+        <GameRoom
+          game={game}
+          userId={currentUser._id}
+          onLeaveGame={handleLeaveGame}
+        />
       )}
     </main>
   );

@@ -2,22 +2,20 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { AnswersWithPlayer } from "@/lib/supabase/supabase-answers";
-import type { Question } from "@/lib/supabase/types";
-import { User } from "@supabase/supabase-js";
+import type { Id } from "@/convex/_generated/dataModel";
 import { Check, Clock, Loader2, X } from "lucide-react";
 import { Highlight, themes } from "prism-react-renderer";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 interface QuestionDisplayProps {
-  question: Question & { ended_at?: string | null; started_at?: string | null };
+  question: any;
   onSubmitAnswer: (selectedOption: number) => void;
   winner?: { playerId: string; user_name: string; score: number } | null;
-  allAnswers: AnswersWithPlayer;
+  allAnswers: any[];
   timeIsUp?: boolean;
   timeLimit?: number;
-  user: User;
+  userId: Id<"users">;
 }
 
 export function QuestionDisplay({
@@ -27,7 +25,7 @@ export function QuestionDisplay({
   allAnswers,
   timeIsUp,
   timeLimit,
-  user,
+  userId,
 }: QuestionDisplayProps) {
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
@@ -46,8 +44,8 @@ export function QuestionDisplay({
 
   // Get the current user's answer
   const userAnswer = useMemo(() => {
-    return allAnswers.find((a) => a.player_id === user?.id);
-  }, [allAnswers, user?.id]);
+    return allAnswers?.find((a: any) => a.player_id === userId);
+  }, [allAnswers, userId]);
 
   // Reset submission state when the user's answer appears in allAnswers
   useEffect(() => {
