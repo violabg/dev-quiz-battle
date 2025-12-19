@@ -263,7 +263,7 @@ export function QuestionDisplay({
   }, [question.language]);
 
   return (
-    <Card className="pt-[2px] gradient-border glass-card">
+    <Card className="pt-0.5 gradient-border glass-card">
       <div className="p-6">
         <div className="flex justify-between items-center mb-4">
           <div>
@@ -345,7 +345,7 @@ export function QuestionDisplay({
                     ? "destructive"
                     : "outline"
                 }
-                className={`w-full justify-start text-left h-auto py-3 px-4 whitespace-normal break-words ${
+                className={`w-full justify-start text-left h-auto py-3 px-4 whitespace-normal wrap-break-word ${
                   state === "correct"
                     ? "ring-2 ring-green-500 bg-[oklch(0.92_0.15_150/0.2)]"
                     : state === "wrong"

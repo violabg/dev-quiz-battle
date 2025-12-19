@@ -39,7 +39,7 @@ const PlayerPodiumCard = ({
       </div>
       {/* Name Row */}
       <div className="flex justify-center items-start pt-1 w-full min-h-[3em] text-center">
-        <p className="max-w-full font-medium break-words whitespace-pre-line hyphens-auto">
+        <p className="max-w-full font-medium wrap-break-word whitespace-pre-line hyphens-auto">
           {player.user?.username}
         </p>
       </div>

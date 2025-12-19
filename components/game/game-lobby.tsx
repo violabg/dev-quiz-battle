@@ -82,7 +82,7 @@ export function GameLobby({
             {game.players.length === game.max_players && (
               <Badge
                 variant="default"
-                className="bg-gradient-to-r from-[oklch(85%_0.2_160)] to-[oklch(85%_0.3_120)] ml-2 text-[oklch(25%_0.05_240)]"
+                className="bg-linear-to-r from-[oklch(85%_0.2_160)] to-[oklch(85%_0.3_120)] ml-2 text-[oklch(25%_0.05_240)]"
               >
                 Tutti presenti
               </Badge>
