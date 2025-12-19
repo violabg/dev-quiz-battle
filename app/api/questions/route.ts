@@ -1,6 +1,6 @@
 import { api } from "@/convex/_generated/api";
+import { GameDifficulty, GameLanguage } from "@/lib/convex-types";
 import { generateQuestion } from "@/lib/groq";
-import { GameDifficulty, GameLanguage } from "@/lib/supabase/types";
 import { ConvexHttpClient } from "convex/browser";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -69,6 +69,9 @@ export async function POST(req: NextRequest) {
     );
 
     // Call Convex mutation to create question
+    // Convert options from {text: string}[] to string[]
+    const optionsAsStrings = questionData.options.map((opt) => opt.text);
+
     const newQuestion = await convex.mutation(api.questions.createQuestion, {
       game_id: gameId,
       created_by_player_id: playerId,
@@ -76,7 +79,7 @@ export async function POST(req: NextRequest) {
       difficulty: difficulty as GameDifficulty,
       question_text: questionData.questionText,
       code_sample: questionData.codeSample,
-      options: questionData.options,
+      options: optionsAsStrings,
       correct_answer: questionData.correctAnswer,
       explanation: questionData.explanation,
     });

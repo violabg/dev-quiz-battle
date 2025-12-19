@@ -1,20 +1,8 @@
-import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState } from 'react'
+import { api } from "@/convex/_generated/api";
+import { useQuery } from "convex/react";
 
 export const useCurrentUserImage = () => {
-  const [image, setImage] = useState<string | null>(null)
+  const profile = useQuery(api.auth.getCurrentUserProfile);
 
-  useEffect(() => {
-    const fetchUserImage = async () => {
-      const { data, error } = await createClient().auth.getSession()
-      if (error) {
-        console.error(error)
-      }
-
-      setImage(data.session?.user.user_metadata.avatar_url ?? null)
-    }
-    fetchUserImage()
-  }, [])
-
-  return image
-}
+  return profile?.avatar_url ?? null;
+};

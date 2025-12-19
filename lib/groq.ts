@@ -1,6 +1,6 @@
 "use server";
+import type { GameDifficulty, GameLanguage } from "@/lib/convex-types";
 import { getRecentQuestionTexts } from "@/lib/get-recent-questions";
-import type { GameDifficulty, GameLanguage } from "@/lib/supabase/types";
 import { groq } from "@ai-sdk/groq";
 import { generateObject } from "ai";
 import { z } from "zod";
@@ -100,7 +100,6 @@ export async function generateQuestion({
       schema: questionSchema,
       prompt,
       temperature: 0.7,
-      maxTokens: 2048,
     });
 
     return questionData as GeneratedQuestion;

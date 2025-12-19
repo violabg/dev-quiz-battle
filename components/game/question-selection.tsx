@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { GameDifficulty, GameLanguage } from "@/lib/supabase/types";
+import type { GameDifficulty, GameLanguage } from "@/lib/convex-types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import * as React from "react";

@@ -56,11 +56,10 @@ export function LoginForm({
         const formData = new FormData();
         formData.append("email", values.email);
         formData.append("password", values.password);
-        formData.append("redirectTo", "/gioca");
         formData.append("flow", "signIn");
         await signIn("password", formData);
 
-        router.push("/gioca");
+        router.push("/dashboard");
       } catch (error: unknown) {
         toast.error("Errore", {
           description:
@@ -78,9 +77,8 @@ export function LoginForm({
       try {
         // GitHub authentication - user initialization is automatic via Convex Auth
         const formData = new FormData();
-        formData.append("redirectTo", "/gioca");
         await signIn("github", formData);
-        router.push("/gioca");
+        router.push("/dashboard");
       } catch (error: unknown) {
         toast.error("Errore", {
           description:

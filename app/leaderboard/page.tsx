@@ -10,6 +10,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { api } from "@/convex/_generated/api";
+import type { Doc } from "@/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
 import { Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -64,24 +65,38 @@ const LeaderboardPage = () => {
   }
 
   // Transform data to match PlayersStanding expected format
-  const players = leaderboardData.players.map((p: any) => ({
-    id: p.player_id,
-    score: p.total_score,
-    profile: {
+  const players = leaderboardData.players.map((p) => {
+    // Type guard to check if p.user is a users document (not a system table document)
+    const isUserDoc = (obj: typeof p.user): obj is Doc<"users"> => {
+      return (
+        obj !== null &&
+        "_id" in obj &&
+        typeof obj._id === "string" &&
+        obj._id.includes("users")
+      );
+    };
+
+    const user = isUserDoc(p.user) ? p.user : null;
+
+    return {
       id: p.player_id,
-      name: p.user?.name || "",
-      full_name: p.user?.name || p.user?.username || "Unknown",
-      user_name: p.user?.username || "",
-      avatar_url: p.user?.image || null,
-      created_at: "",
-      updated_at: "",
-    },
-    game_id: "",
-    player_id: p.player_id,
-    turn_order: 0,
-    is_active: true,
-    joined_at: "",
-  }));
+      score: p.total_score,
+      profile: {
+        id: p.player_id,
+        name: user?.name || "",
+        full_name: user?.name || user?.username || "Unknown",
+        user_name: user?.username || "",
+        avatar_url: user?.image || null,
+        created_at: "",
+        updated_at: "",
+      },
+      game_id: "",
+      player_id: p.player_id,
+      turn_order: 0,
+      is_active: true,
+      joined_at: "",
+    };
+  });
 
   return (
     <main className="mx-auto px-4 py-10 max-w-2x container">

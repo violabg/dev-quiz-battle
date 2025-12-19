@@ -1,6 +1,7 @@
-import { getQuestionsByLanguageAndDifficulty } from "@/lib/supabase/supabase-questions";
-import type { Question } from "@/lib/supabase/types";
-import { subHours } from "date-fns";
+import { api } from "@/convex/_generated/api";
+import { ConvexHttpClient } from "convex/browser";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 /**
  * Fetches the question_text of all questions generated in the last 5 hours for a given language and difficulty.
@@ -12,11 +13,12 @@ export async function getRecentQuestionTexts({
   language: string;
   difficulty: string;
 }) {
-  const since = subHours(new Date(), 5).toISOString();
-  const questions: Question[] = await getQuestionsByLanguageAndDifficulty(
-    language,
-    difficulty,
-    since
+  const questionTexts = await convex.query(
+    api.questions.getRecentQuestionTexts,
+    {
+      language,
+      difficulty,
+    }
   );
-  return questions.map((q: Question) => q.question_text);
+  return questionTexts;
 }

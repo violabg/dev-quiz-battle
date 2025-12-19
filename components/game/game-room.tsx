@@ -1,5 +1,4 @@
 "use client";
-
 import { CurrentTurnCard } from "@/components/game/current-turn-card";
 import { QuestionDisplay } from "@/components/game/question-display";
 import { QuestionSelection } from "@/components/game/question-selection";
@@ -7,17 +6,21 @@ import { TurnResultCard } from "@/components/game/turn-result-card";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import type {
+  GameDifficulty,
+  GameLanguage,
+  GameWithPlayers,
+} from "@/lib/convex-types";
 import { useCurrentQuestion } from "@/lib/hooks/useCurrentQuestion";
 import { useGameAnswers } from "@/lib/hooks/useGameAnswers";
 import { useGameTurns } from "@/lib/hooks/useGameTurns";
-import type { GameDifficulty, GameLanguage } from "@/lib/supabase/types";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import Scoreboard from "./game-scoreboard";
 
 interface GameRoomProps {
-  game: any; // Convex game with players
+  game: GameWithPlayers;
   onLeaveGame: () => void;
   userId: Id<"users">;
 }
@@ -43,7 +46,7 @@ export function GameRoom({ game, userId, onLeaveGame }: GameRoomProps) {
 
   // --- Custom Hooks Initialization ---
   const { allAnswers } = useGameAnswers({
-    currentQuestionId: null as any, // Will be set from currentQuestion
+    currentQuestionId: null as Id<"questions"> | null,
   });
 
   // Calculate initial values
@@ -77,7 +80,7 @@ export function GameRoom({ game, userId, onLeaveGame }: GameRoomProps) {
     userId,
     allAnswersCount: allAnswers?.length ?? 0,
     playersCount: game.players?.length ?? 0,
-    hasCorrectAnswer: allAnswers?.some((a: any) => a.is_correct) ?? false,
+    hasCorrectAnswer: allAnswers?.some((a) => a.is_correct) ?? false,
     winner,
     isCurrentPlayersTurn,
     gameStatus: game.status,
@@ -89,11 +92,9 @@ export function GameRoom({ game, userId, onLeaveGame }: GameRoomProps) {
     const checkGameCompletion = async () => {
       if (!currentQuestion?.ended_at || !getQuestionsByGame) return;
 
-      const completedQuestions = getQuestionsByGame.filter(
-        (q: any) => q.ended_at
-      );
+      const completedQuestions = getQuestionsByGame.filter((q) => q.ended_at);
       const uniqueCreators = new Set(
-        completedQuestions.map((q: any) => q.created_by_player_id)
+        completedQuestions.map((q) => q.created_by_player_id)
       );
 
       if (
@@ -131,13 +132,13 @@ export function GameRoom({ game, userId, onLeaveGame }: GameRoomProps) {
     if (!currentQuestion?.ended_at || !allAnswers) return;
 
     const calculateWinner = () => {
-      const correctAnswers = allAnswers.filter((a: any) => a.is_correct);
+      const correctAnswers = allAnswers.filter((a) => a.is_correct);
       if (correctAnswers.length === 0) {
         setWinner(null);
         return;
       }
 
-      const [firstCorrect] = correctAnswers.sort((a: any, b: any) => {
+      const [firstCorrect] = correctAnswers.sort((a, b) => {
         const aTime = a.answered_at || 0;
         const bTime = b.answered_at || 0;
         return aTime - bTime;
@@ -303,7 +304,7 @@ export function GameRoom({ game, userId, onLeaveGame }: GameRoomProps) {
             <QuestionSelection
               isCurrentPlayersTurn={isCurrentPlayersTurn} // from useGameTurns
               currentPlayerUsername={
-                currentPlayer?.user.username || currentPlayer?.user.name
+                currentPlayer?.user?.username || currentPlayer?.user?.name
               } // from useGameTurns
               isLoading={isLoadingCreateQuestion || isLoadingSelection}
               language={language}
@@ -332,9 +333,9 @@ export function GameRoom({ game, userId, onLeaveGame }: GameRoomProps) {
           <CurrentTurnCard
             currentPlayer={{
               // from useGameTurns
-              user_name: currentPlayer?.user.username,
-              full_name: currentPlayer?.user.name,
-              avatar_url: currentPlayer?.user.image,
+              user_name: currentPlayer?.user?.username,
+              full_name: currentPlayer?.user?.name,
+              avatar_url: currentPlayer?.user?.image,
               player_id: currentPlayer?.player_id,
             }}
             isCurrentPlayersTurn={isCurrentPlayersTurn} // from useGameTurns

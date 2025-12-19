@@ -2,12 +2,13 @@
 
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import type { GameWithPlayers } from "@/lib/convex-types";
 import { useMutation } from "convex/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 type UseGameTurnsProps = {
-  game: any; // Convex game with players
+  game: GameWithPlayers;
   userId: Id<"users"> | undefined;
   isRoundComplete: boolean;
   resetQuestionState: () => void;

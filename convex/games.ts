@@ -95,7 +95,11 @@ export const updateGame = mutation({
       throw new ConvexError("Game not found");
     }
 
-    const updates: any = {
+    const updates: Partial<{
+      updated_at: number;
+      status: "waiting" | "active" | "completed";
+      current_turn: number;
+    }> = {
       updated_at: Date.now(),
     };
 
@@ -221,7 +225,10 @@ export const updateGamePlayer = mutation({
       throw new ConvexError("Game player not found");
     }
 
-    const updates: any = {};
+    const updates: Partial<{
+      score: number;
+      is_active: boolean;
+    }> = {};
 
     if (args.score !== undefined) {
       updates.score = args.score;

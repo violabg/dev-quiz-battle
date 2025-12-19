@@ -1,11 +1,12 @@
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import type { AnswerWithUser } from "@/lib/convex-types";
 import { useQuery } from "convex/react";
 import { useEffect } from "react";
 
 type UseGameAnswersProps = {
   currentQuestionId: Id<"questions"> | undefined | null;
-  onAnswersLoaded?: (answers: any[]) => void;
+  onAnswersLoaded?: (answers: AnswerWithUser[]) => void;
 };
 
 export const useGameAnswers = ({

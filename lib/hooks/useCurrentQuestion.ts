@@ -1,11 +1,13 @@
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import type {
+  GameDifficulty,
+  GameLanguage,
+  QuestionWithCreator,
+} from "@/lib/convex-types";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-
-type GameLanguage = string;
-type GameDifficulty = "easy" | "medium" | "hard" | "expert";
 
 type UseCurrentQuestionProps = {
   gameId: Id<"games">;
@@ -17,7 +19,7 @@ type UseCurrentQuestionProps = {
   isCurrentPlayersTurn: boolean;
   gameStatus: "waiting" | "active" | "completed";
   timeLimit: number;
-  onQuestionLoaded?: (question: any, startTime: number) => void;
+  onQuestionLoaded?: (question: QuestionWithCreator, startTime: number) => void;
 };
 
 export const useCurrentQuestion = ({

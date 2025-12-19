@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { GameWithPlayers } from "@/lib/supabase/types";
+import { GameWithPlayers } from "@/lib/convex-types";
 import { getInitials } from "@/lib/utils";
 import { Home } from "lucide-react";
 import Link from "next/link";

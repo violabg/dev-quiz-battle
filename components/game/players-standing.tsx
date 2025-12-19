@@ -1,10 +1,23 @@
-import type { GamePlayer, Profile } from "@/lib/supabase/types";
 import { Award, Medal, Trophy } from "lucide-react";
 import type { ElementType } from "react";
 
+// Player type for standing display
+interface PlayerProfile {
+  id: string;
+  user_name: string;
+  full_name?: string;
+  avatar_url?: string | null;
+}
+
+interface StandingPlayer {
+  id: string;
+  score: number;
+  profile: PlayerProfile;
+}
+
 // Props for the new PlayerPodiumCard component
 type PlayerPodiumCardProps = {
-  player: GamePlayer & { profile: Profile };
+  player: StandingPlayer;
   MedalIcon: ElementType;
   gradientClass: string;
   medalSizeClass: string;
@@ -48,7 +61,7 @@ const PlayerPodiumCard = ({
 };
 
 interface PlayersStandingProps {
-  players: (GamePlayer & { profile: Profile })[];
+  players: StandingPlayer[];
 }
 
 export const PlayersStanding = ({ players }: PlayersStandingProps) => {

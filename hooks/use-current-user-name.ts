@@ -1,25 +1,8 @@
-import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState } from "react";
+import { api } from "@/convex/_generated/api";
+import { useQuery } from "convex/react";
 
 export const useCurrentUserName = () => {
-  const [name, setName] = useState<string | null>(null);
+  const profile = useQuery(api.auth.getCurrentUserProfile);
 
-  useEffect(() => {
-    const fetchProfileName = async () => {
-      const { data, error } = await createClient().auth.getSession();
-      if (error) {
-        console.error(error);
-      }
-
-      setName(
-        data.session?.user.user_metadata.full_name
-          ? data.session?.user.user_metadata.full_name
-          : data.session?.user.user_metadata.user_name ?? "?"
-      );
-    };
-
-    fetchProfileName();
-  }, []);
-
-  return name || "?";
+  return profile?.username || "?";
 };

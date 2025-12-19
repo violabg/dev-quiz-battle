@@ -78,7 +78,10 @@ export const updateQuestion = mutation({
       throw new ConvexError("Question not found");
     }
 
-    const updates: any = {};
+    const updates: Partial<{
+      ended_at: number;
+      started_at: number;
+    }> = {};
 
     if (args.ended_at !== undefined) {
       // Atomic check: only set ended_at if not already set
@@ -141,17 +144,45 @@ export const getQuestion = query({
 
     const creator = await ctx.db.get(question.created_by_player_id);
 
-    const result: any = {
+    // Optionally exclude correct_answer for active questions
+    if (!args.include_correct_answer && !question.ended_at) {
+      const { correct_answer, ...questionWithoutAnswer } = question;
+      return {
+        ...questionWithoutAnswer,
+        creator,
+      };
+    }
+
+    return {
       ...question,
       creator,
     };
+  },
+});
 
-    // Optionally exclude correct_answer for active questions
-    if (!args.include_correct_answer && !question.ended_at) {
-      delete result.correct_answer;
-    }
+/**
+ * Get recent question texts by language and difficulty (last 5 hours)
+ */
+export const getRecentQuestionTexts = query({
+  args: {
+    language: v.string(),
+    difficulty: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const fiveHoursAgo = Date.now() - 5 * 60 * 60 * 1000;
 
-    return result;
+    const questions = await ctx.db
+      .query("questions")
+      .withIndex("by_language", (q) => q.eq("language", args.language))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("difficulty"), args.difficulty),
+          q.gte(q.field("created_at"), fiveHoursAgo)
+        )
+      )
+      .collect();
+
+    return questions.map((q) => q.question_text);
   },
 });
 
