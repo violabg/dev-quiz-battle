@@ -43,7 +43,7 @@ export function GameLobby({
   } else if (game.status === "active") {
     lobbyMessage =
       "In attesa che venga generata la domanda da " +
-      (currentTurnPlayer?.profile.user_name || "...");
+      (currentTurnPlayer?.user?.username || "...");
   }
 
   return (
@@ -92,23 +92,19 @@ export function GameLobby({
         <CardContent className="gap-4 grid md:grid-cols-2">
           {game.players.map((player) => (
             <div
-              key={player.id}
+              key={player._id}
               className="flex items-center gap-3 p-3 border rounded-lg"
             >
               <Avatar>
-                <AvatarImage src={player.profile.avatar_url || undefined} />
+                <AvatarImage src={player.user?.image || undefined} />
                 <AvatarFallback>
-                  {(
-                    player.profile.user_name ||
-                    player.profile.full_name ||
-                    "??"
-                  )
+                  {(player.user?.username || "??")
                     .substring(0, 2)
                     .toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <p className="font-medium">{player.profile.full_name}</p>
+                <p className="font-medium">{player.user?.username}</p>
                 <p className="text-muted-foreground text-sm">
                   Ordine di turno: {player.turn_order}
                 </p>

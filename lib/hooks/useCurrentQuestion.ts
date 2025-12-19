@@ -5,7 +5,7 @@ import type {
   GameLanguage,
   QuestionWithCreator,
 } from "@/lib/convex-types";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -44,7 +44,9 @@ export const useCurrentQuestion = ({
   );
   const [isLoadingCreateQuestion, setIsLoadingCreateQuestion] = useState(false);
 
-  const createQuestion = useMutation(api.questions.createQuestion);
+  const generateAndCreateQuestion = useAction(
+    api.questions.generateAndCreateQuestion
+  );
   const endQuestion = useMutation(api.questions.endQuestion);
   const updateGame = useMutation(api.games.updateGame);
 
@@ -118,29 +120,18 @@ export const useCurrentQuestion = ({
     async (
       selectedLanguage: GameLanguage,
       selectedDifficulty: GameDifficulty
-    ): Promise<any | null> => {
+    ): Promise<Id<"questions"> | null> => {
       if (!userId || !isCurrentPlayersTurn) return null;
 
       setIsLoadingCreateQuestion(true);
       try {
-        // Still use API route for question generation
-        const response = await fetch("/api/questions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            gameId,
-            language: selectedLanguage,
-            difficulty: selectedDifficulty,
-          }),
+        // Call Convex action to generate and create question
+        const questionId = await generateAndCreateQuestion({
+          game_id: gameId,
+          player_id: userId,
+          language: selectedLanguage,
+          difficulty: selectedDifficulty,
         });
-
-        if (!response.ok) {
-          throw new Error("Failed to create question");
-        }
-
-        const newQuestion = await response.json();
 
         if (gameStatus !== "active") {
           await updateGame({
@@ -149,8 +140,9 @@ export const useCurrentQuestion = ({
           });
         }
 
-        return newQuestion;
-      } catch {
+        return questionId;
+      } catch (error) {
+        console.error("Failed to create question:", error);
         toast.error("Errore", {
           description: "Impossibile creare la domanda",
         });
@@ -159,7 +151,14 @@ export const useCurrentQuestion = ({
         setIsLoadingCreateQuestion(false);
       }
     },
-    [userId, isCurrentPlayersTurn, gameId, gameStatus, updateGame]
+    [
+      userId,
+      isCurrentPlayersTurn,
+      gameId,
+      gameStatus,
+      generateAndCreateQuestion,
+      updateGame,
+    ]
   );
 
   return {

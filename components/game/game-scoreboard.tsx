@@ -84,20 +84,18 @@ export default function Scoreboard({
               .map((player) => {
                 return (
                   <div
-                    key={player.id}
+                    key={player._id}
                     className="flex justify-between items-center p-2 border rounded-lg"
                   >
                     <div className="flex items-center gap-2">
                       <Avatar className="w-8 h-8">
-                        <AvatarImage
-                          src={player.profile.avatar_url || undefined}
-                        />
+                        <AvatarImage src={player.user?.image || undefined} />
                         <AvatarFallback>
-                          {getInitials(player.profile.name)}
+                          {getInitials(player.user?.username || "")}
                         </AvatarFallback>
                       </Avatar>
                       <span className="font-medium">
-                        {player.profile.full_name}
+                        {player.user?.username}
                       </span>
                       {player.player_id === game.host_id && (
                         <Badge variant="outline" className="ml-1">
