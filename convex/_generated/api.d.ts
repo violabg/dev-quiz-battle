@@ -8,12 +8,18 @@
  * @module
  */
 
-import type * as answers from "../answers.js";
+import type * as actions_questions from "../actions/questions.js";
 import type * as auth from "../auth.js";
-import type * as games from "../games.js";
 import type * as http from "../http.js";
-import type * as leaderboard from "../leaderboard.js";
-import type * as questions from "../questions.js";
+import type * as mutations_answers from "../mutations/answers.js";
+import type * as mutations_auth from "../mutations/auth.js";
+import type * as mutations_games from "../mutations/games.js";
+import type * as mutations_questions from "../mutations/questions.js";
+import type * as queries_answers from "../queries/answers.js";
+import type * as queries_auth from "../queries/auth.js";
+import type * as queries_games from "../queries/games.js";
+import type * as queries_leaderboard from "../queries/leaderboard.js";
+import type * as queries_questions from "../queries/questions.js";
 
 import type {
   ApiFromModules,
@@ -22,12 +28,18 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  answers: typeof answers;
+  "actions/questions": typeof actions_questions;
   auth: typeof auth;
-  games: typeof games;
   http: typeof http;
-  leaderboard: typeof leaderboard;
-  questions: typeof questions;
+  "mutations/answers": typeof mutations_answers;
+  "mutations/auth": typeof mutations_auth;
+  "mutations/games": typeof mutations_games;
+  "mutations/questions": typeof mutations_questions;
+  "queries/answers": typeof queries_answers;
+  "queries/auth": typeof queries_auth;
+  "queries/games": typeof queries_games;
+  "queries/leaderboard": typeof queries_leaderboard;
+  "queries/questions": typeof queries_questions;
 }>;
 
 /**

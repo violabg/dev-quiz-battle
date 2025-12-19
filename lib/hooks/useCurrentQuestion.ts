@@ -35,7 +35,7 @@ export const useCurrentQuestion = ({
   onQuestionLoaded,
 }: UseCurrentQuestionProps) => {
   // Convex auto-subscribes with useQuery
-  const currentQuestion = useQuery(api.questions.getCurrentQuestion, {
+  const currentQuestion = useQuery(api.queries.questions.getCurrentQuestion, {
     game_id: gameId,
   });
 
@@ -45,10 +45,10 @@ export const useCurrentQuestion = ({
   const [isLoadingCreateQuestion, setIsLoadingCreateQuestion] = useState(false);
 
   const generateAndCreateQuestion = useAction(
-    api.questions.generateAndCreateQuestion
+    api.actions.questions.generateAndCreateQuestion
   );
-  const endQuestion = useMutation(api.questions.endQuestion);
-  const updateGame = useMutation(api.games.updateGame);
+  const endQuestion = useMutation(api.mutations.questions.endQuestion);
+  const updateGame = useMutation(api.mutations.games.updateGame);
 
   // Set question start time when question loads or changes
   useEffect(() => {

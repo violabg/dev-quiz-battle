@@ -71,7 +71,9 @@ export function SignUpForm({
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const { signIn } = useAuthActions();
-  const initializeUserProfile = useMutation(api.auth.initializeUserProfile);
+  const initializeUserProfile = useMutation(
+    api.mutations.auth.initializeUserProfile
+  );
 
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),

@@ -10,7 +10,7 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export function GameClientPage({ code }: { code: string }) {
-  const currentUser = useQuery(api.auth.currentUser);
+  const currentUser = useQuery(api.queries.auth.currentUser);
   const { loadingState, game, isHost, handleStartGame, handleLeaveGame } =
     useGameState({ code });
   const router = useRouter();

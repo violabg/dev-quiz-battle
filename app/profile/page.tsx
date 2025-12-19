@@ -9,9 +9,9 @@ import { ProfileContentFallback } from "./ProfileContentFallback";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const currentUser = useQuery(api.auth.currentUser);
+  const currentUser = useQuery(api.queries.auth.currentUser);
   const profileData = useQuery(
-    api.leaderboard.getUserProfileWithScore,
+    api.queries.leaderboard.getUserProfileWithScore,
     currentUser?._id ? { user_id: currentUser._id } : "skip"
   );
 

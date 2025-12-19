@@ -4,7 +4,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import type { GameWithPlayers } from "@/lib/convex-types";
 import { useMutation } from "convex/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
 type UseGameTurnsProps = {
@@ -20,22 +20,15 @@ export const useGameTurns = ({
   isRoundComplete,
   resetQuestionState,
 }: UseGameTurnsProps) => {
-  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(
-    game?.current_turn ?? 0
-  );
+  // Derive current player index directly from game state
+  const currentPlayerIndex = game?.current_turn ?? 0;
 
-  const advanceTurn = useMutation(api.games.advanceTurn);
+  const advanceTurn = useMutation(api.mutations.games.advanceTurn);
 
-  // Handle turn changes from game state
+  // Handle turn changes - only call resetQuestionState when turn changes
   useEffect(() => {
-    if (
-      typeof game?.current_turn === "number" &&
-      currentPlayerIndex !== game.current_turn
-    ) {
-      setCurrentPlayerIndex(game.current_turn);
-      resetQuestionState();
-    }
-  }, [game?.current_turn, currentPlayerIndex, resetQuestionState]);
+    resetQuestionState();
+  }, [game?.current_turn, resetQuestionState]);
 
   const currentPlayer = useMemo(
     () => game?.players?.[currentPlayerIndex],

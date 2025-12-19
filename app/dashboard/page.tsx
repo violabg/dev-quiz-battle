@@ -15,7 +15,7 @@ import { CreateGameForm } from "./CreateGameForm";
 import { JoinGameForm } from "./JoinGameForm";
 
 export default function DashboardPage() {
-  const currentUser = useQuery(api.auth.currentUser);
+  const currentUser = useQuery(api.queries.auth.currentUser);
   const router = useRouter();
 
   if (currentUser === undefined) {

@@ -32,7 +32,7 @@ type JoinGameForm = z.infer<typeof joinGameSchema>;
 export const JoinGameForm = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const joinGame = useMutation(api.games.joinGame);
+  const joinGame = useMutation(api.mutations.games.joinGame);
 
   const form = useForm<JoinGameForm>({
     resolver: zodResolver(joinGameSchema),

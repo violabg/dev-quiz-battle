@@ -15,7 +15,7 @@ export const useGameAnswers = ({
 }: UseGameAnswersProps) => {
   // Convex auto-subscribes to changes with useQuery
   const allAnswers = useQuery(
-    api.answers.getAnswersByQuestion,
+    api.queries.answers.getAnswersByQuestion,
     currentQuestionId ? { question_id: currentQuestionId } : "skip"
   );
 

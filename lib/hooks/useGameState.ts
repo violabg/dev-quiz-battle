@@ -12,12 +12,12 @@ export function useGameState({ code }: { code: string }) {
     useState<LoadingState>("initializing");
 
   // Convex auto-subscribes to changes with useQuery
-  const game = useQuery(api.games.getGameByCode, { code });
-  const updateGame = useMutation(api.games.updateGame);
-  const updateGamePlayer = useMutation(api.games.updateGamePlayer);
+  const game = useQuery(api.queries.games.getGameByCode, { code });
+  const updateGame = useMutation(api.mutations.games.updateGame);
+  const updateGamePlayer = useMutation(api.mutations.games.updateGamePlayer);
 
   // Get current user ID from Convex auth
-  const currentUser = useQuery(api.auth.currentUser);
+  const currentUser = useQuery(api.queries.auth.currentUser);
   const userId = currentUser?._id;
 
   const isHost = game?.host_id === userId;

@@ -37,7 +37,7 @@ const LeaderboardPage = () => {
 
   // Query leaderboard data
   const leaderboardData = useQuery(
-    api.leaderboard.getLeaderboardPlayers,
+    api.queries.leaderboard.getLeaderboardPlayers,
     paginationOpts
   );
 
@@ -65,7 +65,7 @@ const LeaderboardPage = () => {
   }
 
   // Transform data to match PlayersStanding expected format
-  const players = leaderboardData.players.map((p) => {
+  const players = leaderboardData.players.map((p, index) => {
     // Type guard to check if p.user is a users document (not a system table document)
     const isUserDoc = (obj: typeof p.user): obj is Doc<"users"> => {
       return (
@@ -78,23 +78,17 @@ const LeaderboardPage = () => {
 
     const user = isUserDoc(p.user) ? p.user : null;
 
+    // Create a game player structure expected by PlayersStanding
     return {
-      id: p.player_id,
+      _id: p.player_id as any, // Using player_id as the _id
+      _creationTime: 0, // Not relevant for leaderboard
+      game_id: "" as any, // Not relevant for leaderboard
+      player_id: p.player_id as any,
       score: p.total_score,
-      profile: {
-        id: p.player_id,
-        name: user?.name || "",
-        full_name: user?.name || user?.username || "Unknown",
-        user_name: user?.username || "",
-        avatar_url: user?.image || null,
-        created_at: "",
-        updated_at: "",
-      },
-      game_id: "",
-      player_id: p.player_id,
-      turn_order: 0,
+      turn_order: index,
       is_active: true,
-      joined_at: "",
+      joined_at: 0, // Not relevant for leaderboard
+      user,
     };
   });
 

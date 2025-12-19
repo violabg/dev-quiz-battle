@@ -27,11 +27,14 @@ interface GameRoomProps {
 
 export function GameRoom({ game, userId, onLeaveGame }: GameRoomProps) {
   // Convex mutations
-  const submitAnswerMutation = useMutation(api.answers.submitAnswer);
-  const updateGameMutation = useMutation(api.games.updateGame);
-  const getQuestionsByGame = useQuery(api.questions.getQuestionsByGame, {
-    game_id: game._id,
-  });
+  const submitAnswerMutation = useMutation(api.mutations.answers.submitAnswer);
+  const updateGameMutation = useMutation(api.mutations.games.updateGame);
+  const getQuestionsByGame = useQuery(
+    api.queries.questions.getQuestionsByGame,
+    {
+      game_id: game._id,
+    }
+  );
 
   // --- State declarations for UI elements and inter-hook communication ---
   const [isLoadingSelection, setIsLoadingSelection] = useState(false);

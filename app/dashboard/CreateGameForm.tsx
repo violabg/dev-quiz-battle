@@ -33,7 +33,7 @@ type CreateGameForm = z.infer<typeof createGameSchema>;
 export const CreateGameForm = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const createGame = useMutation(api.games.createGame);
+  const createGame = useMutation(api.mutations.games.createGame);
 
   const form = useForm<CreateGameForm>({
     resolver: zodResolver(createGameSchema),
