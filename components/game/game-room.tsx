@@ -46,10 +46,12 @@ export function GameRoom({ game, userId, onLeaveGame }: GameRoomProps) {
     score: number;
   } | null>(null);
   const [showNextTurn, setShowNextTurn] = useState(false);
+  const [currentQuestionId, setCurrentQuestionId] =
+    useState<Id<"questions"> | null>(null);
 
   // --- Custom Hooks Initialization ---
   const { allAnswers } = useGameAnswers({
-    currentQuestionId: null as Id<"questions"> | null,
+    currentQuestionId,
   });
 
   // Calculate initial values
@@ -89,6 +91,13 @@ export function GameRoom({ game, userId, onLeaveGame }: GameRoomProps) {
     gameStatus: game.status,
     timeLimit: game.time_limit,
   });
+
+  // Update currentQuestionId when currentQuestion changes
+  useEffect(() => {
+    if (currentQuestion?._id) {
+      setCurrentQuestionId(currentQuestion._id);
+    }
+  }, [currentQuestion?._id]);
 
   // Check game completion
   useEffect(() => {

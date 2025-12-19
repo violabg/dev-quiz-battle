@@ -41,7 +41,8 @@ export function QuestionDisplay({
   // Only show correct answer (green) if someone answered correctly or time is up
   // Mark wrong answers in red for everyone as soon as they are given
   // Reset answer state on new turn
-  const revealCorrect = Boolean(winner) || timeIsUp;
+  const revealCorrect =
+    Boolean(winner) || timeIsUp || Boolean(question.ended_at);
 
   // Get the current user's answer
   const userAnswer = useMemo(() => {
