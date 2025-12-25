@@ -22,7 +22,7 @@ Welcome to **Dev Quiz Battle**! This project is an AI-powered multiplayer coding
 
 ## Overview
 
-Dev Quiz Battle is a real-time, multiplayer coding quiz game. It leverages Convex for authentication, real-time updates, and database operations. The UI is built with modern, accessible components using shadcn/ui and Radix UI, styled with Tailwind CSS v4 and OKLCH color spaces for theme support.
+Dev Quiz Battle is a real-time, multiplayer coding quiz game. It leverages Convex for authentication, real-time updates, and database operations. The UI is built with modern, accessible components using shadcn/ui and Base UI, styled with Tailwind CSS v4 and OKLCH color spaces for theme support.
 
 ## Project Structure
 
@@ -86,7 +86,7 @@ GROQ_API_KEY=gsk_***
 - **TypeScript v5** — Type safety
 - **Tailwind CSS v4** — Utility-first styling, OKLCH color support
 - **Convex** — Backend, auth, real-time, database
-- **shadcn/ui & Radix UI** — Accessible, modern UI components
+- **shadcn/ui & Base UI** — Accessible, modern UI components
 - **Zod** — Schema validation
 - **react-hook-form** — Form management
 

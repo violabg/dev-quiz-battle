@@ -95,7 +95,6 @@ export async function generateQuestion({
       prompt,
       temperature: 0.7,
     });
-    console.log("🚀 ~ generateQuestion ~ questionData:", questionData);
 
     return questionData as GeneratedQuestion;
   } catch (error) {

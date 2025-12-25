@@ -2,7 +2,6 @@
 
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -44,9 +43,7 @@ export default function DashboardPage() {
               Imposta una nuova sfida di quiz di programmazione
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <CreateGameForm />
-          </CardContent>
+          <CreateGameForm />
         </Card>
         <Card className="gradient-border glass-card">
           <CardHeader>
@@ -55,9 +52,7 @@ export default function DashboardPage() {
               Inserisci un codice partita per unirti a una partita esistente
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <JoinGameForm />
-          </CardContent>
+          <JoinGameForm />
         </Card>
       </div>
     </main>

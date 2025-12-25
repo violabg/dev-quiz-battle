@@ -9,7 +9,7 @@ This document describes the main UI components and their organization in Dev Qui
 ## Component Organization
 
 - All reusable components are in the `components/` directory.
-- UI primitives are based on shadcn/ui and Radix UI.
+- UI primitives are based on shadcn/ui and Base UI.
 - Custom game and auth components are grouped by feature.
 
 ## Key Component Groups

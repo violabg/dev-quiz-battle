@@ -9,13 +9,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -42,7 +40,12 @@ export function ForgotPasswordForm({
     defaultValues: { email: "" },
     mode: "onChange",
   });
-  const { handleSubmit, setError } = form;
+  const {
+    handleSubmit,
+    register,
+    setError,
+    formState: { errors, isValid },
+  } = form;
 
   const handleForgotPassword = async (values: ForgotPasswordFormValues) => {
     setIsLoading(true);
@@ -93,49 +96,44 @@ export function ForgotPasswordForm({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Form {...form}>
-              <form
-                onSubmit={handleSubmit(handleForgotPassword)}
-                className="space-y-4"
-                autoComplete="off"
+            <form
+              onSubmit={handleSubmit(handleForgotPassword)}
+              className="space-y-4"
+              autoComplete="off"
+            >
+              <FieldGroup>
+                <Field data-invalid={!!errors.email}>
+                  <FieldLabel htmlFor="email">Email</FieldLabel>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="m@example.com"
+                    autoComplete="email"
+                    disabled={isLoading}
+                    aria-invalid={!!errors.email}
+                    {...register("email")}
+                  />
+                  <FieldError errors={errors.email ? [errors.email] : []} />
+                </Field>
+              </FieldGroup>
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || !isValid}
               >
-                <FormField
-                  name="email"
-                  control={form.control}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="m@example.com"
-                          autoComplete="email"
-                          disabled={isLoading}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isLoading || !form.formState.isValid}
+                {isLoading ? "Invio in corso..." : "Invia email di reset"}
+              </Button>
+              <div className="mt-4 text-sm text-center">
+                Hai già un account?{" "}
+                <Link
+                  href="/auth/login"
+                  className="underline underline-offset-4"
                 >
-                  {isLoading ? "Invio in corso..." : "Invia email di reset"}
-                </Button>
-                <div className="mt-4 text-sm text-center">
-                  Hai già un account?{" "}
-                  <Link
-                    href="/auth/login"
-                    className="underline underline-offset-4"
-                  >
-                    Accedi
-                  </Link>
-                </div>
-              </form>
-            </Form>
+                  Accedi
+                </Link>
+              </div>
+            </form>
           </CardContent>
         </Card>
       )}

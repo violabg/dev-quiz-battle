@@ -15,7 +15,7 @@ This document provides a high-level overview of the architecture for Dev Quiz Ba
 
 - **Component Library**
 
-  - UI is built with shadcn/ui and Radix UI primitives for accessibility and modern design.
+  - UI is built with shadcn/ui and Base UI primitives for accessibility and modern design.
   - Custom components are in `components/`.
 
 - **State Management**

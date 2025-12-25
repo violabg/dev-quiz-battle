@@ -1,6 +1,6 @@
 import { LoginButton } from "@/components/auth/login-button";
 import DQBLogoGradient from "@/components/icons/dqb-gradient-logo";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Code, Cpu, Users } from "lucide-react";
 import Link from "next/link";
@@ -23,9 +23,16 @@ export default async function Home() {
               </p>
             </div>
             <div className="flex sm:flex-row flex-col gap-4">
-              <Button asChild size="lg">
-                <Link href="/dashboard">Inizia a giocare</Link>
-              </Button>
+              <Link
+                className={`${buttonVariants({
+                  variant: "default",
+                  size: "lg",
+                })}`}
+                href="/dashboard"
+              >
+                Inizia a giocare{" "}
+              </Link>
+
               <LoginButton />
             </div>
           </div>

@@ -8,7 +8,7 @@
   - @ai-sdk/groq, @ai-sdk/react, ai
   - @convex-dev/auth, convex
   - @hookform/resolvers, react-hook-form
-  - @radix-ui/react-\* (dialog, dropdown-menu, label, popover, select, slot)
+  - @base-ui/react-\* (dialog, dropdown-menu, label, popover, select, slot)
   - class-variance-authority, clsx, lucide-react, next-themes, sonner, tailwind-merge, tw-animate-css, zod
 
 ## Styling
@@ -22,7 +22,7 @@
 - Prefer functional React components.
 - Use Zod for schema validation.
 - Use React Hook Form for form management.
-- Use Radix UI components.
+- Use Base UI components.
 - Use Convex for backend/database interactions (queries, mutations, actions).
 - Use arrow functions for methods and new components.
 - Use types over interfaces.

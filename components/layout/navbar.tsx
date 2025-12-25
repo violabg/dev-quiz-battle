@@ -1,9 +1,10 @@
 "use client";
 import { ModeToggle } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -68,15 +69,17 @@ export function Navbar() {
           {/* Mobile nav */}
           <div className="md:hidden">
             <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Apri menu di navigazione"
-                >
-                  <Menu className="w-6 h-6" />
-                </Button>
-              </PopoverTrigger>
+              <PopoverTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Apri menu di navigazione"
+                  >
+                    <Menu className="w-6 h-6" />
+                  </Button>
+                }
+              />
               <PopoverContent align="start" className="p-0 w-56">
                 <nav className="flex flex-col gap-1 py-2">
                   {navItems.map((item) => (
@@ -106,20 +109,24 @@ export function Navbar() {
             <>
               {isAuthenticated ? (
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <CurrentUserAvatar />
-                    </Button>
-                  </DropdownMenuTrigger>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button variant="ghost" size="icon">
+                        <CurrentUserAvatar />
+                      </Button>
+                    }
+                  ></DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Il mio account</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile">Profilo</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/dashboard">Dashboard</Link>
-                    </DropdownMenuItem>
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel>Il mio account</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        render={<Link href="/profile">Profilo</Link>}
+                      ></DropdownMenuItem>
+                      <DropdownMenuItem
+                        render={<Link href="/dashboard">Dashboard</Link>}
+                      ></DropdownMenuItem>
+                    </DropdownMenuGroup>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="mr-2 w-4 h-4" />
@@ -128,9 +135,14 @@ export function Navbar() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button asChild>
-                  <Link href="/auth/login">Accedi</Link>
-                </Button>
+                <Link
+                  className={`${buttonVariants({
+                    variant: "default",
+                  })}`}
+                  href="/auth/login"
+                >
+                  Accedi
+                </Link>
               )}
             </>
           )}

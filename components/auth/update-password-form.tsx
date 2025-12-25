@@ -9,13 +9,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { cn } from "@/lib/utils";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,7 +42,12 @@ export function UpdatePasswordForm({
     defaultValues: { password: "" },
     mode: "onChange",
   });
-  const { handleSubmit, setError } = form;
+  const {
+    handleSubmit,
+    register,
+    setError,
+    formState: { errors, isValid },
+  } = form;
 
   const handleUpdatePassword = async (values: UpdatePasswordFormValues) => {
     setIsLoading(true);
@@ -74,39 +77,34 @@ export function UpdatePasswordForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form
-              onSubmit={handleSubmit(handleUpdatePassword)}
-              className="space-y-4"
-              autoComplete="off"
+          <form
+            onSubmit={handleSubmit(handleUpdatePassword)}
+            className="space-y-4"
+            autoComplete="off"
+          >
+            <FieldGroup>
+              <Field data-invalid={!!errors.password}>
+                <FieldLabel htmlFor="password">Nuova password</FieldLabel>
+                <PasswordInput
+                  id="password"
+                  placeholder="New password"
+                  autoComplete="new-password"
+                  disabled={isLoading}
+                  aria-invalid={!!errors.password}
+                  {...register("password")}
+                />
+                <FieldError errors={errors.password ? [errors.password] : []} />
+              </Field>
+            </FieldGroup>
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading || !isValid}
             >
-              <FormField
-                name="password"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nuova password</FormLabel>
-                    <FormControl>
-                      <PasswordInput
-                        placeholder="New password"
-                        autoComplete="new-password"
-                        disabled={isLoading}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading || !form.formState.isValid}
-              >
-                {isLoading ? "Salvataggio..." : "Salva nuova password"}
-              </Button>
-            </form>
-          </Form>
+              {isLoading ? "Salvataggio..." : "Salva nuova password"}
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </div>

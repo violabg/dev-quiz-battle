@@ -1,15 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { CardFooter } from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { CardContent, CardFooter } from "@/components/ui/card";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,7 +10,7 @@ import { useMutation } from "convex/react";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -40,7 +33,10 @@ export const CreateGameForm = () => {
     defaultValues: { maxPlayers: 4, timeLimit: 120 },
     mode: "onChange",
   });
-  const { handleSubmit } = form;
+  const {
+    handleSubmit,
+    formState: { errors },
+  } = form;
 
   const handleCreateGame = async (values: CreateGameForm) => {
     setLoading(true);
@@ -61,51 +57,79 @@ export const CreateGameForm = () => {
   };
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={handleSubmit(handleCreateGame)}
-        className="space-y-4"
-        autoComplete="off"
-      >
-        <FormField
-          name="maxPlayers"
-          control={form.control}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Numero massimo di giocatori</FormLabel>
-              <FormControl>
-                <Input type="number" min={2} disabled={loading} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          name="timeLimit"
-          control={form.control}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tempo limite per domanda (secondi)</FormLabel>
-              <FormControl>
+    <>
+      <CardContent>
+        <form
+          onSubmit={handleSubmit(handleCreateGame)}
+          className="space-y-4"
+          autoComplete="off"
+        >
+          <Controller
+            name="maxPlayers"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor="maxPlayers">
+                  Numero massimo di giocatori
+                </FieldLabel>
                 <Input
+                  id="maxPlayers"
+                  type="number"
+                  min={1}
+                  max={10}
+                  step={1}
+                  disabled={loading}
+                  className="glass-card"
+                  aria-invalid={fieldState.invalid}
+                  {...field}
+                />
+                {fieldState.invalid && (
+                  <FieldError
+                    errors={errors.maxPlayers ? [errors.maxPlayers] : []}
+                  />
+                )}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="timeLimit"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor="timeLimit">
+                  Tempo limite per domanda (secondi)
+                </FieldLabel>
+                <Input
+                  id="timeLimit"
                   type="number"
                   min={30}
                   max={300}
                   disabled={loading}
+                  className="glass-card"
+                  aria-invalid={fieldState.invalid}
                   {...field}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <CardFooter className="p-0 pt-4">
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? <Loader2 className="mr-2 w-4 h-4 animate-spin" /> : null}
-            Crea partita
-          </Button>
-        </CardFooter>
-      </form>
-    </Form>
+                {fieldState.invalid && (
+                  <FieldError
+                    errors={errors.timeLimit ? [errors.timeLimit] : []}
+                  />
+                )}
+              </Field>
+            )}
+          />
+        </form>
+      </CardContent>
+      <CardFooter>
+        <Button
+          disabled={loading}
+          className="w-full"
+          onClick={handleSubmit(handleCreateGame)}
+        >
+          {loading ? <Loader2 className="mr-2 w-4 h-4 animate-spin" /> : null}
+          Crea partita
+        </Button>
+      </CardFooter>
+    </>
   );
 };

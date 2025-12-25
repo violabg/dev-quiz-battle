@@ -1,6 +1,5 @@
 "use client";
-
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { useConvexAuth } from "convex/react";
 import Link from "next/link";
 
@@ -10,9 +9,15 @@ export function LoginButton() {
   return (
     <>
       {!isAuthenticated && (
-        <Button variant="outline" size="lg" asChild>
-          <Link href="/auth/login">Accedi</Link>
-        </Button>
+        <Link
+          className={`${buttonVariants({
+            variant: "outline",
+            size: "lg",
+          })}`}
+          href="/auth/login"
+        >
+          Accedi
+        </Link>
       )}
     </>
   );

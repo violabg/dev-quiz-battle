@@ -9,13 +9,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { api } from "@/convex/_generated/api";
@@ -33,14 +31,6 @@ import PasswordInput from "../ui/password-input";
 
 const signUpSchema = z
   .object({
-    first_name: z
-      .string()
-      .min(2, "Nome deve essere almeno 2 caratteri")
-      .max(30, "Nome deve essere massimo 30 caratteri"),
-    last_name: z
-      .string()
-      .min(2, "Cognome deve essere almeno 2 caratteri")
-      .max(30, "Cognome deve essere massimo 30 caratteri"),
     username: z
       .string()
       .min(3, "Username deve essere almeno 3 caratteri")
@@ -71,15 +61,11 @@ export function SignUpForm({
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
   const { signIn } = useAuthActions();
-  const initializeUserProfile = useMutation(
-    api.mutations.auth.initializeUserProfile
-  );
+  const initializeUserProfile = useMutation(api.auth.initializeUserProfile);
 
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
-      first_name: "",
-      last_name: "",
       username: "",
       email: "",
       password: "",
@@ -87,15 +73,17 @@ export function SignUpForm({
     },
     mode: "onChange",
   });
+  const {
+    handleSubmit,
+    register,
+    formState: { errors, isValid },
+  } = form;
 
   const handleSignUp = async (values: SignUpFormValues) => {
     startTransition(async () => {
       try {
         // Sign up with email and password
         const formData = new FormData();
-        formData.append("first_name", values.first_name);
-        formData.append("last_name", values.last_name);
-        formData.append("username", values.username);
         formData.append("email", values.email);
         formData.append("password", values.password);
         formData.append("flow", "signUp");
@@ -127,7 +115,7 @@ export function SignUpForm({
       try {
         // Sign up with GitHub - user initialization is automatic via Convex Auth
         const formData = new FormData();
-        formData.append("redirectTo", "/gioca");
+        formData.append("redirectTo", "/dashboard");
         await signIn("github", formData);
 
         toast.success("Registrazione completata!");
@@ -152,134 +140,79 @@ export function SignUpForm({
           <CardDescription>Crea un nuovo account per giocare</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(handleSignUp)}
-              className="space-y-4"
-              autoComplete="off"
+          <form
+            onSubmit={handleSubmit(handleSignUp)}
+            className="space-y-4"
+            autoComplete="off"
+          >
+            <FieldGroup>
+              <Field data-invalid={!!errors.username}>
+                <FieldLabel htmlFor="username">Username</FieldLabel>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="johndoe"
+                  autoComplete="off"
+                  disabled={isPending}
+                  aria-invalid={!!errors.username}
+                  {...register("username")}
+                />
+                <FieldError errors={errors.username ? [errors.username] : []} />
+              </Field>
+
+              <Field data-invalid={!!errors.email}>
+                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  autoComplete="email"
+                  disabled={isPending}
+                  aria-invalid={!!errors.email}
+                  {...register("email")}
+                />
+                <FieldError errors={errors.email ? [errors.email] : []} />
+              </Field>
+
+              <Field data-invalid={!!errors.password}>
+                <FieldLabel htmlFor="password">Password</FieldLabel>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  disabled={isPending}
+                  aria-invalid={!!errors.password}
+                  {...register("password")}
+                />
+                <FieldError errors={errors.password ? [errors.password] : []} />
+              </Field>
+
+              <Field data-invalid={!!errors.repeatPassword}>
+                <FieldLabel htmlFor="repeatPassword">
+                  Ripeti Password
+                </FieldLabel>
+                <PasswordInput
+                  id="repeatPassword"
+                  autoComplete="new-password"
+                  disabled={isPending}
+                  aria-invalid={!!errors.repeatPassword}
+                  {...register("repeatPassword")}
+                />
+                <FieldError
+                  errors={errors.repeatPassword ? [errors.repeatPassword] : []}
+                />
+              </Field>
+            </FieldGroup>
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isPending || !isValid}
             >
-              <FormField
-                name="first_name"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="text"
-                        placeholder="Mario"
-                        autoComplete="given-name"
-                        disabled={isPending}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                name="last_name"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cognome</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="text"
-                        placeholder="Rossi"
-                        autoComplete="family-name"
-                        disabled={isPending}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                name="username"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Username</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="text"
-                        placeholder="johndoe"
-                        autoComplete="off"
-                        disabled={isPending}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                name="email"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="m@example.com"
-                        autoComplete="email"
-                        disabled={isPending}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                name="password"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <PasswordInput
-                        autoComplete="new-password"
-                        disabled={isPending}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                name="repeatPassword"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ripeti Password</FormLabel>
-                    <FormControl>
-                      <PasswordInput
-                        autoComplete="new-password"
-                        disabled={isPending}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isPending || !form.formState.isValid}
-              >
-                {isPending ? "Registrazione in corso..." : "Registrati"}
-              </Button>
-            </form>
-          </Form>
+              {isPending ? "Registrazione in corso..." : "Registrati"}
+            </Button>
+          </form>
 
           <Separator className="my-4" />
 

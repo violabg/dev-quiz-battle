@@ -2,14 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import {
   Select,
   SelectContent,
@@ -21,7 +14,7 @@ import type { GameDifficulty, GameLanguage } from "@/lib/convex-types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 
 interface QuestionSelectionProps {
@@ -95,12 +88,16 @@ export function QuestionSelection({
   difficulty,
   onSubmit,
 }: QuestionSelectionProps) {
-  const form = useForm<QuestionSelectionForm>({
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<QuestionSelectionForm>({
     resolver: zodResolver(questionSelectionSchema),
     defaultValues: { language, difficulty },
     mode: "onChange",
   });
-  const { handleSubmit, setValue } = form;
 
   React.useEffect(() => {
     setValue("language", language);
@@ -114,7 +111,7 @@ export function QuestionSelection({
 
   return (
     <Card className="gradient-border glass-card">
-      <div className="flex flex-col justify-center items-center p-6 min-h-[400px]">
+      <div className="flex flex-col justify-center items-center p-6 min-h-100">
         {isCurrentPlayersTurn ? (
           <div className="space-y-6 w-full max-w-md">
             <h2 className="font-bold text-2xl text-center">È il tuo turno!</h2>
@@ -122,78 +119,78 @@ export function QuestionSelection({
               Scegli un linguaggio di programmazione e un livello di difficoltà
               per creare una domanda per tutti.
             </p>
-            <Form {...form}>
-              <form
-                className="space-y-4"
-                onSubmit={handleSubmit(handleFormSubmit)}
-                autoComplete="off"
-              >
-                <FormField
+            <form
+              className="space-y-4"
+              onSubmit={handleSubmit(handleFormSubmit)}
+              autoComplete="off"
+            >
+              <Field data-invalid={!!errors.language}>
+                <FieldLabel htmlFor="language">
+                  Linguaggio di programmazione
+                </FieldLabel>
+                <Controller
                   name="language"
+                  control={control}
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Linguaggio di programmazione</FormLabel>
-                      <FormControl>
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={isLoading}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleziona il linguaggio" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {LANGUAGE_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger id="language">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LANGUAGE_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
                 />
-                <FormField
+                <FieldError errors={errors.language ? [errors.language] : []} />
+              </Field>
+              <Field data-invalid={!!errors.difficulty}>
+                <FieldLabel htmlFor="difficulty">Difficoltà</FieldLabel>
+                <Controller
                   name="difficulty"
+                  control={control}
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Difficoltà</FormLabel>
-                      <FormControl>
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={isLoading}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleziona la difficoltà" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {DIFFICULTY_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger id="difficulty">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DIFFICULTY_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   )}
                 />
-                <Button className="w-full" type="submit" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                      Generazione domanda...
-                    </>
-                  ) : (
-                    "Genera domanda"
-                  )}
-                </Button>
-              </form>
-            </Form>
+                <FieldError
+                  errors={errors.difficulty ? [errors.difficulty] : []}
+                />
+              </Field>
+              <Button className="w-full" type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                    Generazione domanda...
+                  </>
+                ) : (
+                  "Genera domanda"
+                )}
+              </Button>
+            </form>
           </div>
         ) : (
           <div className="text-center">

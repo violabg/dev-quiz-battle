@@ -18,14 +18,7 @@ import { useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../ui/form";
+import { Field, FieldError, FieldGroup, FieldLabel } from "../ui/field";
 import { Input } from "../ui/input";
 import PasswordInput from "../ui/password-input";
 
@@ -44,7 +37,11 @@ export function LoginForm({
     defaultValues: { email: "", password: "" },
     mode: "onChange",
   });
-  const { handleSubmit } = form;
+  const {
+    handleSubmit,
+    register,
+    formState: { errors, isValid },
+  } = form;
   const [isPending, startTransition] = useTransition();
   const { signIn } = useAuthActions();
   const router = useRouter();
@@ -56,6 +53,7 @@ export function LoginForm({
         const formData = new FormData();
         formData.append("email", values.email);
         formData.append("password", values.password);
+        formData.append("redirectTo", "/dashboard");
         formData.append("flow", "signIn");
         await signIn("password", formData);
 
@@ -77,6 +75,7 @@ export function LoginForm({
       try {
         // GitHub authentication - user initialization is automatic via Convex Auth
         const formData = new FormData();
+        formData.append("redirectTo", "/dashboard");
         await signIn("github", formData);
         router.push("/dashboard");
       } catch (error: unknown) {
@@ -98,65 +97,55 @@ export function LoginForm({
           <CardDescription>Accedi con il tuo account GitHub</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form
-              onSubmit={handleSubmit(handleLogin)}
-              className="space-y-4"
-              autoComplete="off"
+          <form
+            onSubmit={handleSubmit(handleLogin)}
+            className="space-y-4"
+            autoComplete="off"
+          >
+            <FieldGroup>
+              <Field data-invalid={!!errors.email}>
+                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  autoComplete="email"
+                  disabled={isPending}
+                  aria-invalid={!!errors.email}
+                  {...register("email")}
+                />
+                <FieldError errors={errors.email ? [errors.email] : []} />
+              </Field>
+
+              <Field data-invalid={!!errors.password}>
+                <div className="flex items-center">
+                  <FieldLabel htmlFor="password">Password</FieldLabel>
+                  <Link
+                    href="/auth/forgot-password"
+                    className="inline-block ml-auto text-sm hover:underline underline-offset-4"
+                  >
+                    Password dimenticata?
+                  </Link>
+                </div>
+                <PasswordInput
+                  id="password"
+                  autoComplete="current-password"
+                  disabled={isPending}
+                  aria-invalid={!!errors.password}
+                  {...register("password")}
+                />
+                <FieldError errors={errors.password ? [errors.password] : []} />
+              </Field>
+            </FieldGroup>
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isPending || !isValid}
             >
-              <FormField
-                name="email"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="m@example.com"
-                        autoComplete="email"
-                        disabled={isPending}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                name="password"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center">
-                      <FormLabel>Password</FormLabel>
-                      <Link
-                        href="/auth/forgot-password"
-                        className="inline-block ml-auto text-sm hover:underline underline-offset-4"
-                      >
-                        Password dimenticata?
-                      </Link>
-                    </div>
-                    <FormControl>
-                      <PasswordInput
-                        autoComplete="current-password"
-                        disabled={isPending}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isPending || !form.formState.isValid}
-              >
-                {isPending ? "Accesso in corso..." : "Accedi"}
-              </Button>
-            </form>
-          </Form>
+              {isPending ? "Accesso in corso..." : "Accedi"}
+            </Button>
+          </form>
           <Separator className="my-4" />
 
           <div className="flex flex-col gap-6">
