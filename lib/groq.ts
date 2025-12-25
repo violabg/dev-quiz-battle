@@ -1,7 +1,7 @@
 "use server";
 import type { GameDifficulty, GameLanguage } from "@/lib/convex-types";
 import { groq } from "@ai-sdk/groq";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 import { LLM_MODEL } from "./utils";
 
@@ -89,12 +89,13 @@ export async function generateQuestion({
   `;
 
   try {
-    const { object: questionData } = await generateObject({
+    const { output: questionData } = await generateText({
       model: groq(LLM_MODEL),
-      schema: questionSchema,
+      output: Output.object({ schema: questionSchema }),
       prompt,
       temperature: 0.7,
     });
+    console.log("🚀 ~ generateQuestion ~ questionData:", questionData);
 
     return questionData as GeneratedQuestion;
   } catch (error) {
