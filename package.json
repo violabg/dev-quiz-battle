@@ -10,12 +10,12 @@
     "devAi": "pnpx @ai-sdk/devtools"
   },
   "dependencies": {
-    "@ai-sdk/groq": "latest",
+    "@ai-sdk/groq": "3.0.1",
     "@auth/core": "0.37.0",
     "@base-ui/react": "latest",
     "@convex-dev/auth": "^0.0.90",
     "@hookform/resolvers": "^5.2.2",
-    "ai": "latest",
+    "ai": "6.0.3",
     "autoprefixer": "^10.4.23",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
