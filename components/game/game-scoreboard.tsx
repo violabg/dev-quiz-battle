@@ -74,7 +74,7 @@ export default function Scoreboard({
           <CardTitle className="text-lg">Classifica</CardTitle>
         </CardHeader>
       )}
-      <CardContent>
+      <CardContent className="space-y-2">
         {isRoundComplete ? (
           <PlayersStanding players={game.players} />
         ) : (

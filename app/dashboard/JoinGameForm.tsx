@@ -69,32 +69,30 @@ export const JoinGameForm = () => {
   };
 
   return (
-    <>
+    <form
+      onSubmit={handleSubmit(handleJoinGame)}
+      className="flex flex-col flex-1 gap-4"
+      autoComplete="off"
+    >
       <CardContent className="flex-1">
-        <form
-          onSubmit={handleSubmit(handleJoinGame)}
-          className="space-y-4"
-          autoComplete="off"
-        >
-          <FieldGroup>
-            <Field data-invalid={!!errors.gameCode}>
-              <FieldLabel htmlFor="gameCode">Codice partita</FieldLabel>
-              <Input
-                id="gameCode"
-                placeholder="Enter 6-digit code"
-                maxLength={6}
-                {...register("gameCode", {
-                  onChange: (e) => {
-                    e.target.value = e.target.value.toUpperCase();
-                  },
-                })}
-                disabled={loading}
-                aria-invalid={!!errors.gameCode}
-              />
-              <FieldError errors={errors.gameCode ? [errors.gameCode] : []} />
-            </Field>
-          </FieldGroup>
-        </form>
+        <FieldGroup>
+          <Field data-invalid={!!errors.gameCode}>
+            <FieldLabel htmlFor="gameCode">Codice partita</FieldLabel>
+            <Input
+              id="gameCode"
+              placeholder="Enter 6-digit code"
+              maxLength={6}
+              {...register("gameCode", {
+                onChange: (e) => {
+                  e.target.value = e.target.value.toUpperCase();
+                },
+              })}
+              disabled={loading}
+              aria-invalid={!!errors.gameCode}
+            />
+            <FieldError errors={errors.gameCode ? [errors.gameCode] : []} />
+          </Field>
+        </FieldGroup>
       </CardContent>
       <CardFooter>
         <Button type="submit" disabled={loading || !isValid} className="w-full">
@@ -102,6 +100,6 @@ export const JoinGameForm = () => {
           Unisciti
         </Button>
       </CardFooter>
-    </>
+    </form>
   );
 };

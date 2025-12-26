@@ -59,7 +59,7 @@ export function GameLobby({
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="px-3 py-1 font-mono text-lg">
+            <Badge variant="outline" className="p-3 font-mono text-lg">
               {game.code}
             </Badge>
             <Button variant="ghost" size="icon" onClick={copyGameCode}>

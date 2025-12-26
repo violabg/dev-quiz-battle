@@ -57,79 +57,73 @@ export const CreateGameForm = () => {
   };
 
   return (
-    <>
-      <CardContent>
-        <form
-          onSubmit={handleSubmit(handleCreateGame)}
-          className="space-y-4"
-          autoComplete="off"
-        >
-          <Controller
-            name="maxPlayers"
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="maxPlayers">
-                  Numero massimo di giocatori
-                </FieldLabel>
-                <Input
-                  id="maxPlayers"
-                  type="number"
-                  min={1}
-                  max={10}
-                  step={1}
-                  disabled={loading}
-                  className="glass-card"
-                  aria-invalid={fieldState.invalid}
-                  {...field}
+    <form
+      onSubmit={handleSubmit(handleCreateGame)}
+      className="flex flex-col flex-1 gap-4"
+      autoComplete="off"
+    >
+      <CardContent className="flex-1 space-y-4">
+        <Controller
+          name="maxPlayers"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="maxPlayers">
+                Numero massimo di giocatori
+              </FieldLabel>
+              <Input
+                id="maxPlayers"
+                type="number"
+                min={1}
+                max={10}
+                step={1}
+                disabled={loading}
+                className="glass-card"
+                aria-invalid={fieldState.invalid}
+                {...field}
+              />
+              {fieldState.invalid && (
+                <FieldError
+                  errors={errors.maxPlayers ? [errors.maxPlayers] : []}
                 />
-                {fieldState.invalid && (
-                  <FieldError
-                    errors={errors.maxPlayers ? [errors.maxPlayers] : []}
-                  />
-                )}
-              </Field>
-            )}
-          />
+              )}
+            </Field>
+          )}
+        />
 
-          <Controller
-            name="timeLimit"
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="timeLimit">
-                  Tempo limite per domanda (secondi)
-                </FieldLabel>
-                <Input
-                  id="timeLimit"
-                  type="number"
-                  min={30}
-                  max={300}
-                  disabled={loading}
-                  className="glass-card"
-                  aria-invalid={fieldState.invalid}
-                  {...field}
+        <Controller
+          name="timeLimit"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="timeLimit">
+                Tempo limite per domanda (secondi)
+              </FieldLabel>
+              <Input
+                id="timeLimit"
+                type="number"
+                min={30}
+                max={300}
+                disabled={loading}
+                className="glass-card"
+                aria-invalid={fieldState.invalid}
+                {...field}
+              />
+              {fieldState.invalid && (
+                <FieldError
+                  errors={errors.timeLimit ? [errors.timeLimit] : []}
                 />
-                {fieldState.invalid && (
-                  <FieldError
-                    errors={errors.timeLimit ? [errors.timeLimit] : []}
-                  />
-                )}
-              </Field>
-            )}
-          />
-        </form>
+              )}
+            </Field>
+          )}
+        />
       </CardContent>
       <CardFooter>
-        <Button
-          disabled={loading}
-          className="w-full"
-          onClick={handleSubmit(handleCreateGame)}
-        >
+        <Button type="submit" disabled={loading} className="w-full">
           {loading ? <Loader2 className="mr-2 w-4 h-4 animate-spin" /> : null}
           Crea partita
         </Button>
       </CardFooter>
-    </>
+    </form>
   );
 };
