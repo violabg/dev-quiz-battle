@@ -209,4 +209,3 @@ export const completeGame = mutation({
 - Incorrect answers: 0 points
 
 See [Game Balance Reference](references/GAME_BALANCE.md) for tuning parameters.
-

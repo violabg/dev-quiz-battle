@@ -141,6 +141,7 @@ export const GradientHeading = ({ text }: Props) => {
 ## Color Palette
 
 Use these Tailwind colors throughout:
+
 - **Primary**: `blue-500`, `blue-600`
 - **Secondary**: `purple-500`, `purple-600`
 - **Success**: `green-500`, `green-600`
@@ -152,8 +153,7 @@ Use these Tailwind colors throughout:
 Always include dark mode variants:
 
 ```typescript
-className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+className = "bg-white dark:bg-gray-900 text-gray-900 dark:text-white";
 ```
 
 See [Theme Configuration Reference](references/THEME_CONFIG.md) for detailed color system.
-

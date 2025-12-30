@@ -70,7 +70,10 @@ export const GameLobby = ({ gameCode, players, onStartGame }: Props) => {
           </div>
         ))}
       </div>
-      <button onClick={onStartGame} className="w-full bg-green-500 text-white py-2 rounded-lg">
+      <button
+        onClick={onStartGame}
+        className="w-full bg-green-500 text-white py-2 rounded-lg"
+      >
         Start Game
       </button>
     </div>
@@ -122,11 +125,18 @@ export const GameScoreboard = ({ players, currentRound, maxRounds }: Props) => {
   return (
     <div className="space-y-3">
       <div className="flex justify-between text-sm text-gray-600">
-        <span>Round {currentRound}/{maxRounds}</span>
+        <span>
+          Round {currentRound}/{maxRounds}
+        </span>
       </div>
       {sorted.map((player, index) => (
-        <div key={player.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-          <span className="font-semibold">#{index + 1} {player.name}</span>
+        <div
+          key={player.id}
+          className="flex justify-between items-center p-2 bg-gray-50 rounded"
+        >
+          <span className="font-semibold">
+            #{index + 1} {player.name}
+          </span>
           <span className="text-blue-600">{player.score}</span>
         </div>
       ))}
@@ -147,7 +157,11 @@ import { useTheme } from "next-themes";
 export const ThemedComponent = () => {
   const { theme } = useTheme();
   return (
-    <div className={theme === "dark" ? "bg-gray-900 text-white" : "bg-white text-black"}>
+    <div
+      className={
+        theme === "dark" ? "bg-gray-900 text-white" : "bg-white text-black"
+      }
+    >
       Content
     </div>
   );
@@ -165,8 +179,8 @@ export const ThemedComponent = () => {
 ## Component Files
 
 Key components in the project:
+
 - `components/game/game-lobby.tsx` - Waiting room
 - `components/game/question-display.tsx` - Question UI
 - `components/game/game-scoreboard.tsx` - Score tracking
 - `components/game/players-standing.tsx` - Final standings
-

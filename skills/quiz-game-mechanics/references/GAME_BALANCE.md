@@ -42,4 +42,3 @@ Adjust if games are too easy/hard:
 - Ties: Player with faster average answer time wins
 - Can't rejoin game once started
 - Must have answered at least 50% of questions to qualify
-

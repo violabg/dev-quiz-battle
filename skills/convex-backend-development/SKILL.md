@@ -16,6 +16,7 @@ This skill covers building and maintaining Convex backend functions for the dev-
 ### 1. Understanding the Project Structure
 
 The Convex backend is located in the `convex/` directory with:
+
 - `queries/` - Read-only functions (games, users, answers, leaderboard)
 - `mutations/` - Write operations (creating games, submitting answers, updating user scores)
 - `actions/` - Long-running operations (AI question generation)
@@ -117,4 +118,3 @@ args: {
 ## Key Files to Reference
 
 See [Convex Schema Reference](references/CONVEX_SCHEMA.md) for complete schema definition.
-

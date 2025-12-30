@@ -12,7 +12,11 @@ type FormData = {
 };
 
 export const JoinGameForm = ({ onJoin }: Props) => {
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(gameCodeSchema),
   });
 

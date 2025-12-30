@@ -3,6 +3,7 @@
 The schema.ts file defines all database tables for dev-quiz-battle:
 
 ## Users Table
+
 - `_id`: Document ID
 - `email`: User email (unique)
 - `name`: User name
@@ -12,6 +13,7 @@ The schema.ts file defines all database tables for dev-quiz-battle:
 - `createdAt`: Registration timestamp
 
 ## Games Table
+
 - `_id`: Document ID
 - `code`: Unique game code (6 characters)
 - `creatorId`: Reference to user who created game
@@ -23,6 +25,7 @@ The schema.ts file defines all database tables for dev-quiz-battle:
 - `createdAt`: Game creation timestamp
 
 ## Questions Table
+
 - `_id`: Document ID
 - `text`: Question text
 - `language`: Programming language
@@ -33,6 +36,7 @@ The schema.ts file defines all database tables for dev-quiz-battle:
 - `generatedAt`: When question was generated
 
 ## Answers Table
+
 - `_id`: Document ID
 - `gameId`: Reference to game
 - `playerId`: Reference to answering player
@@ -44,6 +48,7 @@ The schema.ts file defines all database tables for dev-quiz-battle:
 - `submittedAt`: Submission timestamp
 
 ## Leaderboard Table
+
 - `_id`: Document ID
 - `userId`: Reference to user
 - `totalScore`: User's total score
