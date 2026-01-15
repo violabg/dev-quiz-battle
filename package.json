@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@ai-sdk/groq": "3.0.9",
-    "@auth/core": "0.34.3",
+    "@auth/core": "0.37.0",
     "@base-ui/react": "latest",
     "@convex-dev/auth": "^0.0.90",
     "@hookform/resolvers": "^5.2.2",
