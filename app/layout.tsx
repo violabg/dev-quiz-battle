@@ -13,7 +13,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "Dev Quiz Battle",
-  description: "AI-Powered Multiplayer Coding Quiz Game",
+  description: "Multiplayer coding duels staged like a modern quest board.",
 };
 
 export default async function RootLayout({
@@ -51,15 +51,25 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <ConvexClientProvider>
-              <div className="flex flex-col min-h-screen">
+              <div className="relative flex flex-col min-h-screen">
                 <Navbar />
                 {children}
-                <footer className="py-6 md:py-0 border-t">
-                  <div className="flex md:flex-row flex-col justify-between items-center gap-4 md:h-16 container">
-                    <p className="text-muted-foreground text-sm">
-                      &copy; {new Date().getFullYear()} Dev Quiz Battle. Tutti i
-                      diritti riservati.
-                    </p>
+                <footer className="bg-background/70 backdrop-blur-xl mt-10 border-border/60 border-t">
+                  <div className="py-6 md:py-8 container">
+                    <div className="mb-6 quest-divider" />
+                    <div className="flex md:flex-row flex-col md:justify-between md:items-center gap-4">
+                      <div className="space-y-1">
+                        <p className="quest-kicker">Guild Ledger</p>
+                        <p className="text-muted-foreground text-sm">
+                          Real-time quiz duels, forged by Convex and Groq,
+                          dressed as a living quest board.
+                        </p>
+                      </div>
+                      <p className="text-muted-foreground text-sm">
+                        &copy; {new Date().getFullYear()} Dev Quiz Battle. Tutti
+                        i diritti riservati.
+                      </p>
+                    </div>
                   </div>
                 </footer>
               </div>

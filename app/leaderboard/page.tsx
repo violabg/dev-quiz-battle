@@ -12,7 +12,7 @@ import {
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { Loader2 } from "lucide-react";
+import { Crown, Loader2, Medal, Trophy } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import LeaderboardLanguageFilter from "./LeaderboardLanguageFilter";
@@ -32,13 +32,13 @@ const LeaderboardPage = () => {
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
     }),
-    [languageFilter, page]
+    [languageFilter, page],
   );
 
   // Query leaderboard data
   const leaderboardData = useQuery(
     api.queries.leaderboard.getLeaderboardPlayers,
-    paginationOpts
+    paginationOpts,
   );
 
   // Redirect if page is out of bounds - must be before conditional return
@@ -50,7 +50,7 @@ const LeaderboardPage = () => {
       router.push(
         `/leaderboard?page=${totalPages}${
           languageFilter ? `&language=${languageFilter}` : ""
-        }`
+        }`,
       );
     }
   }, [page, totalPages, languageFilter, router, leaderboardData]);
@@ -81,50 +81,88 @@ const LeaderboardPage = () => {
   });
 
   return (
-    <main className="mx-auto px-4 py-10 max-w-2x container">
-      <h1 className="mb-8 font-dqb text-gradient text-4xl text-center">
-        Classifica
-      </h1>
-      <div className="flex justify-center mb-6">
-        <LeaderboardLanguageFilter language={languageFilter || ""} />
+    <main className="quest-page">
+      <div className="space-y-8 container">
+        <section className="p-6 md:p-8 gradient-border quest-panel">
+          <div className="lg:items-end gap-6 grid lg:grid-cols-[1fr_0.85fr]">
+            <div className="space-y-4">
+              <p className="quest-kicker">Registro della gilda</p>
+              <h1 className="font-dqb text-4xl md:text-6xl">Classifica</h1>
+              <p className="max-w-2xl text-muted-foreground text-base md:text-lg leading-8">
+                Un ledger competitivo per vedere chi domina davvero la campagna.
+                Filtra per linguaggio e scorri la progressione come in un albo
+                d&apos;onore.
+              </p>
+            </div>
+            <div className="gap-4 grid sm:grid-cols-3">
+              <div className="quest-stat">
+                <Crown className="mb-3 size-5 text-primary" />
+                <p className="font-dqb text-2xl">Top rank</p>
+                <p className="mt-2 text-muted-foreground text-sm leading-7">
+                  Focus sui campioni correnti.
+                </p>
+              </div>
+              <div className="quest-stat">
+                <Medal className="mb-3 size-5 text-accent" />
+                <p className="font-dqb text-2xl">Filtro lingua</p>
+                <p className="mt-2 text-muted-foreground text-sm leading-7">
+                  Confronta ladder diverse senza rumore.
+                </p>
+              </div>
+              <div className="quest-stat">
+                <Trophy className="mb-3 size-5 text-primary" />
+                <p className="font-dqb text-2xl">Stato vivo</p>
+                <p className="mt-2 text-muted-foreground text-sm leading-7">
+                  Punteggi aggiornati dal backend realtime.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="p-5 md:p-6 quest-panel">
+          <div className="flex justify-center mb-6">
+            <LeaderboardLanguageFilter language={languageFilter || ""} />
+          </div>
+          <PlayersStanding players={players} />
+          {totalPages > 1 && (
+            <Pagination className="mt-8">
+              <PaginationContent>
+                {page > 1 && (
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href={`/leaderboard?page=${page - 1}${
+                        languageFilter ? `&language=${languageFilter}` : ""
+                      }`}
+                    />
+                  </PaginationItem>
+                )}
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink
+                      href={`/leaderboard?page=${i + 1}${
+                        languageFilter ? `&language=${languageFilter}` : ""
+                      }`}
+                      isActive={page === i + 1}
+                    >
+                      {i + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                {page < totalPages && (
+                  <PaginationItem>
+                    <PaginationNext
+                      href={`/leaderboard?page=${page + 1}${
+                        languageFilter ? `&language=${languageFilter}` : ""
+                      }`}
+                    />
+                  </PaginationItem>
+                )}
+              </PaginationContent>
+            </Pagination>
+          )}
+        </section>
       </div>
-      <PlayersStanding players={players} />
-      {totalPages > 1 && (
-        <Pagination className="mt-8">
-          <PaginationContent>
-            {page > 1 && (
-              <PaginationItem>
-                <PaginationPrevious
-                  href={`/leaderboard?page=${page - 1}${
-                    languageFilter ? `&language=${languageFilter}` : ""
-                  }`}
-                />
-              </PaginationItem>
-            )}
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <PaginationItem key={i}>
-                <PaginationLink
-                  href={`/leaderboard?page=${i + 1}${
-                    languageFilter ? `&language=${languageFilter}` : ""
-                  }`}
-                  isActive={page === i + 1}
-                >
-                  {i + 1}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
-            {page < totalPages && (
-              <PaginationItem>
-                <PaginationNext
-                  href={`/leaderboard?page=${page + 1}${
-                    languageFilter ? `&language=${languageFilter}` : ""
-                  }`}
-                />
-              </PaginationItem>
-            )}
-          </PaginationContent>
-        </Pagination>
-      )}
     </main>
   );
 };
