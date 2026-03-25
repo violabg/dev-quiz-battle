@@ -1,7 +1,7 @@
-/** @type {import('next').NextConfig} */
 import { varlockNextConfigPlugin } from "@varlock/nextjs-integration/plugin";
+import type { NextConfig } from "next";
 
-const nextConfig = {
+const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
