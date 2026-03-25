@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+import { varlockNextConfigPlugin } from "@varlock/nextjs-integration/plugin";
+
 const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
@@ -9,4 +11,4 @@ const nextConfig = {
   typedRoutes: true,
 }
 
-export default nextConfig
+export default varlockNextConfigPlugin()(nextConfig);
