@@ -29,8 +29,8 @@ export const DQBLogoGradient = ({ className, size = 24 }: DQBLogoProps) => {
           y2="61.7551"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#d9b468" />
-          <stop offset="1" stopColor="#3d9989" />
+          <stop stopColor="var(--gradient-from)" />
+          <stop offset="1" stopColor="var(--gradient-to)" />
         </linearGradient>
       </defs>
     </svg>
