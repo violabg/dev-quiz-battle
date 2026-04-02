@@ -56,8 +56,8 @@ export default async function Home() {
                 </div>
                 <div className="space-y-4">
                   <div className="flex items-center gap-4">
-                    <div className="flex justify-center items-center bg-primary/10 shadow-primary/20 shadow-xl border border-primary/25 rounded-[1.8rem] size-18 md:size-24">
-                      <DQBLogoGradient size={56} className="md:size-[70px]" />
+                    <div className="flex justify-center items-center bg-primary/10 shadow-primary/20 shadow-xl border border-primary/25 rounded-2xl md:rounded-[1.8rem] size-16 md:size-24">
+                      <DQBLogoGradient size={44} className="md:size-[70px]" />
                     </div>
                     <div>
                       <p className="quest-kicker">Modern Quest Arena</p>
