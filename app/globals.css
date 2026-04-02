@@ -74,32 +74,33 @@
 }
 
 :root {
-  --background: oklch(96.6% 0.015 78);
-  --foreground: oklch(28% 0.03 252);
+  /* Neutrals shifted to cool hue ~255 to align with blue-purple primary/accent palette */
+  --background: oklch(96.5% 0.008 258);
+  --foreground: oklch(22% 0.028 258);
 
-  --card: oklch(98.5% 0.012 80);
-  --card-foreground: oklch(28% 0.03 252);
+  --card: oklch(98.5% 0.005 258);
+  --card-foreground: oklch(22% 0.028 258);
 
-  --popover: oklch(98.8% 0.01 80);
-  --popover-foreground: oklch(28% 0.03 252);
+  --popover: oklch(99% 0.004 258);
+  --popover-foreground: oklch(22% 0.028 258);
 
   --primary: oklch(53.222% 0.20856 276.659);
-  --primary-foreground: oklch(18% 0.018 250);
-  
-  --secondary: oklch(92% 0.03 190);
-  --secondary-foreground: oklch(30% 0.025 220);
-  
-  --muted: oklch(92.5% 0.015 78);
-  --muted-foreground: oklch(50% 0.03 238);
-  
+  --primary-foreground: oklch(98% 0.006 258);
+
+  --secondary: oklch(91% 0.014 258);
+  --secondary-foreground: oklch(28% 0.025 258);
+
+  --muted: oklch(93% 0.007 258);
+  --muted-foreground: oklch(50% 0.022 258);
+
   --accent: oklch(63.826% 0.15605 243.638);
-  --accent-foreground: oklch(97.5% 0.01 80);
+  --accent-foreground: oklch(98% 0.006 258);
 
   --destructive: oklch(58% 0.2 28);
-  --destructive-foreground: oklch(97.5% 0.01 80);
+  --destructive-foreground: oklch(98% 0.006 258);
 
-  --border: oklch(82% 0.025 76);
-  --input: oklch(86% 0.02 80);
+  --border: oklch(78% 0.022 258);
+  --input: oklch(84% 0.016 258);
   --ring: var(--primary);
 
   --gradient-from: var(--primary);
@@ -122,28 +123,28 @@
 
 .dark {
   --background: oklch(20% 0.025 252);
-  --foreground: oklch(94.5% 0.012 88);
+  --foreground: oklch(94.5% 0.008 258);
 
   --card: oklch(23% 0.02 248);
-  --card-foreground: oklch(94.5% 0.012 88);
+  --card-foreground: oklch(94.5% 0.008 258);
 
   --popover: oklch(23% 0.02 248);
-  --popover-foreground: oklch(94.5% 0.012 88);
+  --popover-foreground: oklch(94.5% 0.008 258);
 
   --primary: oklch(73.691% 0.15828 235.877);
   --primary-foreground: oklch(17% 0.02 248);
 
-  --secondary: oklch(28% 0.035 209);
-  --secondary-foreground: oklch(94.5% 0.012 88);
+  --secondary: oklch(28% 0.03 252);
+  --secondary-foreground: oklch(94.5% 0.008 258);
 
   --muted: oklch(25% 0.018 248);
-  --muted-foreground: oklch(74% 0.015 88);
+  --muted-foreground: oklch(72% 0.012 258);
 
   --accent: oklch(53.222% 0.20856 276.659);
   --accent-foreground: oklch(18% 0.018 248);
 
   --destructive: oklch(61% 0.19 28);
-  --destructive-foreground: oklch(96% 0.012 88);
+  --destructive-foreground: oklch(96% 0.008 258);
 
   --border: oklch(33% 0.03 245);
   --input: oklch(28% 0.022 245);
@@ -264,7 +265,6 @@
 @utility gradient-border {
   position: relative;
   isolation: isolate;
-  border-radius: var(--radius);
   overflow: hidden;
 
   &::before {
@@ -273,7 +273,7 @@
     inset: 0;
     z-index: 0;
     padding: 1px;
-    border-radius: var(--radius);
+    border-radius: inherit;
     background: linear-gradient(
       135deg,
       color-mix(in oklab, var(--gradient-from) 78%, white 22%),
